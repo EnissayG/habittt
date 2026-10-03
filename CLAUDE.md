@@ -35,12 +35,12 @@ Voir `docs/architecture.md` et `docs/decisions/`.
 - Règle : `ui -> domain <- data`. Le domaine n'importe jamais les deux autres.
   Appliquée par ESLint, ne pas la contourner.
 - Modèle : `Habit { id, name, seed, startDate, createdAt }`,
-  `Relapse { id, habitId, date }`. UUID, dates `YYYY-MM-DD` locales.
-- `plante = f(seed, startDate, rechutes, aujourd'hui)`. La date du jour et
-  l'aléatoire sont injectés : jamais de `Date.now()` ni `Math.random()` dans
-  `domain/`.
-- Croissance par ajout : chaque jour a une position stable ; ce qui a poussé
-  ne bouge plus.
+  `Relapse { id, habitId, date, deletedAt }`. UUID, dates `YYYY-MM-DD` locales.
+  Rechute : `startDate <= date <= aujourd'hui` ; annulation = suppression logique.
+- `plante = f(seed, startDate, rechutes, aujourd'hui)`. Date du jour et aléatoire
+  injectés : jamais de `Date.now()` ni `Math.random()` dans `domain/`.
+- Position du jour n = g(seed, n) seulement. Une rechute ne change que
+  l'apparence de la case de son jour, jamais une position.
 
 ## Expo Go
 

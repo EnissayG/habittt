@@ -90,9 +90,23 @@ interface Habit {
 interface Relapse {
   id: string; // UUID
   habitId: HabitId;
-  date: LocalDate;
+  date: LocalDate; // startDate <= date <= aujourd'hui
+  deletedAt: string | null; // instant ISO 8601 UTC si la rechute est annulée
 }
 ```
+
+### Règles sur les rechutes
+
+- **Saisie rétroactive autorisée**, pour n'importe quel jour entre `startDate`
+  et aujourd'hui inclus. **Jamais dans le futur.** La validation est une règle
+  du domaine : elle reçoit `today` en paramètre, comme le générateur.
+- **Annulation par suppression logique.** Annuler une rechute renseigne
+  `deletedAt` ; la ligne n'est jamais effacée. Toutes les lectures métier
+  ignorent les rechutes dont `deletedAt` n'est pas `null`.
+- **Pourquoi pas une vraie suppression :** avec la synchronisation, un appareil
+  qui ne voit plus une ligne ne sait pas si elle a été supprimée ailleurs ou si
+  elle n'a jamais existé. Une suppression logique est une donnée comme une
+  autre : synchroniser revient à fusionner des lignes, sans cas particulier.
 
 ### Choix et raisons
 
@@ -113,11 +127,10 @@ interface Relapse {
 
 ### Questions ouvertes (à trancher avec la première fonctionnalité)
 
-- Plusieurs rechutes le même jour : une seule compte, ou toutes laissent une trace ?
-- Une rechute le jour de `startDate`, ou avant, est-elle valide ?
-- Peut-on supprimer une rechute saisie par erreur ? Peut-on en saisir une
-  **pour un jour passé** ? Voir la contrainte de croissance plus bas : ces deux
-  cas modifient le passé de la plante.
+- Plusieurs rechutes actives le même jour : une seule compte pour la série, mais
+  la case du jour montre-t-elle une trace simple ou une trace par rechute ?
+- `startDate` peut-elle être dans le futur (« j'arrête lundi ») ? Par défaut :
+  non, `startDate <= aujourd'hui`.
 
 ## La plante : une fonction pure
 
@@ -159,20 +172,46 @@ serait lire un état caché, et le résultat changerait d'un appel à l'autre.
 Chaque jour depuis `startDate` a une **position stable** dans la plante. Ce qui
 a déjà poussé ne bouge plus jamais : demain, on ajoute ; on ne redessine pas.
 
-Conséquences pour le générateur :
+Le générateur sépare deux choses :
 
-- L'apparence du jour `n` ne dépend que de `seed`, de `n` et des événements
-  **jusqu'au jour `n` inclus**. Jamais de `aujourd'hui`, jamais du futur.
-  `aujourd'hui` sert seulement à savoir **jusqu'où** dessiner.
-- Propriété testable : la plante d'aujourd'hui est un **préfixe** de la plante
-  de demain. Ce sera un test clé du générateur.
-- Une rechute ne supprime rien : elle ajoute une trace visible au jour où elle
-  a eu lieu, et la croissance repart de là.
+- **La géométrie** (où se trouve chaque jour) dépend **seulement** de `seed`
+  et de l'index du jour `n` (nombre de jours depuis `startDate`). Les rechutes
+  ne la modifient jamais.
+- **L'apparence** de la case du jour `n` dépend de `seed`, de `n` et des
+  rechutes actives **de ce jour-là uniquement**.
 
-**Point de tension à trancher :** une rechute saisie après coup pour un jour
-passé, ou supprimée, change les événements d'un jour déjà dessiné, donc ce qui
-a poussé après. Options : interdire la saisie rétroactive, la limiter (par
-exemple à hier), ou accepter que ce cas précis redessine la plante.
+```
+position(n)   = g(seed, n)
+apparence(n)  = h(seed, n, rechutesDuJour(n))
+plante        = [ (position(n), apparence(n)) pour n de 0 à index(aujourd'hui) ]
+```
+
+`aujourd'hui` sert seulement à savoir **jusqu'où** dessiner.
+
+Pourquoi ce découpage :
+
+- **La saisie et l'annulation rétroactives sont sûres.** Ajouter ou annuler une
+  rechute pour le jour `n` ne change que la case `n`. Rien d'autre ne bouge,
+  ni avant, ni après.
+- **Les notes datées pourront s'accrocher** à `position(n)` sans jamais être
+  déplacées.
+- **Propriétés testables**, qui seront les tests clés du générateur :
+  - la plante d'aujourd'hui est un **préfixe** de la plante de demain ;
+  - ajouter ou annuler une rechute au jour `n` ne modifie **que** la case `n` ;
+  - les positions sont identiques avec ou sans rechutes.
+- Une rechute ne supprime rien : elle laisse une trace visible à son jour, et
+  les jours sans rechute qui suivent continuent de pousser. C'est ainsi que la
+  plante « repousse ».
+
+**Ce que ce choix exclut, volontairement :** une apparence qui dépendrait des
+jours précédents (par exemple des feuilles plus jeunes juste après une
+rechute). Une saisie rétroactive changerait alors l'apparence de tous les jours
+suivants. Si on veut un jour cet effet, il faudra le calculer à part, comme une
+couche d'affichage, sans toucher aux positions.
+
+La **série courante**, elle, n'est pas soumise à cette contrainte : c'est un
+nombre calculé (jours depuis la dernière rechute active, ou depuis
+`startDate`), pas un élément de la plante.
 
 ## Prévu plus tard (documenté, non conçu)
 
@@ -182,5 +221,6 @@ exemple à hier), ou accepter que ce cas précis redessine la plante.
   sans pénalité. C'est la position stable par jour qui rend cela possible.
 - **Arrosage facultatif**, sans pénalité si on ne le fait pas. À concevoir.
 - **Comptes et synchronisation (Supabase)** : une seconde implémentation des
-  repositories dans `data/`. Il faudra probablement ajouter `updatedAt` et une
-  suppression logique (`deletedAt`) pour résoudre les conflits entre appareils.
+  repositories dans `data/`. La suppression logique (`deletedAt`) est déjà
+  prévue ; il faudra probablement ajouter `updatedAt` pour résoudre les
+  conflits entre appareils, et appliquer la suppression logique à `Habit`.
