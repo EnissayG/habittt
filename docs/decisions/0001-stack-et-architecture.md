@@ -1,6 +1,8 @@
 # 0001. Stack et architecture
 
-- **Statut :** accepté
+- **Statut :** accepté, complété par
+  [0002](0002-rechutes-et-croissance.md) (modèle des rechutes, question de la
+  saisie rétroactive tranchée)
 - **Date :** 2026-10-03
 
 ## Contexte

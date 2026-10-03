@@ -83,7 +83,7 @@ interface Habit {
   id: HabitId;
   name: string;
   seed: number; // entier 32 bits, tiré une seule fois à la création
-  startDate: LocalDate; // premier jour du suivi
+  startDate: LocalDate; // premier jour du suivi, startDate <= aujourd'hui
   createdAt: string; // instant ISO 8601 UTC
 }
 
@@ -93,9 +93,22 @@ interface Relapse {
   date: LocalDate; // startDate <= date <= aujourd'hui
   deletedAt: string | null; // instant ISO 8601 UTC si la rechute est annulée
 }
+// Unicité : une seule rechute par (habitId, date).
 ```
 
+### Règles sur l'habitude
+
+- **`startDate` jamais dans le futur, mais librement dans le passé.** On peut
+  déclarer un arrêt commencé il y a plusieurs semaines : la plante naît alors
+  avec toutes ces semaines déjà poussées. Comme la validation des rechutes,
+  cette règle du domaine reçoit `today` en paramètre.
+
 ### Règles sur les rechutes
+
+- **Une seule rechute par jour et par habitude**, garantie par une contrainte
+  d'unicité sur `(habitId, date)`. Saisir une rechute un jour qui en a déjà
+  une active ne fait rien : l'opération est idempotente, on peut la rejouer
+  sans risque.
 
 - **Saisie rétroactive autorisée**, pour n'importe quel jour entre `startDate`
   et aujourd'hui inclus. **Jamais dans le futur.** La validation est une règle
@@ -107,6 +120,20 @@ interface Relapse {
   qui ne voit plus une ligne ne sait pas si elle a été supprimée ailleurs ou si
   elle n'a jamais existé. Une suppression logique est une donnée comme une
   autre : synchroniser revient à fusionner des lignes, sans cas particulier.
+
+### À valider : unicité et suppression logique ensemble
+
+Les deux règles se croisent. Recommandation, pas encore décidée :
+
+- **L'unicité porte sur toutes les lignes, annulées comprises.** Sinon une
+  ligne annulée et une ligne active pourraient coexister pour le même jour.
+- **Ressaisir une rechute annulée la réactive** (`deletedAt` repasse à
+  `null`) au lieu de créer une ligne. On peut ainsi revenir sur une annulation
+  faite par erreur.
+- **L'identifiant d'une rechute est déterministe** : UUID v5 calculé à partir
+  de `habitId` et `date`. Deux appareils hors ligne qui enregistrent la même
+  rechute produisent le même `id` ; la fusion retombe sur « même ligne », sans
+  conflit d'unicité à résoudre.
 
 ### Choix et raisons
 
@@ -124,13 +151,6 @@ interface Relapse {
   évite qu'un compteur et l'historique se contredisent.
 - **Pas de `CheckIn`.** Dans une habitude à arrêter, un jour sans événement est
   un jour réussi : il n'y a rien à cocher.
-
-### Questions ouvertes (à trancher avec la première fonctionnalité)
-
-- Plusieurs rechutes actives le même jour : une seule compte pour la série, mais
-  la case du jour montre-t-elle une trace simple ou une trace par rechute ?
-- `startDate` peut-elle être dans le futur (« j'arrête lundi ») ? Par défaut :
-  non, `startDate <= aujourd'hui`.
 
 ## La plante : une fonction pure
 
@@ -177,12 +197,13 @@ Le générateur sépare deux choses :
 - **La géométrie** (où se trouve chaque jour) dépend **seulement** de `seed`
   et de l'index du jour `n` (nombre de jours depuis `startDate`). Les rechutes
   ne la modifient jamais.
-- **L'apparence** de la case du jour `n` dépend de `seed`, de `n` et des
-  rechutes actives **de ce jour-là uniquement**.
+- **L'apparence** de la case du jour `n` dépend de `seed`, de `n` et du fait
+  qu'il y ait ou non une rechute active **ce jour-là uniquement**. Comme il y a
+  au plus une rechute par jour, c'est un simple booléen.
 
 ```
 position(n)   = g(seed, n)
-apparence(n)  = h(seed, n, rechutesDuJour(n))
+apparence(n)  = h(seed, n, rechuteLeJour(n))   // rechuteLeJour : booléen
 plante        = [ (position(n), apparence(n)) pour n de 0 à index(aujourd'hui) ]
 ```
 

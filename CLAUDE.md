@@ -36,7 +36,7 @@ Voir `docs/architecture.md` et `docs/decisions/`.
   Appliquée par ESLint, ne pas la contourner.
 - Modèle : `Habit { id, name, seed, startDate, createdAt }`,
   `Relapse { id, habitId, date, deletedAt }`. UUID, dates `YYYY-MM-DD` locales.
-  Rechute : `startDate <= date <= aujourd'hui` ; annulation = suppression logique.
+  Rechute : une max par jour, `startDate <= date <= aujourd'hui`, suppression logique.
 - `plante = f(seed, startDate, rechutes, aujourd'hui)`. Date du jour et aléatoire
   injectés : jamais de `Date.now()` ni `Math.random()` dans `domain/`.
 - Position du jour n = g(seed, n) seulement. Une rechute ne change que
