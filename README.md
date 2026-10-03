@@ -17,10 +17,16 @@ npm start      # puis scanner le QR code avec Expo Go
 
 Vérifications : `npm test`, `npm run lint`, `npm run typecheck`.
 
+Guide détaillé, avec les problèmes courants :
+[tester avec Expo Go](docs/tester-avec-expo-go.md).
+
 ## Documentation
 
 - [Architecture](docs/architecture.md) : couches, règle de dépendance, modèle
   de données, plante en fonction pure. **À lire en premier.**
 - [Décisions d'architecture](docs/decisions/) : le pourquoi de chaque choix
-  ([0001 : stack et architecture](docs/decisions/0001-stack-et-architecture.md)).
+  ([0001 : stack et architecture](docs/decisions/0001-stack-et-architecture.md),
+  [0002 : rechutes et croissance](docs/decisions/0002-rechutes-et-croissance.md)).
+- [Tester avec Expo Go](docs/tester-avec-expo-go.md) : lancer l'app sur son
+  téléphone, dépannage.
 - [CLAUDE.md](CLAUDE.md) : résumé pour les assistants de code.
