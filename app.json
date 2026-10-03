@@ -20,6 +20,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "backgroundColor": "#F5F0E1"
   }
 }
