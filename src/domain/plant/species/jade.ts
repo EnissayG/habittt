@@ -2,17 +2,16 @@ import { MAX_GROWTH_DAYS } from '../grid';
 import { GrowthPlanBuilder } from '../growthPlan';
 import { line } from '../raster';
 import type { Species } from '../species';
-import { cosSteps, radiansToSteps, sinSteps } from '../trig';
+import { cos, sin } from '../trig';
 
 // A small tree: a trunk that forks four times (planned breadth-first), grown
 // two cells every other day, with foliage clusters on the other days. Once
 // the wood is done, every day adds foliage.
-// Angles are integers in 1/64 turn (see trig.ts) so the shape is identical
-// on every JavaScript engine.
+// Angles use the deterministic sin/cos of trig.ts.
 
 const MAX_DEPTH = 4;
-const MIN_ANGLE = radiansToSteps(-2.7);
-const MAX_ANGLE = radiansToSteps(-0.45);
+const MIN_ANGLE = -2.7;
+const MAX_ANGLE = -0.45;
 
 interface Branch {
   x: number;
@@ -42,22 +41,22 @@ export const jade: Species = {
       {
         x: anchorX,
         y: rimY - 1,
-        angle: radiansToSteps(-Math.PI / 2 + (random() - 0.5) * 0.3),
+        angle: -Math.PI / 2 + (random() - 0.5) * 0.3,
         length: 10,
         depth: 0,
       },
     ];
     while (queue.length > 0) {
       const branch = queue.shift()!;
-      const endX = branch.x + cosSteps(branch.angle) * branch.length;
-      const endY = branch.y + sinSteps(branch.angle) * branch.length;
+      const endX = branch.x + cos(branch.angle) * branch.length;
+      const endY = branch.y + sin(branch.angle) * branch.length;
       const cells = line(branch.x, branch.y, endX, endY);
       cells.forEach(([x, y], i) =>
         wood.push({ x, y, depth: branch.depth, tip: i === cells.length - 1 }),
       );
       if (branch.depth < MAX_DEPTH) {
         for (const turn of [-1, 1]) {
-          const spread = radiansToSteps(0.45 + random() * 0.35);
+          const spread = 0.45 + random() * 0.35;
           queue.push({
             x: endX,
             y: endY,

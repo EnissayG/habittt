@@ -1,6 +1,6 @@
 import { fnv1a, mulberry32 } from './random';
 import { line, path } from './raster';
-import { cosSteps, radiansToSteps, sinSteps, STEPS_PER_TURN } from './trig';
+import { cos, sin } from './trig';
 
 // Reference values were produced by the JavaScript prototype
 // (docs/prototypes/plants.js), so the port is checked against it.
@@ -84,23 +84,23 @@ describe('path', () => {
   });
 });
 
-describe('trig table', () => {
-  it('approximates Math.sin and Math.cos within 1e-6', () => {
-    for (let step = -STEPS_PER_TURN; step <= STEPS_PER_TURN; step++) {
-      const radians = (2 * Math.PI * step) / STEPS_PER_TURN;
-      expect(Math.abs(sinSteps(step) - Math.sin(radians))).toBeLessThan(1e-6);
-      expect(Math.abs(cosSteps(step) - Math.cos(radians))).toBeLessThan(1e-6);
+describe('sin and cos', () => {
+  it('match Math.sin and Math.cos within 1e-13 on the angles plants use', () => {
+    for (let x = -100; x <= 100; x += 0.0137) {
+      expect(Math.abs(sin(x) - Math.sin(x))).toBeLessThan(1e-13);
+      expect(Math.abs(cos(x) - Math.cos(x))).toBeLessThan(1e-13);
     }
   });
 
-  it('has exact cardinal values', () => {
-    expect(sinSteps(16)).toBe(1);
-    expect(cosSteps(32)).toBe(-1);
-    expect(sinSteps(0)).toBe(0);
+  it('give the cardinal values', () => {
+    expect(sin(0)).toBe(0);
+    expect(sin(Math.PI / 2)).toBeCloseTo(1, 15);
+    expect(cos(0)).toBeCloseTo(1, 15);
+    expect(cos(Math.PI)).toBeCloseTo(-1, 15);
   });
 
-  it('converts radians to the nearest step', () => {
-    expect(radiansToSteps(-Math.PI / 2)).toBe(-16);
-    expect(radiansToSteps(0.45)).toBe(5);
+  it('are odd and even', () => {
+    expect(sin(-1.234)).toBe(-sin(1.234));
+    expect(cos(-1.234)).toBeCloseTo(cos(1.234), 15);
   });
 });
