@@ -22,6 +22,11 @@ export class GrowthPlanBuilder {
     this.days[day - 1]!.push({ x: Math.round(x), y: Math.round(y), tone });
   }
 
+  /** Same as add(), with a 0-based day index (0 = day 1), as in the prototype. */
+  readonly at = (dayIndex: number, x: number, y: number, tone: PlantTone): void => {
+    this.add(dayIndex + 1, x, y, tone);
+  };
+
   build(): GrowthPlan {
     return this.days;
   }

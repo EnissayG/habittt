@@ -3,6 +3,7 @@ import { calathea } from './species/calathea';
 import { jade } from './species/jade';
 import { monstera } from './species/monstera';
 import { pothos } from './species/pothos';
+import { sansevieria } from './species/sansevieria';
 
 /**
  * Every known species. The ONLY file to edit when adding one.
@@ -13,6 +14,7 @@ export const SPECIES_REGISTRY = {
   pothos,
   calathea,
   jade,
+  sansevieria,
 } as const satisfies Record<string, Species>;
 
 export type SpeciesId = keyof typeof SPECIES_REGISTRY;

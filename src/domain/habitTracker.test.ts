@@ -46,9 +46,9 @@ describe('habit tracker use cases', () => {
 
   it('draws a species from the injected generator when none is chosen', async () => {
     const { tracker } = setup();
-    // generateSeed() returns 7 here; 7 % 4 species = index 3 in the registry.
+    // generateSeed() returns 7 here: the species is SPECIES_IDS[7 % count].
     const result = await tracker.addHabit({ name: 'No smoking', startedDaysAgo: 0 });
-    expect(result.ok && result.value.species).toBe(SPECIES_IDS[3]);
+    expect(result.ok && result.value.species).toBe(SPECIES_IDS[7 % SPECIES_IDS.length]);
   });
 
   it('does not save a refused habit', async () => {
