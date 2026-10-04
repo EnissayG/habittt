@@ -4,9 +4,10 @@ import { line } from '../raster';
 import type { Species } from '../species';
 import { cos, sin } from '../trig';
 
-// A small tree: a trunk that forks four times (planned breadth-first), grown
-// two cells every other day, with foliage clusters on the other days. Once
-// the wood is done, every day adds foliage.
+// A small tree: a trunk of seeded length that forks four times at a seeded
+// angle (planned breadth-first). The wood grows two cells every other day,
+// with foliage clusters on the other days; once the wood is done, every day
+// adds foliage.
 // Angles use the deterministic sin/cos of trig.ts.
 
 const MAX_DEPTH = 4;
@@ -34,6 +35,8 @@ export const jade: Species = {
   hanging: false,
   build({ random, anchorX, rimY }) {
     const plan = new GrowthPlanBuilder();
+    // How wide the branches fork, drawn once per plant.
+    const fork = 0.3 + random() * 0.4;
 
     // 1. Plan all the wood, trunk first, then each level of branches.
     const wood: WoodCell[] = [];
@@ -41,8 +44,8 @@ export const jade: Species = {
       {
         x: anchorX,
         y: rimY - 1,
-        angle: -Math.PI / 2 + (random() - 0.5) * 0.3,
-        length: 10,
+        angle: -Math.PI / 2 + (random() - 0.5) * 0.55,
+        length: 7 + Math.floor(random() * 5),
         depth: 0,
       },
     ];
@@ -56,7 +59,7 @@ export const jade: Species = {
       );
       if (branch.depth < MAX_DEPTH) {
         for (const turn of [-1, 1]) {
-          const spread = 0.45 + random() * 0.35;
+          const spread = fork + random() * 0.35;
           queue.push({
             x: endX,
             y: endY,
