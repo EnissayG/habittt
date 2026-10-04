@@ -1,32 +1,52 @@
-import { renderPlant, type PlantImage, type PlantPixel } from '../../domain';
+import {
+  renderPlant,
+  SPECIES_IDS,
+  type Genome,
+  type PlantImage,
+  type PlantPixel,
+} from '../../domain';
 import { NEUTRAL_VITALITY, plantColor } from '../theme/plantPalette';
 import { buildColorRuns } from './colorRuns';
 import { pixelScale } from './pixelScale';
 
 const leaf = (relapse: boolean): PlantPixel => ({ tone: 'leaf', day: 3, relapse });
+const genome: Genome = {
+  potColor: 'terracotta',
+  potShape: 'flared',
+  potPattern: 'plain',
+  mirrored: false,
+  foliage: 'classic',
+  trait: 'none',
+  salt: 0,
+};
 
 describe('plantColor', () => {
   it('gives a yellowed color on a relapse day, same tone otherwise', () => {
-    expect(plantColor(leaf(true), 0)).not.toBe(plantColor(leaf(false), 0));
+    expect(plantColor(leaf(true), genome)).not.toBe(plantColor(leaf(false), genome));
   });
 
-  it('colors the pot by pot style', () => {
+  it('colors the pot by pot color and the leaves by foliage hue', () => {
     const pot: PlantPixel = { tone: 'pot', day: 0, relapse: false };
-    expect(plantColor(pot, 0)).not.toBe(plantColor(pot, 1));
+    expect(plantColor(pot, genome)).not.toBe(plantColor(pot, { ...genome, potColor: 'blue' }));
+    expect(plantColor(leaf(false), genome)).not.toBe(
+      plantColor(leaf(false), { ...genome, foliage: 'forest' }),
+    );
   });
 
   it('has a color for every tone the generator can produce', () => {
-    for (const species of ['monstera', 'pothos', 'calathea', 'jade']) {
+    for (const species of SPECIES_IDS) {
       const image = renderPlant({ species, seed: 7, elapsedDays: 120, relapseDays: [5, 60] });
       for (const pixel of image.pixels) {
-        if (pixel) expect(plantColor(pixel, image.potStyle)).toMatch(/^#[0-9A-F]{6}$/i);
+        if (pixel) expect(plantColor(pixel, image.genome)).toMatch(/^#[0-9A-F]{6}$/i);
       }
     }
   });
 
   it('ignores vitality for now (planned for the next step)', () => {
     const tired = { thirst: 1, fatigue: 1 };
-    expect(plantColor(leaf(false), 0, tired)).toBe(plantColor(leaf(false), 0, NEUTRAL_VITALITY));
+    expect(plantColor(leaf(false), genome, tired)).toBe(
+      plantColor(leaf(false), genome, NEUTRAL_VITALITY),
+    );
   });
 });
 
@@ -35,7 +55,7 @@ describe('buildColorRuns', () => {
   const image: PlantImage = {
     width: 4,
     height: 2,
-    potStyle: 0,
+    genome,
     species: 'monstera',
     variety: null,
     fallback: false,

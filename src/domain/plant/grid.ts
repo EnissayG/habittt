@@ -1,3 +1,5 @@
+import type { Genome } from './genome';
+
 /**
  * Plant canvas size. The ONLY place it is defined: species receive it through
  * their build context and must not assume these numbers.
@@ -7,16 +9,32 @@ export const PLANT_GRID = { width: 48, height: 64 } as const;
 /** A plant grows for this many days, then stays as it is on the last day. */
 export const MAX_GROWTH_DAYS = 120;
 
-/** Number of pot variants; the UI theme gives each one its colors. */
-export const POT_STYLE_COUNT = 6;
-
 /**
  * Symbolic colors. The domain says WHAT a pixel is; the UI theme decides how
- * it looks (and can vary it for relapses or, later, vitality).
+ * it looks, from the plant's genome (foliage hue, trait, pot color) and the
+ * pixel's flags (relapse, and later vitality).
  */
-export type PlantTone = 'leafDark' | 'leaf' | 'leafLight' | 'leafDeep' | 'leafAccent' | 'bark';
+export type PlantTone =
+  | 'leafDark'
+  | 'leaf'
+  | 'leafLight'
+  | 'leafDeep'
+  | 'leafPale'
+  | 'leafAccent'
+  | 'stripe'
+  | 'spine'
+  | 'bark'
+  | 'barkDark'
+  | 'flower'
+  | 'bud'
+  | 'succulent'
+  | 'succulentDark'
+  | 'succulentLight'
+  /** Patches of the rare trait (variegated, pink, golden). */
+  | 'trait';
 
-export type SceneryTone = 'soil' | 'pot' | 'potShade' | 'shelf' | 'shelfShade';
+export type SceneryTone =
+  'soil' | 'pot' | 'potShade' | 'potPattern' | 'potPatternShade' | 'shelf' | 'shelfShade';
 
 export type Tone = PlantTone | SceneryTone;
 
@@ -33,12 +51,12 @@ export interface PlantImage {
   readonly height: number;
   /** Row-major: pixel (x, y) is at index y * width + x. null = empty. */
   readonly pixels: readonly (PlantPixel | null)[];
-  /** Pot variant in [0, POT_STYLE_COUNT). */
-  readonly potStyle: number;
   /** Species actually drawn (the fallback one if the requested id is unknown). */
   readonly species: string;
   /** Variety id picked from the seed (null if the species has none). */
   readonly variety: string | null;
+  /** What the seed varies besides the shape: pot, foliage hue, mirror, trait. */
+  readonly genome: Genome;
   /** True when the requested species was unknown and a fallback was drawn. */
   readonly fallback: boolean;
 }

@@ -19,11 +19,23 @@ const TONE_CHAR: Record<Tone, string> = {
   leaf: 'M',
   leafLight: 'L',
   leafDeep: 'K',
+  leafPale: 'E',
   leafAccent: 'P',
+  stripe: 'W',
+  spine: 'S',
   bark: 'B',
+  barkDark: 'b',
+  flower: 'F',
+  bud: 'R',
+  succulent: 'C',
+  succulentDark: 'c',
+  succulentLight: 'l',
+  trait: 'V',
   soil: '=',
   pot: 'o',
   potShade: 'O',
+  potPattern: '*',
+  potPatternShade: '+',
   shelf: '-',
   shelfShade: '_',
 };
@@ -173,10 +185,16 @@ describe('unknown species', () => {
 });
 
 describe('render output', () => {
-  it('has width * height pixels and a pot style in range', () => {
+  it('has width * height pixels and a deterministic genome', () => {
     const image = render('monstera', 42, 10);
     expect(image.pixels).toHaveLength(image.width * image.height);
-    expect(image.potStyle).toBeGreaterThanOrEqual(0);
-    expect(image.potStyle).toBeLessThan(6);
+    expect(render('monstera', 42, 120).genome).toEqual(image.genome);
+  });
+
+  it('gives different genomes to different seeds', () => {
+    const genomes = new Set(
+      SEEDS.map((seed) => JSON.stringify(render('monstera', seed, 1).genome)),
+    );
+    expect(genomes.size).toBeGreaterThan(1);
   });
 });

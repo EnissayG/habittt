@@ -26,6 +26,8 @@ export interface Species {
   readonly id: string;
   /** Hanging plants sit on a high shelf and drape down. */
   readonly hanging: boolean;
+  /** Sits on a shallow tray with feet instead of a pot (bonsai). */
+  readonly tray?: boolean;
   build(ctx: SpeciesContext): SpeciesPlan;
 }
 

@@ -30,7 +30,7 @@ export function PlantCanvas({
 }: PlantCanvasProps) {
   const scale = pixelScale(image, { width: maxWidth, height: maxHeight }, PixelRatio.get());
   const runs = useMemo(
-    () => buildColorRuns(image, (pixel) => plantColor(pixel, image.potStyle, vitality)),
+    () => buildColorRuns(image, (pixel) => plantColor(pixel, image.genome, vitality)),
     [image, vitality],
   );
 

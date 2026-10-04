@@ -1,7 +1,21 @@
 export {
+  computeGenome,
+  FOLIAGES,
+  isRareTrait,
+  POT_COLORS,
+  POT_PATTERNS,
+  POT_SHAPES,
+  TRAITS,
+  type FoliageId,
+  type Genome,
+  type PotColorId,
+  type PotPatternId,
+  type PotShapeId,
+  type TraitId,
+} from './genome';
+export {
   MAX_GROWTH_DAYS,
   PLANT_GRID,
-  POT_STYLE_COUNT,
   type PlantImage,
   type PlantPixel,
   type PlantTone,

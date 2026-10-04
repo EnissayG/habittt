@@ -51,7 +51,9 @@ export function LabScreen({ onBack }: LabScreenProps) {
 
       <PlantCanvas image={image} maxWidth={width - spacing.lg * 2} maxHeight={360} />
       <Text style={styles.caption}>
-        {species} · graine {seed} · jour {days} · pot {image.potStyle}
+        {species} · graine {seed} · jour {days} · pot {image.genome.potColor}{' '}
+        {image.genome.potShape} · {image.genome.foliage}
+        {image.genome.trait !== 'none' ? ` · ${image.genome.trait}` : ''}
         {relapseDays.length > 0 ? ` · rechutes ${relapseDays.join(', ')}` : ''}
       </Text>
 
