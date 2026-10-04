@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 18,
     color: colors.text,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.field,
     borderWidth: 2,
     borderColor: colors.border,
     borderRadius: 4,
@@ -122,5 +122,5 @@ const styles = StyleSheet.create({
   stepLabel: { fontFamily: fonts.display, fontSize: 24, color: colors.text },
   stepInput: { flex: 1, textAlign: 'center' },
   hint: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
-  error: { fontFamily: fonts.body, fontSize: 14, color: colors.danger },
+  error: { fontFamily: fonts.body, fontSize: 14, color: colors.text },
 });

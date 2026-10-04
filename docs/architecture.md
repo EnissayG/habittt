@@ -379,9 +379,15 @@ Décisions détaillées dans [l'ADR 0004](decisions/0004-rendu-des-plantes.md).
   **sémantiques** que les écrans utilisent (`colors.background`,
   `colors.text`, `colors.accent`…). Un écran n'écrit jamais de couleur en dur
   et n'utilise pas `solarized` directement.
-- **Polices** : deux rôles, `fonts.display` (police pixel : nom de l'app,
-  titres, compteurs) et `fonts.body` (police système lisible pour le texte
-  courant). Un écran utilise le rôle, jamais un nom de police.
+- **Contraste** : seuls `text`, `muted` et `onAccent` colorent du texte, et
+  seulement sur les fonds listés dans `TEXT_PAIRS`. `contrast.test.ts`
+  vérifie que chaque paire atteint 4,5:1 et que les écrans n'utilisent pas
+  d'autre couleur de texte.
+- **Polices** : trois rôles, `fonts.display` (Pixelify Sans Medium : titres,
+  noms), `fonts.displayBold` (Pixelify Sans SemiBold : nom de l'app, grands
+  compteurs) et `fonts.body` (police système lisible pour le texte courant).
+  Un écran utilise le rôle, jamais un nom de police. La police est chargée au
+  démarrage (`useAppFonts`).
 - **`plantPalette.ts`** : `plantColor(pixel, potStyle, vitality)` traduit un
   pixel symbolique en couleur. Un jour de rechute a une teinte jaunie (même
   forme). Le paramètre `vitality` est accepté mais sans effet pour l'instant.

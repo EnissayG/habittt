@@ -59,7 +59,6 @@ const styles = StyleSheet.create({
   empty: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, lineHeight: 22 },
   list: { gap: spacing.md },
   card: {
-    backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.border,
     borderRadius: 4,

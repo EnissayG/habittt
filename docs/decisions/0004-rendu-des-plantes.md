@@ -49,9 +49,16 @@ PixelRatio / taille de la grille)`. La plante grandit par paliers et se
 
 ## Conséquences
 
-- Contrastes mesurés : texte 13:1, texte secondaire 4,99:1 sur le fond et
-  4,39:1 sur les cartes, bouton principal 4,69:1, bouton de rechute 4,29:1.
-  Le vert Solarized sur le fond (2,97:1) est réservé aux éléments décoratifs.
+- **Aucun texte sous 4,5:1** (WCAG AA). Le thème déclare les seules paires
+  texte/fond autorisées (`TEXT_PAIRS`) ; `contrast.test.ts` vérifie chaque
+  paire et interdit aux écrans de colorer un texte avec un autre rôle.
+  Conséquences sur la maquette : texte foncé sur le bouton vert (4,69:1),
+  petits textes en `#586E75` (4,99:1), cartes sans fond coloré, champs sur
+  `#FFF9E9`, bouton de rechute neutre, erreurs dans la couleur du texte. Le
+  vert et le rouge Solarized ne servent jamais à écrire (2,97:1 et 4,29:1).
+- **Police pixel** : Pixelify Sans (SIL OFL, accents français vérifiés), en
+  Medium pour `fonts.display` et SemiBold pour `fonts.displayBold`. Seules
+  ces deux graisses sont embarquées.
 - Le script d'installation de Skia (copie des bibliothèques natives) est
   bloqué par npm. Il est inutile dans Expo Go, qui embarque Skia, mais **il
   faudra l'autoriser** (`npm install-scripts approve @shopify/react-native-skia`)

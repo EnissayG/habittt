@@ -69,7 +69,7 @@ export function HabitScreen({ habitId, onBack }: HabitScreenProps) {
               label={
                 today.relapsed ? "Annuler la rechute d'aujourd'hui" : "J'ai rechuté aujourd'hui"
               }
-              variant={today.relapsed ? 'secondary' : 'danger'}
+              variant={today.relapsed ? 'secondary' : 'quiet'}
               onPress={() => toggle(today.date)}
             />
           )}
@@ -97,7 +97,6 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: spacing.md },
   stat: {
     flex: 1,
-    backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.border,
     borderRadius: 4,
@@ -107,5 +106,5 @@ const styles = StyleSheet.create({
   statLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   section: { gap: spacing.sm },
   hint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 18 },
-  error: { fontFamily: fonts.body, fontSize: 14, color: colors.danger },
+  error: { fontFamily: fonts.body, fontSize: 14, color: colors.text },
 });

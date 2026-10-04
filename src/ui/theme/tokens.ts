@@ -21,23 +21,39 @@ export const solarized = {
 } as const;
 
 /**
- * Semantic colors used by screens. Text pairs were chosen for contrast:
- * text on background ~13:1, muted on background 4.99:1, onAccent on accent
- * 4.69:1, onDanger on danger 4.29:1.
+ * Semantic colors used by screens. Only `text`, `muted` and `onAccent` may
+ * color text, and only on the backgrounds listed in TEXT_PAIRS (checked by
+ * contrast.test.ts: every pair is at least 4.5:1).
  */
 export const colors = {
   background: solarized.base3,
+  /** Quiet fills (neutral button, chips). Only `text` goes on it. */
   surface: solarized.base2,
+  /** Text inputs (from the mockup). */
+  field: '#FFF9E9',
   border: solarized.base1,
   text: solarized.base02,
   muted: solarized.base01,
   accent: solarized.green,
   onAccent: solarized.base03,
-  danger: solarized.red,
-  onDanger: solarized.base3,
   clean: solarized.green,
   relapse: solarized.orange,
 } as const;
+
+type ColorRole = keyof typeof colors;
+
+/** Every [text, background] combination the screens are allowed to use. */
+export const TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
+  ['text', 'background'],
+  ['muted', 'background'],
+  ['text', 'surface'],
+  ['text', 'field'],
+  ['muted', 'field'],
+  ['onAccent', 'accent'],
+];
+
+/** Minimum contrast for running text (WCAG AA). */
+export const MIN_TEXT_CONTRAST = 4.5;
 
 /**
  * Typographic roles. Screens use the role, never a font name.

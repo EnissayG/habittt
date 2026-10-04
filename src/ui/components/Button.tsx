@@ -5,7 +5,7 @@ import { colors, fonts, spacing } from '../theme/tokens';
 interface ButtonProps {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'quiet';
   disabled?: boolean;
 }
 
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primary: { backgroundColor: colors.accent },
-  danger: { backgroundColor: colors.danger },
+  quiet: { backgroundColor: colors.surface },
   secondary: { borderWidth: 2, borderColor: colors.text },
   dimmed: { opacity: 0.6 },
   label: { fontFamily: fonts.body, fontSize: 16 },
@@ -42,6 +42,6 @@ const styles = StyleSheet.create({
 
 const labelStyles = StyleSheet.create({
   primary: { color: colors.onAccent },
-  danger: { color: colors.onDanger },
+  quiet: { color: colors.text },
   secondary: { color: colors.text },
 });
