@@ -1,0 +1,849 @@
+<title>Maquette habittt</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout : une planche d'écrans de téléphone, groupés par moment d'usage, chacun avec ses règles de comportement en dessous. */
+:root{--bg:#EEE8D5;--fg:#586E75;--strong:#073642;--muted:#839496;--rule:#D3CBB7;--panel:#FDF6E3;
+--pixel:'Pixelify Sans',ui-monospace,Menlo,Consolas,monospace;--body:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#002B36;--fg:#93A1A1;--strong:#EEE8D5;--muted:#839496;--rule:#0E4753;--panel:#073642;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#002B36;--fg:#93A1A1;--strong:#EEE8D5;--muted:#839496;--rule:#0E4753;--panel:#073642;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:28px 56px;display:flex;flex-direction:column;gap:36px}
+h1{font-family:var(--pixel);font-weight:600;font-size:30px;margin:0;color:var(--strong);line-height:1.1}
+h2{font-family:var(--pixel);font-weight:500;font-size:19px;margin:0;color:var(--strong)}
+h3{font-family:var(--pixel);font-weight:500;font-size:15px;margin:0;color:var(--strong)}
+p{margin:0;max-width:64ch}
+.head{display:flex;flex-direction:column;gap:8px}
+section{display:flex;flex-direction:column;gap:16px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px 28px;border-top:2px solid var(--rule);padding-top:16px}
+.rules>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.sw{display:flex;flex-direction:row;flex-wrap:wrap;gap:6px}
+.sw i{width:22px;height:22px;display:block;border:1px solid var(--rule)}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px 24px;align-items:start}
+.unit{display:flex;flex-direction:column;gap:10px;min-width:0}
+.spec{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;font-size:13px}
+
+/* ----- Le téléphone : un seul look, Solarized Light, quel que soit le thème de la page ----- */
+.phone{--p-bg:#FDF6E3;--p-soft:#EEE8D5;--p-line:#D3CBB7;--p-text:#586E75;--p-strong:#073642;--p-muted:#93A1A1;--p-green:#859900;--p-greenD:#5F7000;--p-wood:#B58900;--p-pink:#D33682;--p-orange:#CB4B16;
+width:300px;max-width:100%;height:620px;background:var(--p-bg);color:var(--p-text);border:3px solid #073642;border-radius:26px;padding:20px 14px 14px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;font-family:var(--pixel)}
+.phone .sys{font-family:var(--body)}
+canvas.pl{image-rendering:pixelated;display:block;width:100%;height:auto}
+canvas.room{image-rendering:pixelated;display:block;width:calc(100% + 28px);margin:0 -14px;height:auto}
+.views{display:flex;gap:12px;flex-wrap:wrap}
+.views div{display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--pixel);font-size:12px}
+.views canvas{image-rendering:pixelated;width:134px;height:auto;background:#FDF6E3;display:block}
+canvas.win{image-rendering:pixelated;display:block;width:100%;height:auto}
+canvas.ic{image-rendering:pixelated;display:inline-block;width:14px;height:14px;vertical-align:-2px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--p-muted)}
+.logo{font-size:30px;font-weight:600;color:var(--p-strong);line-height:1}
+.small{font-size:12px;color:var(--p-muted)}
+.t1{font-size:22px;font-weight:500;color:var(--p-strong);line-height:1.15}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.slot{display:flex;flex-direction:column;min-width:0}
+.slot b{font-weight:400;font-size:13px;color:var(--p-strong);text-align:center;padding-top:4px;line-height:1.15;overflow-wrap:anywhere}
+.slot span{font-size:12px;color:var(--p-muted);text-align:center}
+.grow{flex:1;min-height:0}
+.btn{font-family:var(--pixel);font-size:15px;background:var(--p-green);color:#FDF6E3;border:0;border-bottom:4px solid var(--p-greenD);padding:10px 12px;text-align:center;display:block;width:100%}
+.btn.alt{background:var(--p-soft);color:var(--p-strong);border-bottom-color:var(--p-line)}
+.quiet{font-size:13px;color:var(--p-muted);text-decoration:underline;text-align:center}
+.music{display:flex;align-items:center;gap:10px;background:var(--p-soft);padding:8px 10px;border-top:2px solid var(--p-line);margin:0 -14px -14px}
+.music .ttl{flex:1;min-width:0;font-size:13px;color:var(--p-strong);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq{display:flex;gap:2px;align-items:flex-end;height:12px}.eq i{width:3px;background:var(--p-green);display:block}
+.scene{position:relative}
+.count{position:absolute;left:0;top:0;display:flex;flex-direction:column}
+.count b{font-size:52px;font-weight:600;color:var(--p-strong);line-height:.95}
+.count span{font-size:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--p-soft);padding:3px 8px;font-size:12px}
+.chip.on{background:var(--p-strong);color:#FDF6E3}
+.chip.big{font-size:14px;padding:6px 10px}
+.field{border:2px solid var(--p-strong);background:#FFF9E9;padding:9px 10px;font-size:16px;color:var(--p-strong)}
+.lab{font-size:13px;color:var(--p-text)}
+.area{border:2px solid var(--p-strong);background:#FFF9E9;padding:9px 10px;font-size:13px;min-height:86px;color:var(--p-strong)}
+.dim{position:absolute;inset:0;background:rgba(7,54,66,.38)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--p-bg);border-top:3px solid var(--p-strong);padding:16px 14px 16px;display:flex;flex-direction:column;gap:10px}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tile{border:2px solid var(--p-line);padding:2px 2px 4px;display:flex;flex-direction:column;min-width:0}
+.tile.on{border-color:var(--p-strong)}
+.tile b{font-weight:400;font-size:11px;text-align:center;color:var(--p-strong);line-height:1.1}
+.days{display:grid;grid-template-columns:repeat(15,1fr);gap:3px}
+.days i{display:block;aspect-ratio:1;background:var(--p-green)}
+.days i.r{background:var(--p-orange)}.days i.n{box-shadow:inset 0 0 0 2px var(--p-strong)}.days i.t{outline:2px solid var(--p-pink);outline-offset:1px}
+.noteitem{border-left:4px solid var(--p-pink);background:var(--p-soft);padding:6px 8px;font-size:12px}
+.noteitem b{font-family:var(--pixel);font-weight:500;color:var(--p-strong);font-size:13px}
+.card{border:2px solid var(--p-line);padding:10px;display:flex;gap:10px;align-items:center}
+.card.on{border-color:var(--p-strong)}
+.card canvas{width:64px;flex:none}
+.card div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.card b{font-weight:500;color:var(--p-strong);font-size:15px}
+.set{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:2px solid var(--p-soft);font-size:15px;color:var(--p-strong);gap:10px}
+.tog{width:34px;height:18px;background:var(--p-line);position:relative;flex:none}.tog::after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;background:#FDF6E3}
+.tog.on{background:var(--p-green)}.tog.on::after{left:19px}
+.swipe{display:flex;align-items:stretch;margin-right:-14px}
+.swipe .keep{flex:1;min-width:0}
+.swipe .act{width:74px;background:var(--p-orange);color:#FDF6E3;display:flex;align-items:center;justify-content:center;font-size:13px;text-align:center;line-height:1.1}
+</style>
+
+<div class="wrap">
+<div class="head">
+<h1>Maquette habittt</h1>
+<p>Tous les écrans de l'app, avec les plantes du générateur. Sous chaque écran, les règles de comportement. Ce fichier est la cible visuelle : il décrit quoi construire, il ne se copie pas tel quel.</p>
+</div>
+
+<section>
+<h2>Règles communes</h2>
+<div class="rules">
+<div><h3>Couleurs</h3><div class="sw"><i style="background:#FDF6E3"></i><i style="background:#EEE8D5"></i><i style="background:#D3CBB7"></i><i style="background:#93A1A1"></i><i style="background:#586E75"></i><i style="background:#073642"></i><i style="background:#859900"></i><i style="background:#B58900"></i><i style="background:#CB4B16"></i><i style="background:#D33682"></i></div><p>Solarized Light. Fond #FDF6E3, surfaces #EEE8D5, texte #586E75, titres #073642, action #859900, rechute #CB4B16, note #D33682.</p></div>
+<div><h3>Typographie</h3><p>Pixelify Sans pour les titres, les compteurs, les boutons et les noms. Police système pour les textes longs (notes, explications).</p></div>
+<div><h3>Formes</h3><p>Aucun coin arrondi, aucune ombre. Les boutons ont un bord bas de 4 px plus foncé. Les icônes sont dessinées en pixels, jamais en emoji.</p></div>
+<div><h3>Ton</h3><p>On tutoie. Aucun message de reproche. Une rechute se dit calmement. Le vert sert aux actions, l'orange seulement à la rechute.</p></div>
+<div><h3>Plantes</h3><p>Dessinées par le générateur, en pixels nets, à une échelle entière. La plante est toujours l'élément principal de l'écran.</p></div>
+</div>
+</section>
+
+<section>
+<h2>Arriver dans l'app</h2>
+<div class="board">
+
+<div class="unit"><h3>1. Ouverture</h3>
+<div class="phone" style="align-items:center;justify-content:center;gap:6px">
+<div style="width:200px"><canvas class="pl" data-sp="bonsai" data-seed="12" data-days="120"></canvas></div>
+<div class="logo" style="font-size:44px">habittt</div>
+<div class="small" style="font-size:14px">une plante par habitude</div>
+</div>
+<ul class="spec"><li>S'affiche une à deux secondes au lancement, puis laisse place à l'étagère.</li><li>La plante montrée est celle de l'habitude la plus ancienne. Sans habitude : un bonsaï adulte.</li></ul></div>
+
+<div class="unit"><h3>2. L'étagère</h3>
+<div class="phone">
+<div class="top"><div><div class="logo">habittt</div><div class="small sys">6 plantes · 386 jours gagnés</div></div><canvas class="ic" data-ic="gear" style="width:21px;height:21px"></canvas></div>
+<div class="row3">
+<div class="slot"><canvas class="pl" data-sp="pothos" data-seed="174" data-days="45" data-crop="46"></canvas><b>Soda</b><span>45 j</span></div>
+<div class="slot" style="grid-column:span 2"><canvas class="win" data-view="jour" aria-hidden="true"></canvas></div>
+</div>
+<div class="row3">
+<div class="slot"><canvas class="pl" data-sp="bonsai" data-seed="12" data-days="87" data-rel="30" data-crop="-40"></canvas><b>Fumer</b><span>87 j</span></div>
+<div class="slot"><canvas class="pl" data-sp="monstera" data-seed="100" data-days="34" data-crop="-40"></canvas><b>Sucre</b><span>34 j</span></div>
+<div class="slot"><canvas class="pl" data-sp="cactus" data-seed="174" data-days="60" data-crop="-40"></canvas><b>Écrans</b><span>12 j</span></div>
+</div>
+<div class="row3" data-reflect>
+<div class="slot"><canvas class="pl" data-sp="sansevieria" data-seed="100" data-days="120" data-crop="-40"></canvas><b>Alcool</b><span>203 j</span></div>
+<div class="slot"><canvas class="pl" data-sp="calathea" data-seed="248" data-days="14" data-crop="-40"></canvas><b>Ongles</b><span>5 j</span></div>
+<div class="slot"><canvas class="pl" data-blank="new" data-crop="-40"></canvas><b style="color:#93A1A1">Nouvelle</b><span>habitude</span></div>
+</div>
+<div class="grow"></div>
+<canvas class="room" data-view="jour" aria-hidden="true"></canvas>
+<div class="music" style="margin-top:-12px"><canvas class="ic" data-ic="play"></canvas><canvas class="ic" data-ic="next"></canvas><div class="ttl">pluie sur la serre</div><div class="eq"><i style="height:5px"></i><i style="height:11px"></i><i style="height:7px"></i><i style="height:9px"></i></div></div>
+</div>
+<div class="views"><div><canvas class="win" data-view="jour"></canvas>jour</div><div><canvas class="win" data-view="soir"></canvas>soir</div><div><canvas class="win" data-view="nuit"></canvas>nuit</div><div><canvas class="win" data-view="hiver"></canvas>hiver</div></div>
+<ul class="spec"><li>L'étagère est un lieu : un mur, une grande fenêtre et un plancher de bois sombre, poli, qui reflète la fenêtre et la tablette du bas. Aucun meuble pour l'instant.</li><li>La fenêtre est large comme deux plantes. Elle a un cadre, huit carreaux, des rideaux et un paysage : ciel, nuages, collines, arbres, une petite maison.</li><li>La vue suit l'heure locale (jour, soir, nuit) et la saison (neige en hiver). Le reflet au sol prend la même lumière.</li><li>Plus tard : la vue s'anime (nuages qui passent, neige qui tombe, étoiles qui scintillent).</li><li>Trois plantes par tablette. Une tablette s'ajoute quand la précédente est pleine ; le mur défile, le plancher reste en bas.</li><li>Les plantes retombantes vont en haut, à côté de la fenêtre.</li><li>Toucher une plante ouvre son habitude. Appui long : menu « Retirer ».</li><li>Le pot en pointillé crée une habitude.</li><li>La barre de musique reste en bas : lecture, suivant, titre. Elle se masque dans les réglages.</li></ul></div>
+
+</div>
+</section>
+
+<section>
+<h2>Créer une habitude</h2>
+<div class="board">
+
+<div class="unit"><h3>3. Le nom et la date</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><span>1 / 2</span></div>
+<div class="t1">Qu'est-ce que tu arrêtes ?</div>
+<div class="field">Fumer</div>
+<div class="lab" style="margin-top:8px">Depuis quand ?</div>
+<div class="chips"><span class="chip big on">Aujourd'hui</span><span class="chip big">Hier</span><span class="chip big">Une autre date</span></div>
+<div class="small sys">Si tu as déjà arrêté depuis un moment, ta plante commencera à la bonne taille.</div>
+<div class="grow"></div>
+<div class="btn">Choisir ma plante</div>
+</div>
+<ul class="spec"><li>Nom obligatoire, 50 caractères au plus.</li><li>La date ne peut pas être dans le futur.</li></ul></div>
+
+<div class="unit"><h3>4. Le choix de la plante</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> retour</span><span>2 / 2</span></div>
+<div class="t1">Choisis ta plante</div>
+<div class="tiles">
+<div class="tile on"><canvas class="pl" data-sp="bonsai" data-seed="3" data-days="120" data-crop="-46"></canvas><b>Bonsaï</b></div>
+<div class="tile"><canvas class="pl" data-sp="monstera" data-seed="1" data-days="120" data-crop="-46"></canvas><b>Monstera</b></div>
+<div class="tile"><canvas class="pl" data-sp="cactus" data-seed="100" data-days="120" data-crop="-46"></canvas><b>Cactus</b></div>
+<div class="tile"><canvas class="pl" data-sp="calathea" data-seed="137" data-days="120" data-crop="-46"></canvas><b>Calathea</b></div>
+<div class="tile"><canvas class="pl" data-sp="ficus" data-seed="174" data-days="120" data-crop="-46"></canvas><b>Caoutchouc</b></div>
+<div class="tile"><canvas class="pl" data-sp="bamboo" data-seed="100" data-days="120" data-crop="-46"></canvas><b>Bambou</b></div>
+<div class="tile"><canvas class="pl" data-sp="sansevieria" data-seed="211" data-days="120" data-crop="-46"></canvas><b>Sansevieria</b></div>
+<div class="tile"><canvas class="pl" data-sp="fern" data-seed="174" data-days="120" data-crop="-46"></canvas><b>Fougère</b></div>
+<div class="tile"><canvas class="pl" data-blank="dice" data-crop="-46"></canvas><b>Surprise</b></div>
+</div>
+<div class="small sys">La variété, le pot et les couleurs dépendent de ta graine. Tu les découvriras en la regardant pousser.</div>
+<div class="grow"></div>
+<div class="btn">Planter</div>
+</div>
+<ul class="spec"><li>La liste défile et montre toutes les espèces du registre, à l'âge adulte.</li><li>« Surprise » tire une espèce au hasard.</li><li>« Planter » crée l'habitude, tire la graine et ouvre l'écran de l'habitude.</li></ul></div>
+
+</div>
+</section>
+
+<section>
+<h2>Tous les jours</h2>
+<div class="board">
+
+<div class="unit"><h3>5. Une habitude</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><canvas class="ic" data-ic="dots" style="width:21px;height:21px"></canvas></div>
+<div class="scene"><canvas class="pl" data-sp="bonsai" data-seed="12" data-days="87" data-rel="30"></canvas><div class="count"><b>87</b><span>jours sans fumer</span></div></div>
+<div><div class="t1">Fumer</div><div class="small sys" data-traits="bonsai,12"></div></div>
+<div class="chips"><span class="chip">record 87 j</span><span class="chip">depuis le 9 juin</span><span class="chip">12 notes</span></div>
+<div class="grow"></div>
+<div class="btn">Arroser et écrire une note</div>
+<div class="quiet">J'ai rechuté</div>
+</div>
+<ul class="spec"><li>La plante occupe toute la largeur. Le compteur se pose dans le vide au-dessus d'elle.</li><li>Toucher un endroit de la plante affiche le jour correspondant et sa note, s'il y en a une.</li><li>Le menu en haut à droite : Historique, Renommer, Retirer.</li><li>« J'ai rechuté » reste discret et ouvre l'écran 8.</li></ul></div>
+
+<div class="unit"><h3>6. Arroser et écrire une note</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><canvas class="ic" data-ic="dots" style="width:21px;height:21px"></canvas></div>
+<div class="scene"><canvas class="pl" data-sp="bonsai" data-seed="12" data-days="87" data-rel="30"></canvas><div class="count"><b>87</b><span>jours sans fumer</span></div></div>
+<div class="dim"></div>
+<div class="sheet">
+<div class="t1" style="font-size:19px"><canvas class="ic" data-ic="drop"></canvas> Jour 87 · 4 octobre</div>
+<div class="area sys">Envie forte après le café ce matin. J'ai marché dix minutes et c'est passé.</div>
+<div class="chips"><span class="chip on">fier</span><span class="chip">envie forte</span><span class="chip">stress</span><span class="chip">facile</span></div>
+<div class="btn">Arroser</div>
+<div class="quiet">Arroser sans rien écrire</div>
+</div>
+</div>
+<ul class="spec"><li>Un panneau qui monte du bas. Une seule note par jour, modifiable.</li><li>Écrire est facultatif : on peut arroser sans note.</li><li>Après l'arrosage, une goutte tombe sur la plante et une petite fleur marque le jour.</li></ul></div>
+
+<div class="unit"><h3>7. Historique</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> Fumer</span><span>117 jours</span></div>
+<div class="t1">Historique</div>
+<div class="days" data-total="117" data-rel="30" data-notes="3,9,17,30,31,44,52,66,71,80,95,117"></div>
+<div class="small sys">Vert : jour tenu. Orange : rechute. Encadré : un jour avec une note. Touche un jour pour corriger.</div>
+<div class="noteitem sys"><b>Jour 117 · 4 octobre</b><br>Envie forte après le café ce matin. J'ai marché dix minutes.</div>
+<div class="noteitem sys"><b>Jour 95 · 12 septembre</b><br>Presque pas pensé à ça aujourd'hui.</div>
+<div class="noteitem sys" style="border-left-color:#CB4B16"><b>Jour 30 · rechute</b><br>Soirée difficile. Je repars demain.</div>
+</div>
+<ul class="spec"><li>C'est l'ancienne grille de carrés, déplacée ici. Elle sert à déclarer ou annuler une rechute un jour passé.</li><li>Sous la grille, les notes de la plus récente à la plus ancienne.</li></ul></div>
+
+</div>
+</section>
+
+<section>
+<h2>Les moments délicats</h2>
+<div class="board">
+
+<div class="unit"><h3>8. Une rechute</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><canvas class="ic" data-ic="dots" style="width:21px;height:21px"></canvas></div>
+<div class="scene"><canvas class="pl" data-sp="bonsai" data-seed="12" data-days="87" data-rel="30"></canvas><div class="count"><b>87</b><span>jours sans fumer</span></div></div>
+<div class="dim"></div>
+<div class="sheet">
+<div class="t1" style="font-size:19px">Ça arrive.</div>
+<div class="sys" style="font-size:13px">Ta plante garde une trace de ce jour et continue de pousser. Ton compteur repart, pas ta plante.</div>
+<div class="chips"><span class="chip big on">Aujourd'hui</span><span class="chip big">Hier</span><span class="chip big">Un autre jour</span></div>
+<div class="btn alt">Noter la rechute</div>
+<div class="quiet">Annuler</div>
+</div>
+</div>
+<ul class="spec"><li>Aucun rouge vif, aucun point d'exclamation. Le bouton est neutre.</li><li>Après validation, une feuille jaunit à l'endroit du jour et l'app propose d'écrire une note.</li><li>Une rechute s'annule depuis l'historique.</li></ul></div>
+
+<div class="unit"><h3>9. Retirer une habitude</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><span></span></div>
+<div class="swipe"><div class="keep row3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+<div class="slot"><canvas class="pl" data-sp="monstera" data-seed="100" data-days="34" data-crop="-40"></canvas></div>
+<div class="slot"><canvas class="pl" data-sp="cactus" data-seed="174" data-days="60" data-crop="-40"></canvas></div></div><div class="act">Retirer</div></div>
+<div class="t1" style="font-size:19px">Que devient ta plante ?</div>
+<div class="card on"><canvas class="pl" data-sp="cactus" data-seed="174" data-days="60" data-crop="-44"></canvas><div><b>Elle rejoint le jardin</b><span class="sys small">Je n'ai plus besoin de la suivre. Elle reste visible, avec ses notes.</span></div></div>
+<div class="card"><canvas class="pl" data-blank="give" data-crop="-44"></canvas><div><b>Je la donne</b><span class="sys small">J'arrête de la suivre pour l'instant. Elle quitte l'étagère.</span></div></div>
+<div class="grow"></div>
+<div class="btn">Confirmer</div>
+<div class="quiet">Tout effacer définitivement</div>
+</div>
+<ul class="spec"><li>On y arrive en glissant une plante vers la gauche, par un appui long, ou par le menu de l'habitude.</li><li>Toujours une confirmation. Rien n'est effacé sans le lien du bas, qui redemande confirmation.</li><li>Les deux sorties sont une suppression logique : les données restent.</li></ul></div>
+
+<div class="unit"><h3>10. Le jardin</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><span></span></div>
+<div><div class="t1">Le jardin</div><div class="small sys">Les habitudes dont tu n'as plus besoin.</div></div>
+<div class="row3">
+<div class="slot"><canvas class="pl" data-sp="ficus" data-seed="137" data-days="120" data-crop="-56"></canvas><b>Café</b><span>365 j</span></div>
+<div class="slot"><canvas class="pl" data-sp="bamboo" data-seed="285" data-days="120" data-crop="-56"></canvas><b>Fast-food</b><span>190 j</span></div>
+<div class="slot"><canvas class="pl" data-sp="jade" data-seed="100" data-days="120" data-crop="-56"></canvas><b>Retards</b><span>142 j</span></div>
+</div>
+<div class="small sys">Touche une plante pour relire son histoire.</div>
+<div class="grow"></div>
+</div>
+<ul class="spec"><li>Même présentation que l'étagère, en lecture seule.</li><li>Accessible depuis l'étagère, tout en bas, et depuis les réglages.</li></ul></div>
+
+<div class="unit"><h3>11. Réglages</h3>
+<div class="phone">
+<div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><span></span></div>
+<div class="t1">Réglages</div>
+<div>
+<div class="set"><span>Musique</span><span class="tog on"></span></div>
+<div class="set"><span>Barre de musique visible</span><span class="tog on"></span></div>
+<div class="set"><span>Rappel doux le soir</span><span class="tog"></span></div>
+<div class="set"><span>Le jardin</span><span class="small">3 plantes</span></div>
+<div class="set"><span>Compte et synchronisation</span><span class="small">bientôt</span></div>
+<div class="set"><span>Exporter mes données</span><span></span></div>
+<div class="set" style="border:0"><span>À propos de habittt</span><span></span></div>
+</div>
+<div class="grow"></div>
+<div class="small sys" style="text-align:center">La musique : « habittt, vol. 1 »</div>
+</div>
+<ul class="spec"><li>Le rappel est désactivé par défaut et ne reproche jamais rien.</li><li>La musique se coupe d'un geste ; l'app respecte le mode silencieux du téléphone.</li></ul></div>
+
+</div>
+</section>
+</div>
+
+<script>
+// Générateur de plantes en pixel art — prototype de référence.
+// Principe : plante = f(espèce, graine, jours, rechutes).
+// Chaque jour ajoute des pixels à des positions qui dépendent seulement de la graine
+// et de l'index du jour. Une rechute change la couleur des pixels de ce jour, jamais leur position.
+(function (root) {
+  const W = 48, H = 64, N = 120, CX = 24;
+  const PAL = { e: '#D8E08A', bd: '#5E3D22', d: '#5F7000', m: '#859900', l: '#A8BD2A', k: '#46580A', w: '#EEE8D5', s: '#FDF6E3', b: '#7A5230', f: '#D33682', r: '#DC322F', p: '#6C71C4', c: '#2AA198', cd: '#1F7A72', cl: '#5FC4B8' };
+  const SICK = { e: '#D9B44A', bd: '#946F00', d: '#946F00', m: '#B58900', l: '#D9B44A', k: '#7A5C00', w: '#E8D9A0', s: '#E8D9A0', b: '#C9A227', f: '#93A1A1', r: '#93A1A1', p: '#93A1A1', c: '#B58900', cd: '#946F00', cl: '#D9B44A' };
+  const POTS = [['#CB4B16', '#A53C12'], ['#268BD2', '#1E6FA8'], ['#6C71C4', '#565A9D'], ['#D33682', '#A92B68'], ['#2AA198', '#22817A'], ['#93A1A1', '#768181']];
+  const int = Math.floor;
+  // Ce que la graine fait varier, en plus de la forme propre à chaque espèce.
+  const FOLIAGE = [
+    { name: 'vert classique', w: 40, l: '#A8BD2A', m: '#859900', d: '#5F7000', k: '#46580A', c: '#2AA198', cd: '#1F7A72', cl: '#5FC4B8' },
+    { name: 'vert forêt', w: 22, l: '#7FA650', m: '#4F8A3C', d: '#356B2E', k: '#234F22', c: '#3F8F5A', cd: '#2C6E44', cl: '#6FB884' },
+    { name: 'vert tendre', w: 22, l: '#C9D64A', m: '#A3B818', d: '#7A8C0C', k: '#5C6B08', c: '#8FAE3A', cd: '#6C8A22', cl: '#B5CC66' },
+    { name: 'vert bleuté', w: 16, l: '#7FC4A8', m: '#3F9E82', d: '#2A7862', k: '#1C5A49', c: '#4A90B8', cd: '#356F92', cl: '#7DB6D6' },
+  ];
+  const TRAITS = [
+    { name: '', w: 80 },
+    { name: 'panaché', w: 14, v: '#E6EBA8', pct: 16 },
+    { name: 'rosé', w: 5, v: '#E79AB8', pct: 14 },
+    { name: 'doré', w: 1, v: '#E0B030', pct: 22 },
+  ];
+  const POT_SHAPES = [
+    { name: 'évasé', hw: [7, 7, 6, 6, 6, 5, 5, 5, 4, 4] },
+    { name: 'droit', hw: [7, 7, 6, 6, 6, 6, 6, 6, 6, 6] },
+    { name: 'rond', hw: [6, 7, 7, 7, 7, 7, 6, 6, 5, 4] },
+  ];
+  const TRAY = { name: 'plateau', hw: [10, 10, 9, 9, 9, 8, 0, 0, 0, 0] };
+  const POT_BANDS = ['uni', 'à bande', 'à pois'];
+  const POT_NAMES = ['terre cuite', 'bleu', 'violet', 'rose', 'turquoise', 'gris'];
+  function pick(list, x) { let t = 0; for (const o of list) t += o.w; let v = x * t; for (const o of list) { if ((v -= o.w) < 0) return o; } return list[0]; }
+  function genome(key, seed) {
+    const g = rng(hash(key + '#genome') ^ Math.imul(seed | 0, 40503));
+    const pot = int(g() * POTS.length), shape = int(g() * POT_SHAPES.length), band = int(g() * POT_BANDS.length);
+    return { pot, shape, band, mirror: g() < 0.5, foliage: pick(FOLIAGE, g()), trait: pick(TRAITS, g()), salt: int(g() * 65536) };
+  }
+
+  function rng(s) {
+    return function () {
+      s |= 0; s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function line(x0, y0, x1, y1) {
+    x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+    const pts = [], dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let e = dx + dy;
+    for (;;) { pts.push([x0, y0]); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
+    return pts;
+  }
+  function path(samples) {
+    const out = [];
+    for (let i = 1; i < samples.length; i++) {
+      const seg = line(samples[i - 1][0], samples[i - 1][1], samples[i][0], samples[i][1]);
+      for (let j = out.length ? 1 : 0; j < seg.length; j++) out.push(seg[j]);
+    }
+    return out;
+  }
+  function mk() {
+    const plan = Array.from({ length: N }, () => []);
+    return { plan, add(d, x, y, c) { if (d >= 0 && d < N) plan[d].push([Math.round(x), Math.round(y), c]); } };
+  }
+  const choose = (r, list) => list[int(r() * list.length)];
+  // Répartit les jours entre plusieurs tiges, avec des poids tirés de la graine, sans dépasser la place disponible.
+  function lanes(r, n, cap, maxW) {
+    const order = []; for (let v = 0; v < n; v++) { const w = 1 + int(r() * maxW); for (let i = 0; i < w; i++) order.push(v); }
+    for (let i = order.length - 1; i > 0; i--) { const j = int(r() * (i + 1)), t = order[i]; order[i] = order[j]; order[j] = t; }
+    const used = new Array(n).fill(0); let p = 0;
+    return () => { for (let t = 0; t < order.length; t++) { const v = order[(p + t) % order.length]; if (used[v] < cap(v)) { p += t + 1; used[v]++; return v; } } const v = order[p++ % order.length]; used[v]++; return v; };
+  }
+  function crown(add, T, a, b) {
+    for (let x = CX - 5; x <= CX + 5; x++) add(0, x, T - 1, (x & 1) ? a : b);
+    for (let x = CX - 3; x <= CX + 3; x++) add(0, x, T - 2, (x & 1) ? b : a);
+  }
+
+  function bigleaf(style) {
+    return function (r, T) {
+      const { plan, add } = mk(); const hw = style.hw;
+      for (let k = 0; k * 10 < N; k++) {
+        const d0 = k * 10, side = k % 2 ? 1 : -1;
+        const tx = CX + side * (style.reach + (k % 3) * style.step + int(r() * 3)), ty = T - 10 - int(k * 2.6) - int(r() * 3);
+        const pet = line(CX + side * (k % 3), T - 1, tx, ty);
+        pet.forEach((p, i) => add(d0 + int(i * 4 / pet.length), p[0], p[1], 'd'));
+        const px = [];
+        for (let i = 0; i < hw.length; i++) for (let dx = -hw[i]; dx <= hw[i]; dx++) {
+          const y = ty - 1 - i, x = tx + dx + side * int(i / 3); let c;
+          if (style.kind === 'monstera') {
+            if (k >= 2 && i >= 2 && i <= 5 && Math.abs(dx) === 2 && i % 2 === 0) continue;
+            if (k >= 4 && Math.abs(dx) === hw[i] && i % 2 === 1 && i <= 5) continue;
+            c = dx === 0 ? 'd' : dx * side > 0 ? 'm' : 'l';
+          } else if (style.kind === 'lance') {
+            c = dx === 0 ? 'k' : (i % 3 === 1 && Math.abs(dx) === 1) ? 'k' : Math.abs(dx) === hw[i] && i < 3 ? 'p' : 'm';
+          } else if (style.kind === 'orbi') {
+            c = dx === 0 || Math.abs(dx) === hw[i] ? 'd' : i % 2 ? 'e' : 'm';
+          } else {
+            c = dx === 0 ? 'k' : (Math.abs(dx) === hw[i] && i < 4) ? 'p' : (i + Math.abs(dx)) % 2 ? 'l' : 'm';
+          }
+          px.push([x, y, c]);
+        }
+        px.forEach((p, i) => add(d0 + 4 + int(i * 6 / px.length), p[0], p[1], p[2]));
+      }
+      return plan;
+    };
+  }
+
+  function aloe(r, T) {
+    const { plan, add } = mk(); const close = 0.08 + r() * 0.08, baseL = 8 + int(r() * 7);
+    for (let k = 0; k * 6 < N; k++) {
+      const d0 = k * 6, side = k % 2 ? 1 : -1, a = Math.max(0.08, 1.25 - close * int(k / 2) + (r() - 0.5) * 0.1), Ln = baseL + int(r() * 4) + int(k / 2);
+      for (let p = 0; p < Ln; p++) {
+        const x = Math.round(CX + side * Math.sin(a) * p), y = Math.round(T - 1 - Math.cos(a) * p - (p * p / (Ln * 2.2)) * Math.sin(a));
+        const d = d0 + int(p * 6 / Ln), th = p < Ln * 0.5 ? 1 : 0;
+        add(d, x, y, p > Ln * 0.8 ? 'cl' : 'c');
+        if (p < Ln * 0.8) add(d, x + side, y, p % 5 === 2 ? 'cl' : 'cd');
+        if (th) add(d, x - side, y, 'cl');
+      }
+    }
+    return plan;
+  }
+
+  function jade(r, T) {
+    const { plan, add } = mk(); const fork = 0.3 + r() * 0.4, steps = [], q = [{ x: CX, y: T - 1, a: -Math.PI / 2 + (r() - 0.5) * 0.55, len: 7 + int(r() * 5), dp: 0 }];
+    while (q.length) {
+      const s = q.shift(), x1 = s.x + Math.cos(s.a) * s.len, y1 = s.y + Math.sin(s.a) * s.len, pts = line(s.x, s.y, x1, y1);
+      pts.forEach((p, i) => steps.push({ x: p[0], y: p[1], dp: s.dp, end: i === pts.length - 1 }));
+      if (s.dp < 4) [-1, 1].forEach(sg => q.push({ x: x1, y: y1, a: Math.max(-2.7, Math.min(-0.45, s.a + sg * (fork + r() * 0.35))), len: Math.max(5, s.len * 0.8), dp: s.dp + 1 }));
+    }
+    let si = 0; const ends = [];
+    const grow = d => { const s = steps[si]; if (!s) return false; si++; add(d, s.x, s.y, 'b'); if (s.dp <= 1) add(d, s.x + 1, s.y, 'b'); if (s.dp === 0) add(d, s.x - 1, s.y, 'b'); if (s.end && s.dp >= 1) ends.push(s); return true; };
+    const leaf = d => { const e = ends[ends.length - 1 - int(r() * r() * ends.length)], x = e.x + int(r() * 5) - 2, y = e.y + int(r() * 4) - 3; add(d, x, y, 'l'); add(d, x + 1, y, 'm'); add(d, x, y + 1, 'm'); add(d, x + 1, y + 1, 'd'); };
+    for (let d = 0; d < N; d++) {
+      if (d % 2 === 0 || !ends.length) { const a = grow(d), b = grow(d); if (!a && !b && ends.length) leaf(d); }
+      else leaf(d);
+    }
+    return plan;
+  }
+
+  function sansevieria(r, T) {
+    const { plan, add } = mk(); const V = choose(r, ['Trifasciata', 'Trifasciata', 'Laurentii', 'Laurentii', 'Cylindrica', 'Hahnii']); plan.variety = V;
+    const cyl = V === 'Cylindrica', hah = V === 'Hahnii', edge = V === 'Laurentii' ? 'e' : 'd', fan = 0.4 + r() * 0.9; let d = 0, k = 0;
+    while (d < N) {
+      const len = hah ? 3 + int(r() * 3) : cyl ? 10 + int(r() * 9) : 6 + int(r() * 9);
+      const off = hah ? ((k * 5) % 9 - 4) * 2 : (k ? Math.min(7, Math.ceil(k / 2)) * (cyl ? 2 : 3) * (k % 2 ? -1 : 1) : 0);
+      const lean = Math.max(-1.05, Math.min(1.05, (hah ? off / 5 : off / 16 * fan) + (r() - 0.5) * 0.4)), hwid = hah ? 2 : 1;
+      for (let s = 0; s < len && d < N; s++, d++) for (let q = 0; q < 2; q++) {
+        const h = s * 2 + q, y = T - 1 - h, x = CX + off + Math.round(lean * h / 3), band = edge === 'e' ? (h % 3 === 0 ? 'm' : 'd') : h % 3 === 0 ? 'l' : 'm', left = len * 2 - h;
+        if (cyl) { add(d, x, y, h % 5 === 4 ? 'd' : 'm'); if (left > 3) add(d, x + 1, y, 'd'); }
+        else { const w = left <= 1 ? 0 : left <= 3 ? hwid - 1 : hwid; for (let dx = -w; dx <= w; dx++) add(d, x + dx, y, w > 0 && Math.abs(dx) === w ? (dx < 0 && edge === 'd' ? 'm' : edge) : band); }
+      }
+      k++;
+    }
+    return plan;
+  }
+
+  function pothos(r, T) {
+    const { plan, add } = mk(); crown(add, T, 'm', 'l');
+    const big = r() < 0.5, step = big ? 3 : 2, nV = big ? 3 + int(r() * 2) : 2 + int(r() * 3); plan.variety = big ? 'à grandes feuilles' : 'à petites feuilles';
+    const anchors = [[CX + 9, 0, 0.22], [CX - 9, 0, -0.22], [CX + 3, 11, 0.1], [CX - 4, 11, -0.1]].slice(0, nV), dr = [], n = anchors.map(() => 0);
+    anchors.forEach((a, v) => { let x = 0; dr[v] = []; for (let j = 0; j < 70; j++) { if (j % 4 === 3) { const t = r() + a[2]; x += t > 0.66 ? 1 : t < 0.33 ? -1 : 0; } dr[v][j] = x; } });
+    const next = lanes(r, nV, v => int((H - 4 - T - 2 - anchors[v][1]) / step) * 3, 3);
+    for (let d = 0; d < N; d++) {
+      const v = d < 9 ? (next(), 0) : next(), a = anchors[v], m = n[v]++, t = int(m / 3), ph = m % 3, j = t * step + step - 1, x = a[0] + dr[v][j], y = T + 2 + a[1] + j, sd = t % 2 ? 1 : -1;
+      if (ph === 0) for (let q = 0; q < step; q++) add(d, a[0] + dr[v][j - q], y - q, 'd');
+      if (ph === 1) add(d, x + sd, y, 'l');
+      if (ph === 2 && big) { add(d, x + sd, y - 1, 'l'); add(d, x + 2 * sd, y - 1, 'm'); add(d, x + 2 * sd, y, 'm'); add(d, x + 3 * sd, y, 'd'); add(d, x + 2 * sd, y + 1, 'd'); }
+      if (ph === 2 && !big) { add(d, x + sd, y - 1, 'm'); add(d, x + 2 * sd, y, 'd'); }
+    }
+    return plan;
+  }
+
+  function monstera(r, T) {
+    const { plan, add } = mk(); const adan = r() < 0.4; plan.variety = adan ? 'Adansonii' : 'Deliciosa';
+    const SHAPE = adan ? [2, 3, 4, 4, 4, 4, 4, 3, 3, 2, 1] : [3, 5, 6, 7, 7, 7, 6, 6, 5, 4, 3, 2, 1], per = adan ? 7 : 10, wide = 0.75 + r() * 0.6, grow = adan ? 1.55 : 2.5;
+    for (let k = 0; k * per < N; k++) {
+      const d0 = k * per, side = k % 2 ? 1 : -1, sc = Math.min(1, (adan ? 0.6 : 0.45) + k * 0.065);
+      const rows = Math.max(5, Math.round(SHAPE.length * sc));
+      const spread = ([0.2, 0.62, 1.0][k % 3] + (r() - 0.5) * 0.16) * wide, R = 9 + k * grow + r() * 2;
+      const tx = Math.max(8, Math.min(W - 9, Math.round(CX + side * R * Math.sin(spread)))), ty = Math.max(3, Math.round(T - 1 - R * Math.cos(spread) * 0.95));
+      const mx = CX + side * (1 + k % 3), samples = [];
+      for (let i = 0; i <= 8; i++) { const t = i / 8; samples.push([mx + (tx - mx) * t * t, T - 1 + (ty - (T - 1)) * (1 - (1 - t) * (1 - t))]); }
+      const pet = path(samples), cut = int(per * 0.4);
+      pet.forEach((p, i) => add(d0 + int(i * cut / pet.length), p[0], p[1], 'd'));
+      const px = [];
+      for (let i = 0; i < rows; i++) {
+        const hw = Math.max(1, Math.round(SHAPE[Math.min(SHAPE.length - 1, Math.round(i / sc))] * sc)), y = ty + i, lean = side * int(i / 4);
+        for (let dx = -hw; dx <= hw; dx++) {
+          const ax = Math.abs(dx), x = tx + dx + lean;
+          if (i === 0 && ax === 0) continue;
+          if (adan) { if (k >= 1 && ax >= 1 && ax <= hw - 1 && (i + ax * 2) % 3 === 0 && i > 0 && i < rows - 2) continue; }
+          else {
+            if (k >= 3 && ax >= 2 && ax <= hw - 2 && (i + ax) % 3 === 0 && i > 0 && i < rows - 3) continue;
+            if (k >= 6 && ax === hw && i % 3 === 1 && i > 1 && i < rows - 2) continue;
+          }
+          px.push([x, y, ax === hw ? 'k' : ax === 0 ? 'd' : dx * side < 0 ? 'l' : 'm']);
+        }
+      }
+      px.forEach((p, i) => add(d0 + cut + int(i * (per - cut) / px.length), p[0], p[1], p[2]));
+    }
+    return plan;
+  }
+
+  function spider(r, T) {
+    const { plan, add } = mk(); const curly = r() < 0.35, every = 5 + int(r() * 5), reach = 0.7 + r() * 0.6, edgeStripe = r() < 0.5;
+    plan.variety = curly ? 'Bonnie (frisée)' : edgeStripe ? 'Variegatum' : 'Vittatum';
+    for (let k = 0; k * 4 < N; k++) {
+      const d0 = k * 4, side = k % 2 ? 1 : -1, runner = k % every === every - 1;
+      const L = (runner ? 19 : 4 + r() * 14) * (curly && !runner ? 0.6 : reach), hm = runner ? 15 : (8 + r() * 11) * (curly ? 0.8 : 1), w = runner ? 3.0 : curly ? 3.3 : 2.6;
+      const samples = [];
+      for (let i = 0; i <= 12; i++) { const t = i / 12; samples.push([CX + side * (1 + Math.min(21, L) * t), Math.min(T - 1, T - 1 - hm * Math.sin(t * w))]); }
+      const P = path(samples), base = k % 3 === 2 ? 'l' : 'm';
+      P.forEach((p, i) => add(d0 + int(i * 4 / P.length), p[0], p[1], runner ? 'd' : (edgeStripe ? k % 2 === 0 && i % 2 === 0 : k % 3 === 1 && i % 3 === 1) ? 'w' : base));
+      if (runner) { const e = P[P.length - 1]; [[0, 0, 's'], [-1, -1, 'm'], [1, -1, 'm'], [-1, 1, 'm'], [1, 1, 'm'], [0, -2, 'l'], [-2, 0, 'l'], [2, 0, 'l']].forEach(o => add(d0 + 3, e[0] + o[0], e[1] + o[1], o[2])); }
+    }
+    return plan;
+  }
+
+  function saguaro(r, T, plan, add) {
+    const C3 = ['cd', 'c', 'cl'];
+    const row3 = (d, cx, h) => C3.forEach((c, i) => add(d, cx - 1 + i, T - 1 - h, (i === 0 && h % 4 === 1) || (i === 2 && h % 4 === 3) ? 's' : c));
+    const trunk = (d, h) => { add(d, CX - 1, T - 1 - h, 'c'); add(d, CX, T - 1 - h, 'cl'); add(d, CX + 1, T - 1 - h, 'c'); if (h > 0) { add(d, CX - 2, T - h, h % 4 === 1 ? 's' : 'cd'); add(d, CX + 2, T - h, h % 4 === 3 ? 's' : 'cd'); } };
+    const a = 6 + int(r() * 10), b = 11 + int(r() * 10); let q = 0, fl = 0;
+    const tops = [[CX, 0], [CX - 5, 0], [CX + 5, 0]];
+    for (let d = 0; d < N; d++) {
+      if (d < 30) trunk(d, d);
+      else if (d < 33) for (let j = 0; j < 3; j++) add(d, CX - 3 - (d - 30), T - 1 - a - j, C3[2 - j]);
+      else if (d < 50) row3(d, CX - 5, a + 3 + (d - 33));
+      else if (d < 53) for (let j = 0; j < 3; j++) add(d, CX + 3 + (d - 50), T - 1 - b - j, C3[2 - j]);
+      else if (d < 65) row3(d, CX + 5, b + 3 + (d - 53));
+      else if (d < 75) trunk(d, 30 + d - 65);
+      else if ((d - 75) % 5 === 0) {
+        const t = fl % 3, o = int(fl / 3) - 1; fl++;
+        const ty = t === 0 ? T - 1 - 39 : t === 1 ? T - 1 - (a + 19) : T - 1 - (b + 14);
+        add(d, tops[t][0] + o, ty - 1, 'f'); if (o === 0) add(d, tops[t][0], ty - 2, 'f');
+      } else {
+        if (q < 8) row3(d, CX - 5, q); else if (q < 16) row3(d, CX + 5, q - 8);
+        else add(d, CX - 1 + int(r() * 3), T - 2 - int(r() * 36), 's');
+        q++;
+      }
+    }
+  }
+  function cierges(r, T, plan, add) {
+    const nC = 3 + int(r() * 2), xs = [], hs = new Array(nC).fill(0), C3 = ['cd', 'c', 'cl'];
+    for (let i = 0; i < nC; i++) xs.push(Math.round(CX + (i - (nC - 1) / 2) * 5));
+    const next = lanes(r, nC, () => 40, 4);
+    for (let d = 0; d < N; d++) {
+      if (d >= 108) { const i = (d - 108) % nC, o = int((d - 108) / nC); add(d, xs[i] + [0, -1, 1, 0][o], T - 2 - hs[i] + (o === 3 ? -1 : 0), 'f'); continue; }
+      const i = next(), h = hs[i]++;
+      C3.forEach((c, j) => add(d, xs[i] - 1 + j, T - 1 - h, (j === 0 && h % 4 === 1) || (j === 2 && h % 4 === 3) ? 's' : c));
+    }
+  }
+  function opuntia(r, T, plan, add) {
+    const HW = [1, 2, 3, 3, 3, 3, 3, 2, 1], pads = [{ x: CX, y: T - 1, kids: 0 }];
+    for (let k = 0; k * 10 < N; k++) {
+      let p;
+      if (k === 0) p = pads[0];
+      else {
+        const open = pads.filter(q => q.kids < 2 && q.y - 7 > 12), par = open[int(r() * open.length)] || pads[pads.length - 1];
+        const sd = par.kids === 0 ? (r() < 0.5 ? -1 : 1) : -par.first; if (par.kids === 0) par.first = sd; par.kids++;
+        p = { x: Math.max(5, Math.min(W - 6, par.x + sd * (3 + int(r() * 2)))), y: par.y - 7, kids: 0 }; pads.push(p);
+      }
+      const px = [];
+      for (let i = 0; i < HW.length; i++) for (let dx = -HW[i]; dx <= HW[i]; dx++) px.push([p.x + dx, p.y - i, Math.abs(dx) === HW[i] ? 'cd' : (i % 3 === 1 && dx % 2 === 0) ? 's' : dx < 0 ? 'cl' : 'c']);
+      px.forEach((q, i) => add(k * 10 + int(i * 9 / px.length), q[0], q[1], q[2]));
+      add(k * 10 + 9, p.x, p.y - HW.length, k >= 6 ? 'f' : 'cl'); if (k >= 6) add(k * 10 + 9, p.x + 1, p.y - HW.length, 'f');
+    }
+  }
+  function cactus(r, T) {
+    const { plan, add } = mk(); const V = choose(r, ['Saguaro', 'Saguaro', 'Cierges', 'Figuier de Barbarie', 'Figuier de Barbarie']); plan.variety = V;
+    (V === 'Saguaro' ? saguaro : V === 'Cierges' ? cierges : opuntia)(r, T, plan, add);
+    return plan;
+  }
+
+  function fern(r, T) {
+    const { plan, add } = mk(); const hair = r() < 0.35, droop = 1.7 + r() * 1.3, scale = 0.75 + r() * 0.45; plan.variety = hair ? 'Capillaire' : droop > 2.5 ? 'de Boston (retombante)' : 'de Boston (dressée)';
+    for (let k = 0; k * 8 < N; k++) {
+      const d0 = k * 8, side = k % 2 ? 1 : -1, L = Math.min(21, (7 + r() * 13) * scale), hm = (9 + r() * 13 + k * 0.6) * (droop > 2.5 ? 0.8 : 1.15), samples = [];
+      for (let i = 0; i <= 12; i++) { const t = i / 12; samples.push([CX + side * (1 + L * t), Math.max(2, T - 1 - hm * Math.sin(t * droop))]); }
+      const P = path(samples);
+      P.forEach((p, i) => {
+        const d = d0 + int(i * 8 / P.length); add(d, p[0], p[1], hair ? 'k' : 'd');
+        if (i > 2 && i % 2 === 0 && i < P.length - 2) {
+          const vert = P[i + 1][0] !== p[0], long = !hair && i % 4 === 0 && i < P.length - 6, t1 = hair ? 'l' : 'm';
+          if (hair) { const o = i % 4 === 0 ? -1 : 1; if (vert) { add(d, p[0], p[1] + o, 'l'); add(d, p[0] + 1, p[1] + 2 * o, 'm'); } else { add(d, p[0] + o, p[1], 'l'); add(d, p[0] + 2 * o, p[1] - 1, 'm'); } }
+          else if (vert) { add(d, p[0], p[1] - 1, t1); add(d, p[0], p[1] + 1, t1); if (long) { add(d, p[0], p[1] - 2, 'l'); add(d, p[0], p[1] + 2, 'l'); } }
+          else { add(d, p[0] - 1, p[1], t1); add(d, p[0] + 1, p[1], t1); if (long) { add(d, p[0] - 2, p[1], 'l'); add(d, p[0] + 2, p[1], 'l'); } }
+        }
+      });
+    }
+    return plan;
+  }
+
+  function ficus(r, T) {
+    const { plan, add } = mk(); const dr = [], bias = (r() - 0.5) * 0.5, split = r() < 0.5 ? 5 + int(r() * 5) : 99, long = r() < 0.5; let x = 0;
+    plan.variety = (split < 99 ? 'ramifié' : 'à tige unique') + (long ? ', longues feuilles' : '');
+    for (let j = 0; j < 60; j++) { if (j % 4 === 3) { const t = r() + bias; x += t > 0.7 ? 1 : t < 0.3 ? -1 : 0; x = Math.max(-5, Math.min(5, x)); } dr[j] = x; }
+    for (let d = 0; d < N; d++) {
+      const c = int(d / 5), ph = d % 5; let j, sx, sd, px;
+      if (c < split) { j = 2 * c + 1; sx = CX + dr[j]; px = CX + dr[j - 1]; sd = c % 2 ? 1 : -1; }
+      else { const e = c - split, s = e % 2 ? 1 : -1, i = int(e / 2), b = 2 * split; j = b + 1 + 2 * i; sx = CX + dr[b] + s * (2 + Math.min(i, 4)) + (dr[j] - dr[b]); px = i === 0 ? CX + dr[b] + s : CX + dr[b] + s * (2 + Math.min(i - 1, 4)) + (dr[j - 2] - dr[b]); sd = s; }
+      const y = T - 1 - j, e1 = long ? 6 : 5;
+      if (ph === 0) { add(d, px, y + 1, 'b'); if (px !== sx) add(d, sx, y + 1, 'b'); }
+      if (ph === 1) { add(d, sx, y, 'b'); add(d, sx + sd, y, 'r'); }
+      if (ph === 2) { for (let i = 1; i <= 3; i++) add(d, sx + sd * i, y, 'k'); add(d, sx + sd * 2, y - 1, 'd'); add(d, sx + sd * 3, y - 1, 'd'); add(d, sx + sd * 2, y + 1, 'k'); add(d, sx + sd * 3, y + 1, 'k'); }
+      if (ph === 3) { for (let i = 4; i < e1; i++) { add(d, sx + sd * i, y, 'k'); add(d, sx + sd * i, y - 1, 'd'); if (i < e1 - 1 || !long) add(d, sx + sd * i, y + 1, 'k'); } add(d, sx + sd * e1, y, 'd'); }
+      if (ph === 4) { add(d, sx + sd * 2, y - 1, 'l'); add(d, sx + sd * 3, y - 1, 'm'); }
+    }
+    return plan;
+  }
+
+  function bamboo(r, T) {
+    const { plan, add } = mk(); const nC = 3 + int(r() * 3), spiral = r() < 0.35, xs = [], n = new Array(nC).fill(0), ph = [];
+    plan.variety = (spiral ? 'spirale, ' : '') + nC + ' cannes';
+    for (let i = 0; i < nC; i++) { xs.push(Math.round(CX - 1 + (i - (nC - 1) / 2) * (nC > 4 ? 4 : 5))); ph.push(int(r() * 6)); }
+    const next = lanes(r, nC, () => 46, 4);
+    for (let d = 0; d < N; d++) {
+      const v = next(), h = n[v]++, x = xs[v] + (spiral ? Math.round(1.6 * Math.sin((h + ph[v] * 2) / 2.6)) : 0), y = T - 1 - h, node = (h + ph[v]) % 6 === 5;
+      add(d, x, y, node ? 'd' : 'l'); add(d, x + 1, y, node ? 'd' : 'm');
+      if (node) { const sd = ((h + ph[v] + 1) / 6) % 2 ? 1 : -1, bx = sd > 0 ? x + 2 : x - 1; add(d, bx, y - 1, 'm'); add(d, bx + sd, y - 2, 'l'); add(d, bx + 2 * sd, y - 2, 'm'); }
+    }
+    return plan;
+  }
+
+  function pearls(r, T) {
+    const { plan, add } = mk(); crown(add, T, 'l', 'm');
+    const V = choose(r, ['Perles', 'Perles', 'Dauphins', 'Bananes']), gap = V === 'Dauphins' ? 3 : 2.6, nS = V === 'Dauphins' ? 7 + int(r() * 2) : 6 + int(r() * 3); plan.variety = V;
+    const offs = [-9, 9, -12, 12, -15, 15, -18, 18].slice(0, nS), n = offs.map(() => 0), y0 = offs.map(() => T + 1 + int(r() * 2)), phs = offs.map(() => r() * 6);
+    const next = lanes(r, nS, () => int((H - 3 - T - 3) / gap), 3);
+    for (let d = 0; d < N; d++) {
+      const v = next(), m = n[v]++, x = CX + offs[v] + Math.round(Math.sin(m * 0.5 + phs[v])), y = y0[v] + int(m * gap);
+      if (m === 0) for (const q of line(CX + Math.sign(offs[v]) * 6, T - 1, x, y)) add(d, q[0], q[1], 'd');
+      if (V === 'Perles') { add(d, x, y, 'l'); add(d, x + 1, y, 'm'); add(d, x, y + 1, 'm'); add(d, x + 1, y + 1, 'd'); }
+      if (V === 'Dauphins') { const s = m % 2 ? 1 : -1; add(d, x, y, 'd'); add(d, x + s, y, 'l'); add(d, x + 2 * s, y, 'm'); add(d, x + s, y - 1, 'm'); add(d, x + 2 * s, y + 1, 'd'); }
+      if (V === 'Bananes') { const s = m % 2 ? 1 : -1; add(d, x, y, 'd'); add(d, x + s, y, 'm'); add(d, x + 2 * s, y - 1, 'l'); add(d, x + s, y + 1, 'd'); }
+    }
+    return plan;
+  }
+
+  function calathea(r, T) {
+    const st = choose(r, [
+      { name: 'Médaillon', kind: 'calathea', hw: [1, 2, 3, 3, 3, 3, 2, 2, 1], reach: 2, step: 3 },
+      { name: 'Orbifolia', kind: 'orbi', hw: [2, 4, 5, 5, 5, 5, 4, 3, 2], reach: 3, step: 4 },
+      { name: 'Lancifolia', kind: 'lance', hw: [1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1], reach: 2, step: 3 },
+    ]);
+    const plan = bigleaf(st)(r, T); plan.variety = st.name; return plan;
+  }
+
+  function bonsai(r, T) {
+    const { plan, add } = mk(); const V = choose(r, ['Chokkan (droit)', 'Moyogi (sinueux)', 'Moyogi (sinueux)', 'Shakan (incliné)', 'Fukinagashi (battu par le vent)']); plan.variety = V;
+    const wind = V[0] === 'F', dir = r() < 0.5 ? -1 : 1, Ht = 20 + int(r() * 7);
+    const lean = V[0] === 'S' ? 0.45 + r() * 0.2 : wind ? 0.3 + r() * 0.15 : V[0] === 'M' ? (r() - 0.5) * 0.3 : 0, amp = V[0] === 'M' ? 2.5 + r() * 2 : wind ? 1 : 0, freq = 0.22 + r() * 0.12;
+    const tx = h => CX - Math.round(dir * lean * Ht * 0.35) + Math.round(dir * (lean * h + amp * Math.sin(h * freq)));
+    const trunk = [], limbs = [], pads = [];
+    for (let h = 0; h < Ht; h++) { const w = h === 0 ? 2 : h < Ht * 0.35 ? 1 : 0, x = tx(h); for (let dx = -w; dx <= (h < Ht * 0.7 ? Math.max(w, 1) : w); dx++) trunk.push([x + dx, T - 1 - h, dx > 0 ? 'bd' : 'b']); }
+    const nB = 3 + int(r() * 3);
+    for (let i = 0; i < nB; i++) {
+      const h = Math.round(Ht * (0.38 + 0.5 * i / nB)), side = wind ? dir : (i % 2 ? 1 : -1) * dir, len = Math.round((wind ? 9 : 8) - i * (wind ? 0.8 : 1.1) + r() * 2), x0 = tx(h), y0 = T - 1 - h;
+      const end = [x0 + side * len, y0 - (wind ? 0 : 1 + int(r() * 2))];
+      line(x0 + side, y0, end[0], end[1]).forEach(p => limbs.push([p[0], p[1], 'b']));
+      pads.push({ x: end[0] + (wind ? side * 2 : 0), y: end[1] - 1, rx: Math.max(3, (wind ? 6 : 5) - int(i / 2)), ry: 2 });
+    }
+    pads.push({ x: tx(Ht - 1) + (wind ? dir * 3 : 0), y: T - 1 - Ht, rx: wind ? 5 : 4, ry: 3 });
+    const leaves = pads.map(p => {
+      const px = [];
+      for (let dy = -p.ry; dy <= p.ry; dy++) for (let dx = -p.rx; dx <= p.rx; dx++) {
+        const q = (dx * dx) / (p.rx * p.rx + 0.5) + (dy * dy) / (p.ry * p.ry + 0.5);
+        if (q <= 1 && !(dy === p.ry && (dx + p.x) % 3 === 0)) px.push([p.x + dx, p.y + dy, dy < 0 ? (dy === -p.ry || (dx + dy) % 3 === 0 ? 'l' : 'm') : dy === p.ry ? 'k' : (dx % 2 ? 'd' : 'm'), q + r() * 0.35]);
+      }
+      return px.sort((a, b) => a[3] - b[3]);
+    });
+    const foliage = []; for (let i = 0; leaves.some(l => i < l.length); i++) leaves.forEach(l => { if (i < l.length) foliage.push(l[i]); });
+    const put = (list, d0, d1) => list.forEach((p, i) => add(d0 + int(i * (d1 - d0) / list.length), p[0], p[1], p[2]));
+    put(trunk, 0, 28); put(limbs, 28, 42); put(foliage, 42, N);
+    return plan;
+  }
+
+  // Règle : au jour 120, chaque jour garde au moins un pixel visible (KEEP si possible).
+  // 1. Un jour recouvert reprend des cases aux jours plus récents qui en ont en trop.
+  // 2. S'il ne reste rien à reprendre, il pousse d'un pixel dans la case libre la plus proche.
+  const KEEP = 2;
+  function settle(plan, T, potHW) {
+    const inPot = (x, y) => y > T && y <= T + 10 && Math.abs(x - CX) <= potHW[y - T - 1];
+    const scenery = (x, y) => inPot(x, y) || (y === T && Math.abs(x - CX) <= potHW[0] - 1) || (y >= T + 11 && y <= T + 13);
+    const inGrid = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+    const days = plan.map(px => { const m = new Map(); for (const p of px) { if (!inGrid(p[0], p[1]) || inPot(p[0], p[1])) continue; m.set(p[1] * W + p[0], p[2]); } return m; });
+    const owner = new Map(), count = new Array(N).fill(0), used = new Set();
+    days.forEach((m, d) => { for (const c of m.keys()) { owner.set(c, d); used.add(c); } });
+    for (const d of owner.values()) count[d]++;
+    for (let d = 0; d < N; d++) {
+      while (count[d] < KEEP) {
+        const floor = count[d] === 0 ? 1 : KEEP; let best = -1, bestN = floor;
+        for (const c of days[d].keys()) {
+          const o = owner.get(c); if (o === d || count[o] <= bestN) continue;
+          let safe = true; for (let e = d + 1; e < o && safe; e++) if (days[e].has(c) && days[e].size <= 1) safe = false;
+          if (safe) { bestN = count[o]; best = c; }
+        }
+        if (best < 0) break;
+        const o = owner.get(best);
+        for (let e = d + 1; e < N; e++) days[e].delete(best);
+        owner.set(best, d); count[o]--; count[d]++;
+      }
+      if (count[d] === 0) {
+        let found = -1, tone = 'm', bd = 99;
+        for (const p of plan[d]) for (let dy = -9; dy <= 9; dy++) for (let dx = -9; dx <= 9; dx++) {
+          const x = Math.max(0, Math.min(W - 1, p[0])) + dx, y = Math.max(0, Math.min(H - 1, p[1])) + dy, dist = Math.abs(dx) + Math.abs(dy);
+          if (dist >= bd || !inGrid(x, y) || scenery(x, y) || used.has(y * W + x)) continue;
+          bd = dist; found = y * W + x; tone = p[2];
+        }
+        if (found >= 0) { days[d].set(found, tone); owner.set(found, d); used.add(found); count[d] = 1; }
+      }
+    }
+    return days.map(m => [...m].map(([c, tone]) => [c % W, int(c / W), tone]));
+  }
+
+  const SPECIES = {
+    sansevieria: { name: 'Sansevieria', note: 'Des lames qui montent une à une', build: sansevieria },
+    pothos: { name: 'Pothos', note: 'Une liane qui retombe de la tablette', hang: true, build: pothos },
+    monstera: { name: 'Monstera', note: 'Les trous apparaissent avec la maturité', build: monstera },
+    spider: { name: 'Plante araignée', note: 'Des bébés au bout de longues tiges', build: spider },
+    cactus: { name: 'Cactus', note: 'Saguaro, cierges ou raquettes', build: cactus },
+    aloe: { name: 'Aloès', note: 'Une rosette qui se resserre vers le centre', build: aloe },
+    fern: { name: 'Fougère', note: 'Des frondes en arc, plume par plume', build: fern },
+    ficus: { name: 'Caoutchouc', note: 'Une tige droite, une feuille à la fois', build: ficus },
+    bamboo: { name: 'Bambou', note: 'Trois cannes qui montent à leur rythme', build: bamboo },
+    pearls: { name: 'Collier de perles', note: 'Une perle par jour', hang: true, build: pearls },
+    calathea: { name: 'Calathea', note: 'Des feuilles rayées bordées de violet', build: calathea },
+    jade: { name: 'Arbre de jade', note: 'Des branches, puis le feuillage', build: jade },
+    bonsai: { name: 'Bonsaï', note: 'Un tronc, des branches, des coussins de feuillage', tray: true, build: bonsai },
+  };
+
+  function render(key, seed, days, relapses) {
+    const sp = SPECIES[key], T = sp.hang ? 8 : 50, r = rng(hash(key) ^ Math.imul(seed | 0, 2654435761));
+    r();
+    const G = genome(key, seed), pot = POTS[G.pot], shape = sp.tray ? TRAY : POT_SHAPES[G.shape], potHW = shape.hw, grid = new Array(W * H).fill(null);
+    const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) grid[y * W + x] = c; };
+    for (let x = CX - potHW[0] + 1; x <= CX + potHW[0] - 1; x++) set(x, T, '#5B4636');
+    for (let i = 0; i < 10; i++) {
+      const y = T + 1 + i, hw = potHW[i];
+      if (hw === 0) { for (const x of [CX - 7, CX - 6, CX + 6, CX + 7]) set(x, y, x > CX ? pot[1] : pot[0]); continue; }
+      for (let x = CX - hw; x <= CX + hw; x++) {
+        let c = x > CX + hw - 3 ? pot[1] : pot[0];
+        if (!sp.tray && G.band === 1 && (i === 4 || i === 5)) c = x > CX + hw - 3 ? '#C9C2AC' : '#EEE8D5';
+        if (!sp.tray && G.band === 2 && i >= 3 && i <= 8 && (i % 3 === 1) && (x - CX + 12) % 4 === (i % 2 ? 0 : 2)) c = '#EEE8D5';
+        set(x, y, c);
+      }
+    }
+    for (let x = 0; x < W; x++) { set(x, T + 11, '#B58900'); set(x, T + 12, '#B58900'); set(x, T + 13, '#93710A'); }
+    // La graine choisit le sens de pousse (miroir) et, pour les traits rares, les zones panachées.
+    let raw = sp.build(r, T); const variety = raw.variety || '';
+    if (G.mirror) raw = raw.map(px => px.map(p => [2 * CX - p[0], p[1], p[2]]));
+    if (G.trait.v) raw = raw.map(px => px.map(p => ((p[2] === 'l' || p[2] === 'm' || p[2] === 'c' || p[2] === 'cl' || p[2] === 'e') && hash((p[0] >> 1) + ':' + (p[1] >> 1) + ':' + G.salt) % 100 < G.trait.pct) ? [p[0], p[1], 'v'] : p));
+    const plan = settle(raw, T, potHW), rel = new Set(relapses || []), dayAt = new Array(W * H).fill(0);
+    const pal = Object.assign({}, PAL, { l: G.foliage.l, m: G.foliage.m, d: G.foliage.d, k: G.foliage.k, c: G.foliage.c, cd: G.foliage.cd, cl: G.foliage.cl, v: G.trait.v });
+    const sick = Object.assign({}, SICK, { v: '#C9A227' });
+    for (let d = 0; d < Math.min(days, N); d++) { const P = rel.has(d + 1) ? sick : pal; for (const p of plan[d]) { set(p[0], p[1], P[p[2]]); dayAt[p[1] * W + p[0]] = d + 1; } }
+    const traits = { variety, pot: sp.tray ? 'plateau ' + POT_NAMES[G.pot] : 'pot ' + POT_SHAPES[G.shape].name + ' ' + POT_NAMES[G.pot] + (G.band ? ' ' + POT_BANDS[G.band] : ''), foliage: G.foliage.name, trait: G.trait.name, rare: G.trait.w <= 5 };
+    return { w: W, h: H, grid, dayAt, traits };
+  }
+
+  const api = { W, H, MAX_DAYS: N, SPECIES, render };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PlantLab = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+const P=window.PlantLab;
+// La fenêtre : 96 x 46 pixels, quatre vues. Dans l'app, la vue dépend de l'heure locale et de la saison.
+const VIEWS={
+ jour:{sky:['#6FB7D6','#8CCBE2','#A8D8E8','#CDEAF0'],far:'#9DB36A',near:'#859900',tree:['#5F7000','#859900'],cloud:['#FFFFFF','#D6EEF3'],wall:'#EEE8D5',roof:'#CB4B16',lit:'#93A1A1',glare:.2,floor:'#CDEAF0'},
+ soir:{sky:['#5B4B8A','#B0567A','#E77C5A','#F6B26B'],far:'#7A5C6E',near:'#46580A',tree:['#2E3A06','#46580A'],cloud:['#F9C9A0','#D98A8A'],wall:'#C9A58E',roof:'#8A3210',lit:'#F2C94C',glare:.1,floor:'#F6B26B'},
+ nuit:{sky:['#04222B','#073642','#0B3F4D','#14505F'],far:'#0E4753',near:'#0A3440',tree:['#052830','#0A3440'],cloud:['#124B59','#0E4753'],wall:'#124B59',roof:'#0A3440',lit:'#F2C94C',glare:.06,floor:'#3A6F7D'},
+ hiver:{sky:['#AEBFC6','#C3D0D5','#D8E1E4','#EDF1F2'],far:'#E2E8EA',near:'#FDF6E3',tree:['#5B4636','#FFFFFF'],cloud:['#FFFFFF','#E2E8EA'],wall:'#EEE8D5',roof:'#FFFFFF',lit:'#F2C94C',glare:.16,floor:'#EDF1F2'}};
+const BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+function drawWindow(cv){
+ cv.width=96;cv.height=46;const view=cv.dataset.view,V=VIEWS[view],c=cv.getContext('2d'),R=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};
+ const gx=13,gy=7,gw=70,gh=30,ground=gy+gh;
+ // cadre
+ R(9,3,78,38,'#5B4636');R(10,4,76,36,'#B58900');R(10,4,76,1,'#D9B44A');R(10,4,1,36,'#D9B44A');R(85,5,1,35,'#93710A');R(10,39,76,1,'#93710A');R(12,6,72,32,'#5B4636');
+ // ciel en dégradé tramé
+ for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){const f=y/(gh-1)*3,b=Math.min(2,Math.floor(f));R(gx+x,gy+y,1,1,V.sky[(f-b)>BAYER[y%4][x%4]/16?b+1:b])}
+ // astres
+ if(view==='jour'){R(gx+58,gy+3,5,5,'#F7D774');R(gx+59,gy+2,3,7,'#F7D774');R(gx+59,gy+4,3,3,'#FFF3B0')}
+ if(view==='hiver'){R(gx+56,gy+4,5,5,'#F4F4EC');R(gx+57,gy+3,3,7,'#F4F4EC')}
+ if(view==='soir'){R(gx+20,ground-13,7,5,'#FFD98A');R(gx+21,ground-14,5,1,'#FFD98A');R(gx+22,ground-12,3,3,'#FFF3B0')}
+ if(view==='nuit'){R(gx+56,gy+3,5,6,'#EEE8D5');R(gx+57,gy+2,3,8,'#EEE8D5');R(gx+58,gy+3,3,5,V.sky[0]);[[5,4],[12,2],[19,9],[27,5],[34,12],[41,3],[47,8],[65,13],[9,13],[30,16]].forEach(s=>R(gx+s[0],gy+s[1],1,1,'#EEE8D5'))}
+ // nuages
+ const cloud=(x,y,w)=>{R(gx+x+2,gy+y,w-5,1,V.cloud[0]);R(gx+x,gy+y+1,w,2,V.cloud[0]);R(gx+x+1,gy+y+3,w-3,1,V.cloud[1])};
+ if(view!=='nuit'){cloud(6,5,12);cloud(34,9,9)}else cloud(30,7,11);
+ // collines, deux plans
+ for(let x=0;x<gw;x++){const h1=Math.round(9+3*Math.sin(x/9+1)+2*Math.sin(x/4)),h2=Math.round(5+2*Math.sin(x/6+3)+1.5*Math.sin(x/2.5));R(gx+x,ground-h1,1,h1,V.far);R(gx+x,ground-h2,1,h2,V.near)}
+ // maison
+ const hx=gx+40,hy=ground-11;R(hx,hy+3,8,5,V.wall);R(hx-1,hy+2,10,1,V.roof);R(hx,hy+1,8,1,V.roof);R(hx+2,hy,4,1,V.roof);R(hx+2,hy+5,2,2,V.lit);R(hx+5,hy+5,2,3,'#5B4636');
+ // arbres
+ [[7,7],[15,5],[60,6],[66,8]].forEach(t=>{const tx=gx+t[0],base=ground-t[1]+2;R(tx,base-3,1,4,'#5B4636');
+  if(view==='hiver'){R(tx-1,base-4,1,1,'#5B4636');R(tx+1,base-5,1,2,'#5B4636');R(tx-2,base-5,1,1,'#5B4636');R(tx-1,base-6,3,1,'#FFFFFF')}
+  else{R(tx-2,base-7,5,4,V.tree[0]);R(tx-1,base-8,3,1,V.tree[0]);R(tx-2,base-7,2,2,V.tree[1])}});
+ if(view==='hiver')[[3,9],[10,15],[18,6],[25,18],[33,11],[44,5],[52,16],[61,10],[67,19],[6,22],[38,21],[57,23]].forEach(s=>R(gx+s[0],gy+s[1],1,1,'#FFFFFF'));
+ // reflets sur la vitre
+ c.globalAlpha=V.glare;for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){const k=(x+y)%31;if(k<3||k===6)R(gx+x,gy+y,1,1,'#FFFFFF')}c.globalAlpha=1;
+ // montants et petits bois
+ R(gx+34,gy,2,gh,'#B58900');R(gx+36,gy,1,gh,'#93710A');R(gx+33,gy,1,gh,'#D9B44A');R(gx+16,gy,1,gh,'#B58900');R(gx+53,gy,1,gh,'#B58900');R(gx,gy+10,gw,1,'#B58900');R(gx,gy+11,gw,1,'#93710A');
+ // tringle et rideaux
+ R(3,1,90,1,'#5B4636');R(2,0,2,3,'#5B4636');R(92,0,2,3,'#5B4636');
+ [[4,14],[78,92]].forEach(r=>{for(let x=r[0];x<r[1];x++){const k=(x-r[0])%4;R(x,2,1,40,k===0?'#D3CBB7':k===2?'#FDF6E3':'#EEE8D5')}R(r[0],41,r[1]-r[0],1,'#D3CBB7')});
+ // appui
+ R(6,41,84,2,'#D9B44A');R(6,43,84,1,'#93710A');R(8,44,80,1,'rgba(7,54,66,0.12)');
+}
+document.querySelectorAll('canvas.win').forEach(drawWindow);
+// Le plancher : bois sombre poli. Il reflète la fenêtre (colonnes 2 et 3) et la tablette du bas.
+function drawRoom(cv){
+ cv.width=144;cv.height=52;const V=VIEWS[cv.dataset.view],c=cv.getContext('2d'),R=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)},F=3;
+ R(0,0,144,2,'#D3CBB7');R(0,2,144,1,'#A89F88');
+ let y=F,i=0;const seams=[];
+ for(const h of [4,5,6,7,8,9,10]){R(0,y,144,h,['#6B4423','#74492A','#633F20'][i%3]);R(0,y,144,1,'rgba(255,255,255,0.05)');for(let x=(i*53+17)%61;x<144;x+=61+i*7)R(x,y,1,h,'#4A2E16');y+=h;seams.push(y-1);R(0,y-1,144,1,'#4A2E16');i++}
+ // reflet de la tablette du bas : les plantes à l'envers, écrasées et estompées
+ const row=cv.parentNode.querySelector('[data-reflect]');
+ if(row)row.querySelectorAll('canvas.pl').forEach((pc,k)=>{if(pc.dataset.blank)return;const g=P.render(pc.dataset.sp,+pc.dataset.seed,+pc.dataset.days,[]);
+  for(let sy=63;sy>=24;sy--){const fy=F+Math.floor((63-sy)*0.8),t=(fy-F)/34;if(t>=1)break;c.globalAlpha=0.34*(1-t);for(let x=0;x<48;x++){const col=g.grid[sy*48+x];if(col)R(k*48+x+((fy%3)===1?1:0),fy,1,1,col)}}c.globalAlpha=1});
+ // reflet de la fenêtre : la lumière du ciel, avec l'ombre des montants
+ for(let fy=F;fy<50;fy++){const t=(fy-F)/48,wob=Math.round(Math.sin(fy*1.3)*1.2);c.globalAlpha=(seams.includes(fy)?0.2:0.58)*(1-t*0.85);
+  for(let x=61;x<131;x++){const k=x-61;if(k===34||k===35||k===16||k===53||(fy-F)===14||(fy-F)===15)continue;R(x+wob,fy,1,1,V.floor)}}
+ c.globalAlpha=1;
+}
+document.querySelectorAll('canvas.room').forEach(drawRoom);
+// data-crop : nombre de lignes à garder. Positif = depuis le haut (plantes retombantes), négatif = depuis le bas.
+function crop(cv,n){if(!n)return{y0:0,h:P.H};const h=Math.abs(n),y0=n>0?0:P.H-h;cv.height=h;return{y0,h}}
+document.querySelectorAll('canvas.pl').forEach(cv=>{
+ cv.width=P.W;cv.height=P.H;cv.setAttribute('aria-hidden','true');
+ const cr=crop(cv,+(cv.dataset.crop||0)),c=cv.getContext('2d'),kind=cv.dataset.blank;
+  if(kind){const sy=kind==='top'?19:61;
+  if(kind==='top'||kind==='new'){c.fillStyle='#B58900';c.fillRect(0,sy-cr.y0,P.W,2);c.fillStyle='#93710A';c.fillRect(0,sy+2-cr.y0,P.W,1)}
+  if(kind!=='top'){c.fillStyle='#93A1A1';const by=50-cr.y0;for(let x=17;x<=31;x+=2){c.fillRect(x,by,1,1);c.fillRect(x,by+10,1,1)}for(let y=by;y<=by+10;y+=2){c.fillRect(17,y,1,1);c.fillRect(31,y,1,1)}
+   if(kind==='new'){c.fillRect(22,by+5,5,1);c.fillRect(24,by+3,1,5)}
+   if(kind==='dice'){[[22,3],[26,3],[24,5],[22,7],[26,7]].forEach(q=>c.fillRect(q[0],by+q[1],1,1))}
+   if(kind==='give'){c.fillRect(21,by+5,7,1);c.fillRect(26,by+3,1,1);c.fillRect(27,by+4,1,1);c.fillRect(27,by+6,1,1);c.fillRect(26,by+7,1,1)}}
+  return}
+ const rel=(cv.dataset.rel||'').split(',').filter(Boolean).map(Number),g=P.render(cv.dataset.sp,+cv.dataset.seed,+cv.dataset.days,rel);
+ for(let i=0;i<g.grid.length;i++){const y=((i/P.W)|0)-cr.y0;if(g.grid[i]&&y>=0&&y<cr.h){c.fillStyle=g.grid[i];c.fillRect(i%P.W,y,1,1)}}
+});
+document.querySelectorAll('[data-traits]').forEach(el=>{const a=el.dataset.traits.split(','),t=P.render(a[0],+a[1],1,[]).traits;el.textContent=P.SPECIES[a[0]].name+(t.variety?' '+t.variety:'')+' · '+t.foliage+(t.trait?' · '+t.trait:'')});
+const IC={play:['1100000','1111000','1111110','1111111','1111110','1111000','1100000'],next:['1000101','1100101','1110101','1111101','1110101','1100101','1000101'],back:['0001000','0011000','0111000','1111111','0111000','0011000','0001000'],dots:['0000000','0000000','0000000','1101011','1101011','0000000','0000000'],gear:['0010100','0111110','1110111','0100010','1110111','0111110','0010100'],drop:['0001000','0001000','0011100','0111110','0111110','0111110','0011100']};
+document.querySelectorAll('canvas.ic').forEach(cv=>{cv.width=7;cv.height=7;cv.setAttribute('aria-hidden','true');const c=cv.getContext('2d');c.fillStyle=cv.dataset.ic==='drop'?'#268BD2':'#073642';IC[cv.dataset.ic].forEach((r,y)=>{for(let x=0;x<7;x++)if(r[x]==='1')c.fillRect(x,y,1,1)})});
+document.querySelectorAll('.days').forEach(el=>{const n=+el.dataset.total,rel=el.dataset.rel.split(',').map(Number),notes=el.dataset.notes.split(',').map(Number);for(let d=1;d<=n;d++){const i=document.createElement('i');if(rel.includes(d))i.className='r';if(notes.includes(d))i.classList.add('n');if(d===n)i.classList.add('t');el.append(i)}});
+})();
+</script>
