@@ -97,13 +97,17 @@ describe.each(SPECIES_IDS)('plant generator: %s', (species) => {
       for (const days of [60, MAX_GROWTH_DAYS]) {
         const clean = render(species, seed, days);
         const marked = render(species, seed, days, RELAPSES);
-        clean.pixels.forEach((pixel, index) => {
+        // Collect the differences, then assert once (one expect per pixel is slow).
+        const wrong = clean.pixels.flatMap((pixel, index) => {
           const other = marked.pixels[index] ?? null;
-          expect(other?.tone).toBe(pixel?.tone);
-          expect(other?.day).toBe(pixel?.day);
-          expect(pixel?.relapse ?? false).toBe(false);
-          if (pixel && other) expect(other.relapse).toBe(RELAPSES.includes(pixel.day));
+          const ok =
+            other?.tone === pixel?.tone &&
+            other?.day === pixel?.day &&
+            (pixel?.relapse ?? false) === false &&
+            (!pixel || !other || other.relapse === RELAPSES.includes(pixel.day));
+          return ok ? [] : [{ index, clean: pixel, marked: other }];
         });
+        expect({ seed, days, wrong }).toEqual({ seed, days, wrong: [] });
       }
     }
   });

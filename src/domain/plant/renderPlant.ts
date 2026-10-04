@@ -47,12 +47,33 @@ export interface PlanForSeed {
   rimY: number;
 }
 
+/** Number of plans kept in memory (a shelf full of plants, plus margin). */
+const PLAN_CACHE_SIZE = 64;
+const planCache = new Map<string, PlanForSeed>();
+
 /**
  * The full 120-day plan of a plant, settled so every day stays visible.
- * Independent of elapsed days and relapses. Same steps, in the same order,
- * as render() in the prototype.
+ * Independent of elapsed days and relapses, so it is computed once per
+ * (species, seed) and reused: settling can take tens of milliseconds, while
+ * painting a plan is cheap. Same output either way (the function is pure).
  */
 export function planPlant(speciesId: string, seed: number): PlanForSeed {
+  const key = `${speciesId}|${seed}`;
+  const cached = planCache.get(key);
+  if (cached) {
+    // Re-insert to keep the most recently used entries at the end.
+    planCache.delete(key);
+    planCache.set(key, cached);
+    return cached;
+  }
+  const result = computePlan(speciesId, seed);
+  planCache.set(key, result);
+  if (planCache.size > PLAN_CACHE_SIZE) planCache.delete(planCache.keys().next().value!);
+  return result;
+}
+
+/** Same steps, in the same order, as render() in the prototype. */
+function computePlan(speciesId: string, seed: number): PlanForSeed {
   const { species, fallback } = resolveSpecies(speciesId);
   const { width, height } = PLANT_GRID;
   const onTray = species.tray === true;
