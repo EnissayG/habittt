@@ -7,6 +7,7 @@ import { fern } from './species/fern';
 import { ficus } from './species/ficus';
 import { jade } from './species/jade';
 import { monstera } from './species/monstera';
+import { pearls } from './species/pearls';
 import { pothos } from './species/pothos';
 import { sansevieria } from './species/sansevieria';
 import { spider } from './species/spider';
@@ -27,6 +28,7 @@ export const SPECIES_REGISTRY = {
   fern,
   ficus,
   bamboo,
+  pearls,
 } as const satisfies Record<string, Species>;
 
 export type SpeciesId = keyof typeof SPECIES_REGISTRY;
