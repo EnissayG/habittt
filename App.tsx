@@ -54,5 +54,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  text: { fontFamily: fonts.mono, fontSize: 20, color: colors.text, textAlign: 'center' },
+  text: { fontFamily: fonts.display, fontSize: 20, color: colors.text, textAlign: 'center' },
 });

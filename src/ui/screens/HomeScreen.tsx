@@ -11,9 +11,11 @@ import { useLoader } from '../useLoader';
 interface HomeScreenProps {
   onOpenHabit: (id: HabitId) => void;
   onNewHabit: () => void;
+  /** Only passed in development builds: shows the plant lab entry. */
+  onOpenLab?: () => void;
 }
 
-export function HomeScreen({ onOpenHabit, onNewHabit }: HomeScreenProps) {
+export function HomeScreen({ onOpenHabit, onNewHabit, onOpenLab }: HomeScreenProps) {
   const tracker = useTracker();
   const load = useCallback(() => tracker.listHabits(), [tracker]);
   const { data: habits } = useLoader(load);
@@ -46,14 +48,15 @@ export function HomeScreen({ onOpenHabit, onNewHabit }: HomeScreenProps) {
       />
 
       <Button label="+ Nouvelle habitude" onPress={onNewHabit} />
+      {onOpenLab && <Button label="Labo (dev)" variant="secondary" onPress={onOpenLab} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg, gap: spacing.md },
-  title: { fontFamily: fonts.mono, fontSize: 32, color: colors.text },
-  empty: { fontFamily: fonts.mono, fontSize: 15, color: colors.muted, lineHeight: 22 },
+  title: { fontFamily: fonts.display, fontSize: 32, color: colors.text },
+  empty: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, lineHeight: 22 },
   list: { gap: spacing.md },
   card: {
     backgroundColor: colors.surface,
@@ -64,7 +67,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   pressed: { opacity: 0.7 },
-  name: { fontFamily: fonts.mono, fontSize: 18, color: colors.text },
-  streak: { fontFamily: fonts.mono, fontSize: 28, color: colors.accent },
-  meta: { fontFamily: fonts.mono, fontSize: 13, color: colors.muted },
+  name: { fontFamily: fonts.display, fontSize: 18, color: colors.text },
+  streak: { fontFamily: fonts.display, fontSize: 28, color: colors.text },
+  meta: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
 });

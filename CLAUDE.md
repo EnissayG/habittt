@@ -50,8 +50,8 @@ L'API Expo change à chaque SDK : consulter https://docs.expo.dev/versions/v57.0
 
 ## Conventions
 
-- Code, identifiants et messages de commit en anglais.
-- Documentation et commentaires de doc en français.
+- Code, identifiants et commits en anglais ; documentation en français.
+- Couleurs et polices : uniquement les rôles de `src/ui/theme/`, jamais en dur.
 - Commits atomiques : un changement logique par commit.
 - Décision d'architecture importante : nouvel ADR dans `docs/decisions/`
   (`NNNN-titre.md`).

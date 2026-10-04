@@ -95,12 +95,12 @@ export function NewHabitScreen({ onCreated, onCancel }: NewHabitScreenProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg, gap: spacing.lg },
-  back: { fontFamily: fonts.mono, fontSize: 16, color: colors.muted },
-  title: { fontFamily: fonts.mono, fontSize: 26, color: colors.text },
+  back: { fontFamily: fonts.body, fontSize: 16, color: colors.muted },
+  title: { fontFamily: fonts.display, fontSize: 26, color: colors.text },
   field: { gap: spacing.sm },
-  label: { fontFamily: fonts.mono, fontSize: 14, color: colors.muted },
+  label: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   input: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.body,
     fontSize: 18,
     color: colors.text,
     backgroundColor: colors.surface,
@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepLabel: { fontFamily: fonts.mono, fontSize: 24, color: colors.text },
+  stepLabel: { fontFamily: fonts.display, fontSize: 24, color: colors.text },
   stepInput: { flex: 1, textAlign: 'center' },
-  hint: { fontFamily: fonts.mono, fontSize: 13, color: colors.muted },
-  error: { fontFamily: fonts.mono, fontSize: 14, color: colors.danger },
+  hint: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
+  error: { fontFamily: fonts.body, fontSize: 14, color: colors.danger },
 });

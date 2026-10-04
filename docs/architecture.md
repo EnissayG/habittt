@@ -369,6 +369,47 @@ Les propriétés 2 et 3 ont été vérifiées par mutation : un rendu qui décal
 passé, ou qui change la couleur des anciens pixels, ou qui modifie la couleur
 d'un jour de rechute, fait échouer le test sur les quatre espèces.
 
+## L'interface : thème et rendu des plantes
+
+Décisions détaillées dans [l'ADR 0004](decisions/0004-rendu-des-plantes.md).
+
+### Thème (`src/ui/theme/`)
+
+- **`tokens.ts`** : la palette Solarized Light (`solarized`), et les couleurs
+  **sémantiques** que les écrans utilisent (`colors.background`,
+  `colors.text`, `colors.accent`…). Un écran n'écrit jamais de couleur en dur
+  et n'utilise pas `solarized` directement.
+- **Polices** : deux rôles, `fonts.display` (police pixel : nom de l'app,
+  titres, compteurs) et `fonts.body` (police système lisible pour le texte
+  courant). Un écran utilise le rôle, jamais un nom de police.
+- **`plantPalette.ts`** : `plantColor(pixel, potStyle, vitality)` traduit un
+  pixel symbolique en couleur. Un jour de rechute a une teinte jaunie (même
+  forme). Le paramètre `vitality` est accepté mais sans effet pour l'instant.
+
+### `PlantCanvas` : des pixels nets à toutes les tailles
+
+Le flou du pixel art agrandi vient de trois causes : le lissage d'une image
+agrandie, l'antialiasing des bords, et une échelle non entière par rapport
+aux pixels physiques de l'écran (souvent 2,625 ou 3 par point). Le composant
+les évite toutes les trois :
+
+1. **Échelle entière en pixels physiques** (`pixelScale`) : chaque pixel de
+   plante fait exactement k × k pixels de l'écran.
+2. **Des rectangles, pas une image agrandie** : rien n'est rééchantillonné.
+3. **Antialiasing désactivé** : de toute façon, tous les bords tombent sur
+   des pixels physiques.
+
+Les pixels sont regroupés par couleur (`buildColorRuns`) : un chemin Skia
+par couleur, fait de rectangles fusionnés par ligne. La plante grandit par
+paliers et se centre dans l'espace disponible.
+
+### Écran « Labo »
+
+Accessible depuis l'accueil, **seulement en mode développement** (`__DEV__`).
+Il appelle directement `renderPlant` : choix de l'espèce, de la graine, du
+nombre de jours (1 à 120) et de deux jours de rechute, avec la plante mise à
+jour en direct. Il ne lit ni n'écrit la base.
+
 ## Prévu pour l'étape suivante : la vitalité (documenté, non conçu)
 
 Une fonction pure **séparée du générateur** calculera la vitalité d'une

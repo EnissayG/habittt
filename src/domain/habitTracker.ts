@@ -1,6 +1,8 @@
 import { createHabit, type CreateHabitError, type Habit, type HabitId } from './habit';
 import { addDays, type LocalDate } from './localDate';
+import type { PlantImage } from './plant/grid';
 import { FALLBACK_SPECIES_ID, SPECIES_IDS, type SpeciesId } from './plant/registry';
+import { renderPlant } from './plant/renderPlant';
 import type { Clock, IdGenerator, SeedGenerator } from './ports';
 import { cancelRelapse, isActive, recordRelapse, type RecordRelapseError } from './relapse';
 import type { HabitRepository, RelapseRepository } from './repositories';
@@ -15,6 +17,7 @@ export interface HabitSummary {
 
 export interface HabitDetail extends HabitSummary {
   days: DayEntry[];
+  plant: PlantImage;
 }
 
 export interface AddHabitInput {
@@ -42,7 +45,7 @@ export interface HabitTrackerDeps {
 export function createHabitTracker(deps: HabitTrackerDeps) {
   const { habits, relapses, clock } = deps;
 
-  async function summarize(habit: Habit, today: LocalDate): Promise<HabitDetail> {
+  async function summarize(habit: Habit, today: LocalDate) {
     const habitRelapses = await relapses.listByHabit(habit.id);
     const params = { startDate: habit.startDate, relapses: habitRelapses, today };
     return { habit, stats: computeStats(params), days: buildTimeline(params) };
@@ -59,7 +62,16 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
 
     async getHabit(id: HabitId): Promise<HabitDetail | undefined> {
       const habit = await habits.getById(id);
-      return habit && summarize(habit, clock.today());
+      if (!habit) return undefined;
+      const summary = await summarize(habit, clock.today());
+      const plant = renderPlant({
+        species: habit.species,
+        seed: habit.seed,
+        elapsedDays: summary.stats.totalDays,
+        // Plant day numbers start at 1 on startDate; timeline indexes at 0.
+        relapseDays: summary.days.filter((day) => day.relapsed).map((day) => day.index + 1),
+      });
+      return { ...summary, plant };
     },
 
     async addHabit(input: AddHabitInput): Promise<Result<Habit, CreateHabitError>> {

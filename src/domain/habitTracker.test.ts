@@ -1,5 +1,6 @@
 import { createHabitTracker } from './habitTracker';
 import { SPECIES_IDS } from './plant/registry';
+import { renderPlant } from './plant/renderPlant';
 import { relapseIdFor } from './relapse';
 import {
   InMemoryHabitRepository,
@@ -102,6 +103,27 @@ describe('habit tracker use cases', () => {
       ok: false,
       error: 'HABIT_NOT_FOUND',
     });
+  });
+
+  it('returns the plant drawn from the habit and its relapses', async () => {
+    const { tracker } = setup();
+    const added = await tracker.addHabit({
+      name: 'No smoking',
+      startedDaysAgo: 2,
+      species: 'pothos',
+    });
+    if (!added.ok) throw new Error('setup failed');
+    await tracker.toggleRelapse(added.value.id, day(-1)); // day 2 of the plant
+
+    const detail = await tracker.getHabit(added.value.id);
+    expect(detail?.plant).toEqual(
+      renderPlant({
+        species: 'pothos',
+        seed: added.value.seed,
+        elapsedDays: 3,
+        relapseDays: [2],
+      }),
+    );
   });
 
   it('returns the day timeline with the habit detail', async () => {

@@ -3,6 +3,15 @@
 Idées notées, **à ne pas concevoir pour l'instant**. Chacune devra respecter
 les [principes du produit](architecture.md#principes-du-produit) le moment venu.
 
+## Pour l'étape suivante
+
+- **Un écran d'accueil** avec une plante et le nom « habittt ».
+- **L'étagère à la place de la liste** des habitudes.
+- **Glisser pour retirer une habitude**, avec confirmation et suppression
+  logique.
+
+## Plus tard
+
 - **Partager une image de son étagère.**
 - **Autocollants et décorations à débloquer.**
 - **Un jardinier animé** qui passe de temps en temps.

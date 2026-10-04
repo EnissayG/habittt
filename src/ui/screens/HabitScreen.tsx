@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import type { HabitId, LocalDate } from '../../domain';
 import { Button } from '../components/Button';
 import { DayGrid } from '../components/DayGrid';
 import { days, toggleRelapseErrorMessage } from '../messages';
+import { PlantCanvas } from '../plant/PlantCanvas';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useLoader } from '../useLoader';
@@ -16,6 +17,7 @@ interface HabitScreenProps {
 
 export function HabitScreen({ habitId, onBack }: HabitScreenProps) {
   const tracker = useTracker();
+  const { width } = useWindowDimensions();
   const load = useCallback(() => tracker.getHabit(habitId), [tracker, habitId]);
   const { data: detail, reload } = useLoader(load);
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +52,12 @@ export function HabitScreen({ habitId, onBack }: HabitScreenProps) {
             <Stat label="depuis le début" value={days(detail.stats.totalDays)} />
           </View>
 
+          <PlantCanvas image={detail.plant} maxWidth={width - spacing.lg * 2} maxHeight={320} />
+
           <View style={styles.section}>
             <DayGrid days={detail.days} onPressDay={toggle} />
             <Text style={styles.hint}>
-              Vert : jour tenu. Rouge : rechute. Touche un jour pour déclarer ou annuler une
+              Vert : jour tenu. Orange : rechute. Touche un jour pour déclarer ou annuler une
               rechute.
             </Text>
           </View>
@@ -86,10 +90,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.lg },
-  back: { fontFamily: fonts.mono, fontSize: 16, color: colors.muted },
-  name: { fontFamily: fonts.mono, fontSize: 26, color: colors.text },
-  streak: { fontFamily: fonts.mono, fontSize: 72, color: colors.accent, lineHeight: 80 },
-  streakLabel: { fontFamily: fonts.mono, fontSize: 16, color: colors.text },
+  back: { fontFamily: fonts.body, fontSize: 16, color: colors.muted },
+  name: { fontFamily: fonts.display, fontSize: 26, color: colors.text },
+  streak: { fontFamily: fonts.display, fontSize: 72, color: colors.text, lineHeight: 80 },
+  streakLabel: { fontFamily: fonts.body, fontSize: 16, color: colors.text },
   statsRow: { flexDirection: 'row', gap: spacing.md },
   stat: {
     flex: 1,
@@ -99,9 +103,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: spacing.md,
   },
-  statValue: { fontFamily: fonts.mono, fontSize: 18, color: colors.text },
-  statLabel: { fontFamily: fonts.mono, fontSize: 12, color: colors.muted },
+  statValue: { fontFamily: fonts.display, fontSize: 18, color: colors.text },
+  statLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   section: { gap: spacing.sm },
-  hint: { fontFamily: fonts.mono, fontSize: 12, color: colors.muted, lineHeight: 18 },
-  error: { fontFamily: fonts.mono, fontSize: 14, color: colors.danger },
+  hint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 18 },
+  error: { fontFamily: fonts.body, fontSize: 14, color: colors.danger },
 });

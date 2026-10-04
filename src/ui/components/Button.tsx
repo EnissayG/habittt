@@ -21,9 +21,7 @@ export function Button({ label, onPress, variant = 'primary', disabled = false }
         (pressed || disabled) && styles.dimmed,
       ]}
     >
-      <Text style={[styles.label, variant === 'secondary' ? styles.labelDark : styles.labelLight]}>
-        {label}
-      </Text>
+      <Text style={[styles.label, labelStyles[variant]]}>{label}</Text>
     </Pressable>
   );
 }
@@ -39,7 +37,11 @@ const styles = StyleSheet.create({
   danger: { backgroundColor: colors.danger },
   secondary: { borderWidth: 2, borderColor: colors.text },
   dimmed: { opacity: 0.6 },
-  label: { fontFamily: fonts.mono, fontSize: 16 },
-  labelLight: { color: colors.onAccent },
-  labelDark: { color: colors.text },
+  label: { fontFamily: fonts.body, fontSize: 16 },
+});
+
+const labelStyles = StyleSheet.create({
+  primary: { color: colors.onAccent },
+  danger: { color: colors.onDanger },
+  secondary: { color: colors.text },
 });

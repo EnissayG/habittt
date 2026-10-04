@@ -21,7 +21,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "backgroundColor": "#F5F0E1",
+    "backgroundColor": "#FDF6E3",
     "plugins": ["expo-sqlite"]
   }
 }
