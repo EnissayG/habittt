@@ -117,8 +117,9 @@ interface Relapse {
 
 ### L'espèce de la plante (`Habit.species`)
 
-- Une nouvelle habitude reçoit une espèce **connue** du registre. En attendant
-  l'écran de choix, elle est tirée au hasard avec le générateur injecté.
+- Une nouvelle habitude reçoit une espèce **connue** du registre (13 espèces).
+  En attendant l'écran de choix, elle est tirée au hasard avec le générateur
+  injecté.
 - **Espèce inconnue à la lecture : plante de remplacement, jamais d'erreur.**
   Un appareil pas à jour pourra recevoir par synchronisation une espèce ajoutée
   dans une version plus récente. L'écran ne doit pas planter pour ça : le
@@ -282,9 +283,10 @@ nombre calculé (jours depuis la dernière rechute active, ou depuis
 
 ## Le générateur de plantes (`src/domain/plant/`)
 
-Décisions détaillées dans
-[l'ADR 0003](decisions/0003-generateur-de-plantes.md). Référence d'origine :
-`docs/prototypes/plants.js`.
+Décisions détaillées dans [l'ADR 0003](decisions/0003-generateur-de-plantes.md)
+et [l'ADR 0005](decisions/0005-generateur-v2.md). **Référence :**
+`docs/prototypes/plants.js`. L'app dessine exactement les mêmes plantes que ce
+fichier ; un test de parité le vérifie pixel par pixel.
 
 ```
 renderPlant({ species, seed, elapsedDays, relapseDays }) -> PlantImage
@@ -296,58 +298,77 @@ renderPlant({ species, seed, elapsedDays, relapseDays }) -> PlantImage
 - **Sortie** : une grille de `PLANT_GRID.width × PLANT_GRID.height` (48 × 64
   aujourd'hui, défini à un seul endroit, `grid.ts`). Chaque pixel est `null`
   ou `{ tone, day, relapse }` : une **couleur symbolique** (`leaf`, `bark`,
-  `pot`…), le jour qui l'a posé (0 pour le pot et l'étagère), et si ce jour
-  est un jour de rechute. Plus `potStyle`, la variante de pot.
-- **Les vraies couleurs appartiennent au thème de l'UI.** Le domaine dit ce
-  qu'est un pixel, pas à quoi il ressemble.
+  `succulent`, `pot`…), le jour qui l'a posé (0 pour le pot et l'étagère), et
+  si ce jour est un jour de rechute. Plus la **variété** et le **génome**, sous
+  forme d'identifiants.
+- **Les vraies couleurs et les libellés français appartiennent à l'UI**
+  (`plantPalette.ts`, `labels.ts`). Le domaine dit ce qu'est un pixel, pas à
+  quoi il ressemble ni comment il s'appelle.
 
 ### Comment une plante est calculée
 
 1. Un générateur pseudo-aléatoire (`mulberry32`) est initialisé avec le seed,
-   salé par l'identifiant de l'espèce.
-2. Le style du pot est tiré en premier.
-3. L'espèce construit son **plan de croissance** complet : pour chacun des
-   120 jours, la liste des pixels qu'il pose. Ce plan ne dépend que de
-   l'espèce et du seed, jamais du nombre de jours écoulés ni des rechutes.
-4. Le rendu peint le pot et l'étagère, puis les jours 1 à
+   salé par l'identifiant de l'espèce. Un premier tirage est écarté, comme dans
+   le prototype.
+2. Le **génome** est tiré d'un second générateur : couleur, forme et motif du
+   pot (le bonsaï a un plateau à pieds), teinte du feuillage, miroir, trait
+   rare (panaché, rosé, doré).
+3. L'espèce construit son **plan de croissance** brut pour les 120 jours, et
+   choisit sa **variété**. Ce plan ne dépend que de l'espèce et du seed.
+4. Le plan est retourné en miroir si le génome le dit, et le trait rare
+   recolore des taches de feuillage.
+5. `settle()` garantit que chaque jour garde au moins un pixel visible au
+   jour 120 (voir l'ADR 0005).
+6. Le rendu peint le pot et l'étagère, puis les jours 1 à
    `min(elapsedDays, 120)` **dans l'ordre**. Après 120 jours, la plante ne
    change plus.
+
+Les étapes 1 à 5 ne dépendent pas de l'âge ni des rechutes : leur résultat
+(`planPlant`) est gardé en mémoire pour les 64 dernières plantes, car
+`settle()` peut coûter plusieurs dizaines de millisecondes.
 
 ### Espèces
 
 Une espèce est un fichier dans `src/domain/plant/species/` qui implémente
-l'interface `Species` (`id`, `hanging`, `build(ctx)`). Ajouter une espèce =
-un nouveau fichier + une ligne dans `registry.ts`. Les tests de propriétés
-parcourent le registre : une nouvelle espèce est testée automatiquement. Les
-espèces ne connaissent pas la taille de la grille : elles reçoivent un point
-d'ancrage (centre du bord du pot) dans leur contexte.
+l'interface `Species` (`id`, `hanging`, `tray`, `build(ctx)` qui renvoie le
+plan et la variété). Ajouter une espèce = un nouveau fichier + une ligne dans
+`registry.ts`. Les tests de propriétés et de parité parcourent le registre :
+une nouvelle espèce est testée automatiquement. Les espèces ne connaissent pas
+la taille de la grille : elles reçoivent un point d'ancrage (centre du bord du
+pot) dans leur contexte.
 
-Quatre espèces : monstera, pothos (suspendu), calathea, arbre de jade.
-**Le dessin des quatre espèces sera retravaillé avant la publication.** Les
-références figées (`__snapshots__/plant.test.ts.snap`) seront alors mises à
-jour volontairement (`npx jest -u`).
+| Clé           | Nom                           | Variétés                                          |
+| ------------- | ----------------------------- | ------------------------------------------------- |
+| `sansevieria` | Sansevieria                   | trifasciata, laurentii, cylindrica, hahnii        |
+| `pothos`      | Pothos (retombant)            | à grandes feuilles, à petites feuilles            |
+| `monstera`    | Monstera                      | deliciosa, adansonii                              |
+| `spider`      | Plante araignée               | bonnie, variegatum, vittatum                      |
+| `cactus`      | Cactus                        | saguaro, cierges, figuier de Barbarie             |
+| `aloe`        | Aloès                         | —                                                 |
+| `fern`        | Fougère                       | de Boston dressée ou retombante, capillaire       |
+| `ficus`       | Caoutchouc                    | ramifié ou à tige unique, longues feuilles ou non |
+| `bamboo`      | Bambou                        | 3 à 5 cannes, spirale ou non                      |
+| `pearls`      | Collier de perles (retombant) | perles, dauphins, bananes                         |
+| `calathea`    | Calathea                      | médaillon, orbifolia, lancifolia                  |
+| `jade`        | Arbre de jade                 | —                                                 |
+| `bonsai`      | Bonsaï (sur plateau)          | chokkan, moyogi, shakan, fukinagashi              |
+
+**Le dessin des espèces pourra être retravaillé avant la publication.** Les
+références figées (`__snapshots__/plant.test.ts.snap`) et le prototype seront
+alors mis à jour volontairement, ensemble.
 
 ### Ce qu'il faut savoir sur le rendu
 
 - **Recouvrements.** Un jour plus récent peut peindre par-dessus un pixel
-  plus ancien (une feuille sur une tige). C'est le comportement du prototype.
-  La croissance reste par ajout : rien ne bouge ni ne disparaît, mais un pixel
-  peut être caché par un jour postérieur. Moyenne mesurée sur 6 seeds :
-  monstera 139 pixels recouverts, calathea 192, arbre de jade 124, pothos 43
-  (plus 35 sur l'étagère, qu'il recouvre en retombant).
+  plus ancien (une feuille sur une tige). La croissance reste par ajout : rien
+  ne bouge ni ne disparaît, mais un pixel peut être caché par un jour
+  postérieur. `settle()` rend à chaque jour au moins une case visible.
 - **Pixels cachés par le pot.** Un pixel planifié à l'intérieur du pot n'est
-  pas dessiné (la plante est derrière). Seul le pothos est concerné (environ
-  2 pixels par plante).
-- **Limite connue, à corriger au redessin : des jours entiers finissent
-  invisibles.** Au jour 120, en moyenne, 5 jours du monstera, 6 du calathea,
-  17 de l'arbre de jade et **39 du pothos** n'ont plus aucun pixel visible :
-  tout a été recouvert. Une rechute ces jours-là ne laisse plus de trace, ce
-  qui contredit le principe « une rechute laisse une trace », et une note
-  datée n'aurait pas d'endroit où s'accrocher. Le redessin devra garantir une
-  8e propriété : _chaque jour garde au moins un pixel visible au jour 120_.
-- **Trigonométrie en table.** `Math.sin` et `Math.cos` ne donnent pas
-  forcément le même résultat sur V8 (Jest) et Hermes (téléphone). L'arbre de
-  jade utilise une table de 64 angles écrite en dur (`trig.ts`).
+  pas dessiné (la plante est derrière) ; `settle()` les retire du plan.
+- **Trigonométrie déterministe.** `Math.sin` et `Math.cos` ne donnent pas
+  forcément le même résultat sur V8 (Jest) et Hermes (téléphone). Les espèces
+  utilisent `sin` et `cos` de `trig.ts`, calculés avec +, −, × et ÷ seulement
+  (formule dans l'ADR 0005).
 - **Redessiner une espèce change toutes les plantes existantes** de cette
   espèce, puisque rien n'est stocké. « Rien ne bouge » n'est garanti qu'à
   dessin constant. Si cela devient un problème après la publication, on
@@ -362,12 +383,19 @@ jour volontairement (`npx jest -u`).
 3. Une rechute ne change que le drapeau `relapse` des pixels de son jour.
 4. Chaque jour de 1 à 120 ajoute au moins un pixel visible ce jour-là.
 5. Deux seeds différents donnent deux plantes différentes.
-6. Aucun pixel planifié hors de la grille (vérifié sur le plan brut).
+6. Aucun pixel du plan hors de la grille.
 7. Après 120 jours, la plante est celle du jour 120.
+8. Au jour 120, chaque jour garde au moins un pixel visible.
 
-Les propriétés 2 et 3 ont été vérifiées par mutation : un rendu qui décale le
-passé, ou qui change la couleur des anciens pixels, ou qui modifie la couleur
-d'un jour de rechute, fait échouer le test sur les quatre espèces.
+Les propriétés 2, 3 et 8 ont été vérifiées par mutation : un rendu qui décale
+le passé, qui change la couleur des anciens pixels ou d'un jour de rechute, ou
+qui saute `settle()`, fait échouer le test sur toutes les espèces.
+
+**Parité avec le prototype** (`src/ui/plant/prototypeParity.test.ts`) : pour
+chaque espèce, 12 à 16 graines (dont des graines choisies pour couvrir chaque
+variété, chaque trait et chaque forme de pot), 4 âges et 2 ensembles de
+rechutes, la couleur et le jour de chaque pixel sont identiques à ceux du
+prototype, ainsi que les libellés des traits. Aucun écart.
 
 ## L'interface : thème et rendu des plantes
 
@@ -388,9 +416,14 @@ Décisions détaillées dans [l'ADR 0004](decisions/0004-rendu-des-plantes.md).
   compteurs) et `fonts.body` (police système lisible pour le texte courant).
   Un écran utilise le rôle, jamais un nom de police. La police est chargée au
   démarrage (`useAppFonts`).
-- **`plantPalette.ts`** : `plantColor(pixel, potStyle, vitality)` traduit un
-  pixel symbolique en couleur. Un jour de rechute a une teinte jaunie (même
-  forme). Le paramètre `vitality` est accepté mais sans effet pour l'instant.
+- **`plantPalette.ts`** : `plantColor(pixel, genome, vitality)` traduit un
+  pixel symbolique en couleur, selon le génome (teinte du feuillage, couleur
+  du trait rare, couleur du pot). Un jour de rechute a une teinte jaunie (même
+  forme). Les valeurs sont celles du prototype. Le paramètre `vitality` est
+  accepté mais sans effet pour l'instant.
+- **`src/ui/plant/labels.ts`** : les libellés français des espèces, variétés,
+  teintes, traits et pots, et `describePlant()` (« Bonsaï Moyogi (sinueux) ·
+  vert forêt · panaché »).
 
 ### `PlantCanvas` : des pixels nets à toutes les tailles
 

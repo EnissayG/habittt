@@ -1,6 +1,8 @@
 # 0003. Générateur de plantes
 
-- **Statut :** accepté
+- **Statut :** accepté, complété par
+  [0005](0005-generateur-v2.md) (13 espèces, sinus calculé à la place de la
+  table, `settle()`, génome)
 - **Date :** 2026-10-04
 - **Complète :** [0002](0002-rechutes-et-croissance.md)
 

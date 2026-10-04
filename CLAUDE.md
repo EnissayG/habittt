@@ -39,8 +39,8 @@ Voir `docs/architecture.md` et `docs/decisions/`.
   Rechute : une max par jour, `startDate <= date <= aujourd'hui`, suppression logique.
 - `plante = f(seed, startDate, rechutes, aujourd'hui)`. Date du jour et aléatoire
   injectés : jamais de `Date.now()` ni `Math.random()` dans `domain/`.
-- Plante (`src/domain/plant/`) : plan fixe de 120 jours, couleurs symboliques, une
-  espèce = un fichier + une ligne du registre. Une rechute ne change que son jour.
+- Plante (`src/domain/plant/`) : port exact de `docs/prototypes/plants.js` (test de
+  parité). Une espèce = un fichier + une ligne du registre. Trigo : `trig.ts` seulement.
 
 ## Expo Go
 
