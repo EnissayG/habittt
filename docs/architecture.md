@@ -88,12 +88,13 @@ interface Habit {
 }
 
 interface Relapse {
-  id: string; // UUID
+  id: string; // UUID déterministe, calculé à partir de (habitId, date)
   habitId: HabitId;
   date: LocalDate; // startDate <= date <= aujourd'hui
   deletedAt: string | null; // instant ISO 8601 UTC si la rechute est annulée
+  updatedAt: string; // instant ISO 8601 UTC de la dernière modification
 }
-// Unicité : une seule rechute par (habitId, date).
+// Unicité : une seule rechute par (habitId, date), lignes annulées comprises.
 ```
 
 ### Règles sur l'habitude
@@ -121,19 +122,25 @@ interface Relapse {
   elle n'a jamais existé. Une suppression logique est une donnée comme une
   autre : synchroniser revient à fusionner des lignes, sans cas particulier.
 
-### À valider : unicité et suppression logique ensemble
-
-Les deux règles se croisent. Recommandation, pas encore décidée :
+### Unicité et suppression logique ensemble
 
 - **L'unicité porte sur toutes les lignes, annulées comprises.** Sinon une
   ligne annulée et une ligne active pourraient coexister pour le même jour.
 - **Ressaisir une rechute annulée la réactive** (`deletedAt` repasse à
   `null`) au lieu de créer une ligne. On peut ainsi revenir sur une annulation
   faite par erreur.
-- **L'identifiant d'une rechute est déterministe** : UUID v5 calculé à partir
-  de `habitId` et `date`. Deux appareils hors ligne qui enregistrent la même
+- **L'identifiant d'une rechute est déterministe**, calculé à partir de
+  `habitId` et `date`. Deux appareils hors ligne qui enregistrent la même
   rechute produisent le même `id` ; la fusion retombe sur « même ligne », sans
   conflit d'unicité à résoudre.
+- **`updatedAt` est renseigné à chaque changement d'état** (création,
+  annulation, réactivation), avec l'horloge injectée. Une saisie sans effet
+  (rechute déjà active) ne le modifie pas. Lors de la synchronisation, pour une
+  même ligne, la version au `updatedAt` le plus récent gagne.
+- **Limite connue :** « le plus récent gagne » se fie à l'horloge de chaque
+  appareil. Une horloge déréglée peut faire gagner une action plus ancienne.
+  Acceptable pour une app personnelle ; à revoir si la synchronisation devient
+  collaborative.
 
 ### Choix et raisons
 
@@ -243,5 +250,5 @@ nombre calculé (jours depuis la dernière rechute active, ou depuis
 - **Arrosage facultatif**, sans pénalité si on ne le fait pas. À concevoir.
 - **Comptes et synchronisation (Supabase)** : une seconde implémentation des
   repositories dans `data/`. La suppression logique (`deletedAt`) est déjà
-  prévue ; il faudra probablement ajouter `updatedAt` pour résoudre les
-  conflits entre appareils, et appliquer la suppression logique à `Habit`.
+  prévue, ainsi que `updatedAt` sur les rechutes. Il faudra appliquer la même
+  chose à `Habit` (renommage, suppression d'une habitude).
