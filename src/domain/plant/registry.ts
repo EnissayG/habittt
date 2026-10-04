@@ -1,6 +1,7 @@
 import type { Species } from './species';
 import { aloe } from './species/aloe';
 import { bamboo } from './species/bamboo';
+import { bonsai } from './species/bonsai';
 import { cactus } from './species/cactus';
 import { calathea } from './species/calathea';
 import { fern } from './species/fern';
@@ -29,6 +30,7 @@ export const SPECIES_REGISTRY = {
   ficus,
   bamboo,
   pearls,
+  bonsai,
 } as const satisfies Record<string, Species>;
 
 export type SpeciesId = keyof typeof SPECIES_REGISTRY;
