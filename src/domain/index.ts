@@ -19,6 +19,7 @@ export {
 } from './habitTracker';
 export { buildTimeline, type DayEntry } from './timeline';
 export { addDays, daysBetween, isLocalDate, parseLocalDate, type LocalDate } from './localDate';
+export * from './plant';
 export type { Clock, IdGenerator, SeedGenerator } from './ports';
 export {
   cancelRelapse,

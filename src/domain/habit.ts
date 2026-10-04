@@ -1,5 +1,6 @@
 import { normalizeHabitName } from './habitName';
 import { daysBetween, type LocalDate } from './localDate';
+import { isSpeciesId, type SpeciesId } from './plant/registry';
 import type { Clock, IdGenerator, SeedGenerator } from './ports';
 import { err, ok, type Result } from './result';
 
@@ -10,6 +11,12 @@ export interface Habit {
   readonly name: string;
   /** Unsigned 32-bit integer, drawn once at creation; drives the plant. */
   readonly seed: number;
+  /**
+   * Plant species id, kept exactly as stored even if this app version does
+   * not know it (synced from a newer one): saving the habit must never
+   * replace it. Unknown ids are only substituted when drawing (renderPlant).
+   */
+  readonly species: string;
   readonly startDate: LocalDate;
   /** Instant, ISO 8601 UTC. */
   readonly createdAt: string;
@@ -24,6 +31,8 @@ export type CreateHabitError = 'NAME_EMPTY' | 'NAME_TOO_LONG' | 'START_DATE_IN_F
 export interface CreateHabitInput {
   name: string;
   startDate: LocalDate;
+  /** Only known species can be chosen for a new habit. */
+  species: SpeciesId;
 }
 
 export interface CreateHabitDeps {
@@ -36,6 +45,10 @@ export function createHabit(
   input: CreateHabitInput,
   deps: CreateHabitDeps,
 ): Result<Habit, CreateHabitError> {
+  if (!isSpeciesId(input.species)) {
+    throw new Error(`Unknown species for a new habit: "${String(input.species)}"`);
+  }
+
   const name = normalizeHabitName(input.name);
   if (name === '') return err('NAME_EMPTY');
   // Spread to count code points: '🌱'.length is 2 (UTF-16 code units).
@@ -53,6 +66,7 @@ export function createHabit(
     id: deps.generateId(),
     name,
     seed,
+    species: input.species,
     startDate: input.startDate,
     createdAt: deps.clock.now(),
   });

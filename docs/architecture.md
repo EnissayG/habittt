@@ -10,6 +10,23 @@ Le compteur avance tout seul avec le temps ; le seul événement saisi est une
 **rechute**. Chaque habitude est une plante en pixel art qui pousse jour après
 jour, garde une trace visible de chaque rechute, et repousse.
 
+L'app se veut un **compagnon de poche, doux et sans jugement**. Chaque habitude
+est une plante d'intérieur posée sur une étagère ; on veut que les gens aient
+envie de collectionner les plantes.
+
+## Principes du produit
+
+Ces principes priment sur toute idée de fonctionnalité. Une proposition qui en
+contredit un est refusée ou retravaillée.
+
+- **La plante ne meurt jamais.**
+- **La santé de la plante est toujours récupérable.**
+- **Aucun message culpabilisant, aucune notification de reproche.**
+- **Une rechute laisse une trace, pas une punition.**
+- **Écrire une note est toujours facultatif.**
+
+Les idées notées pour plus tard sont dans [idees.md](idees.md).
+
 ## Les trois couches
 
 ```mermaid
@@ -71,9 +88,9 @@ violée (voir `eslint.config.js`).
 - `no-restricted-imports` interdit à `domain/` d'importer React, React Native,
   Expo, Zustand, Skia ou Supabase.
 
-## Modèle de données prévu
+## Modèle de données
 
-Rien de ceci n'est encore codé. Deux entités :
+Deux entités, dans `src/domain/habit.ts` et `src/domain/relapse.ts` :
 
 ```ts
 type HabitId = string; // UUID
@@ -83,6 +100,7 @@ interface Habit {
   id: HabitId;
   name: string;
   seed: number; // entier 32 bits, tiré une seule fois à la création
+  species: string; // espèce de la plante, ex. 'monstera' (voir plus bas)
   startDate: LocalDate; // premier jour du suivi, startDate <= aujourd'hui
   createdAt: string; // instant ISO 8601 UTC
 }
@@ -96,6 +114,27 @@ interface Relapse {
 }
 // Unicité : une seule rechute par (habitId, date), lignes annulées comprises.
 ```
+
+### L'espèce de la plante (`Habit.species`)
+
+- Une nouvelle habitude reçoit une espèce **connue** du registre. En attendant
+  l'écran de choix, elle est tirée au hasard avec le générateur injecté.
+- **Espèce inconnue à la lecture : plante de remplacement, jamais d'erreur.**
+  Un appareil pas à jour pourra recevoir par synchronisation une espèce ajoutée
+  dans une version plus récente. L'écran ne doit pas planter pour ça : le
+  générateur dessine l'espèce de remplacement (`FALLBACK_SPECIES_ID`,
+  aujourd'hui le monstera) et le signale (`PlantImage.fallback`). Quand l'app
+  sera mise à jour, la vraie plante apparaîtra.
+- **Inconvénient évité :** si le remplacement était fait au moment de la
+  lecture, la prochaine sauvegarde de l'habitude écraserait la vraie espèce,
+  et la synchronisation propagerait l'erreur. `Habit.species` garde donc la
+  valeur brute lue en base ; le remplacement n'a lieu qu'au dessin.
+- **Migration SQLite n°2** : `ALTER TABLE habits ADD COLUMN species TEXT NOT
+NULL DEFAULT 'monstera'`, puis répartition des habitudes existantes sur les
+  quatre espèces selon `seed % 4`. SQLite exige un `DEFAULT` pour ajouter une
+  colonne `NOT NULL` à une table non vide. Vérifié : `seed` est bien stocké
+  comme entier (affinité `INTEGER`, même si le pilote l'envoie en flottant), et
+  la migration ajoute un `CAST` par sécurité.
 
 ### Règles sur l'habitude
 
@@ -240,6 +279,121 @@ couche d'affichage, sans toucher aux positions.
 La **série courante**, elle, n'est pas soumise à cette contrainte : c'est un
 nombre calculé (jours depuis la dernière rechute active, ou depuis
 `startDate`), pas un élément de la plante.
+
+## Le générateur de plantes (`src/domain/plant/`)
+
+Décisions détaillées dans
+[l'ADR 0003](decisions/0003-generateur-de-plantes.md). Référence d'origine :
+`docs/prototypes/plants.js`.
+
+```
+renderPlant({ species, seed, elapsedDays, relapseDays }) -> PlantImage
+```
+
+- **Entrées** : l'espèce, le seed, le nombre de jours écoulés
+  (`HabitStats.totalDays` ; le jour 1 est `startDate`) et les numéros des jours
+  de rechute.
+- **Sortie** : une grille de `PLANT_GRID.width × PLANT_GRID.height` (48 × 64
+  aujourd'hui, défini à un seul endroit, `grid.ts`). Chaque pixel est `null`
+  ou `{ tone, day, relapse }` : une **couleur symbolique** (`leaf`, `bark`,
+  `pot`…), le jour qui l'a posé (0 pour le pot et l'étagère), et si ce jour
+  est un jour de rechute. Plus `potStyle`, la variante de pot.
+- **Les vraies couleurs appartiennent au thème de l'UI.** Le domaine dit ce
+  qu'est un pixel, pas à quoi il ressemble.
+
+### Comment une plante est calculée
+
+1. Un générateur pseudo-aléatoire (`mulberry32`) est initialisé avec le seed,
+   salé par l'identifiant de l'espèce.
+2. Le style du pot est tiré en premier.
+3. L'espèce construit son **plan de croissance** complet : pour chacun des
+   120 jours, la liste des pixels qu'il pose. Ce plan ne dépend que de
+   l'espèce et du seed, jamais du nombre de jours écoulés ni des rechutes.
+4. Le rendu peint le pot et l'étagère, puis les jours 1 à
+   `min(elapsedDays, 120)` **dans l'ordre**. Après 120 jours, la plante ne
+   change plus.
+
+### Espèces
+
+Une espèce est un fichier dans `src/domain/plant/species/` qui implémente
+l'interface `Species` (`id`, `hanging`, `build(ctx)`). Ajouter une espèce =
+un nouveau fichier + une ligne dans `registry.ts`. Les tests de propriétés
+parcourent le registre : une nouvelle espèce est testée automatiquement. Les
+espèces ne connaissent pas la taille de la grille : elles reçoivent un point
+d'ancrage (centre du bord du pot) dans leur contexte.
+
+Quatre espèces : monstera, pothos (suspendu), calathea, arbre de jade.
+**Le dessin des quatre espèces sera retravaillé avant la publication.** Les
+références figées (`__snapshots__/plant.test.ts.snap`) seront alors mises à
+jour volontairement (`npx jest -u`).
+
+### Ce qu'il faut savoir sur le rendu
+
+- **Recouvrements.** Un jour plus récent peut peindre par-dessus un pixel
+  plus ancien (une feuille sur une tige). C'est le comportement du prototype.
+  La croissance reste par ajout : rien ne bouge ni ne disparaît, mais un pixel
+  peut être caché par un jour postérieur. Moyenne mesurée sur 6 seeds :
+  monstera 139 pixels recouverts, calathea 192, arbre de jade 124, pothos 43
+  (plus 35 sur l'étagère, qu'il recouvre en retombant).
+- **Pixels cachés par le pot.** Un pixel planifié à l'intérieur du pot n'est
+  pas dessiné (la plante est derrière). Seul le pothos est concerné (environ
+  2 pixels par plante).
+- **Limite connue, à corriger au redessin : des jours entiers finissent
+  invisibles.** Au jour 120, en moyenne, 5 jours du monstera, 6 du calathea,
+  17 de l'arbre de jade et **39 du pothos** n'ont plus aucun pixel visible :
+  tout a été recouvert. Une rechute ces jours-là ne laisse plus de trace, ce
+  qui contredit le principe « une rechute laisse une trace », et une note
+  datée n'aurait pas d'endroit où s'accrocher. Le redessin devra garantir une
+  8e propriété : _chaque jour garde au moins un pixel visible au jour 120_.
+- **Trigonométrie en table.** `Math.sin` et `Math.cos` ne donnent pas
+  forcément le même résultat sur V8 (Jest) et Hermes (téléphone). L'arbre de
+  jade utilise une table de 64 angles écrite en dur (`trig.ts`).
+- **Redessiner une espèce change toutes les plantes existantes** de cette
+  espèce, puisque rien n'est stocké. « Rien ne bouge » n'est garanti qu'à
+  dessin constant. Si cela devient un problème après la publication, on
+  versionnera les espèces (`monstera@2`) au lieu de les modifier.
+
+### Propriétés testées, pour chaque espèce
+
+1. Déterminisme : mêmes entrées, même grille.
+2. Croissance par ajout : entre le jour N-1 et le jour N, chaque case est
+   identique ou contient un pixel du jour N. Par récurrence, pour tout A < B,
+   une case garde son pixel du jour A ou a été peinte par un jour de ]A, B].
+3. Une rechute ne change que le drapeau `relapse` des pixels de son jour.
+4. Chaque jour de 1 à 120 ajoute au moins un pixel visible ce jour-là.
+5. Deux seeds différents donnent deux plantes différentes.
+6. Aucun pixel planifié hors de la grille (vérifié sur le plan brut).
+7. Après 120 jours, la plante est celle du jour 120.
+
+Les propriétés 2 et 3 ont été vérifiées par mutation : un rendu qui décale le
+passé, ou qui change la couleur des anciens pixels, ou qui modifie la couleur
+d'un jour de rechute, fait échouer le test sur les quatre espèces.
+
+## Prévu pour l'étape suivante : la vitalité (documenté, non conçu)
+
+Une fonction pure **séparée du générateur** calculera la vitalité d'une
+plante. L'UI l'appliquera comme une **variation de couleurs**, sans changer la
+forme.
+
+- **La soif** : la plante n'a pas été arrosée depuis un moment. Il faudra
+  stocker la date du dernier arrosage. Un geste (arroser) la remet d'aplomb
+  immédiatement.
+- **La fatigue** : plusieurs rechutes rapprochées. Elle s'efface avec le
+  temps.
+
+**Pourquoi le modèle de couleurs symboliques le permet :**
+
+- L'UI calcule chaque couleur avec
+  `thème(tone, { relapse, soif, fatigue })`. La vitalité n'est qu'une entrée
+  de plus du thème : le générateur et les positions ne changent pas.
+- Le `tone` dit **ce qu'est** un pixel : la soif peut jaunir les feuilles
+  (`leaf*`) sans toucher au pot ni à l'étagère, ce qu'une couleur
+  hexadécimale ne permettrait pas de distinguer.
+- Le `day` de chaque pixel permet des effets dans le temps : la fatigue peut
+  toucher surtout les pousses récentes.
+- Arroser change un paramètre du thème : l'effet est immédiat, sans recalcul.
+- Les principes sont respectés : la plante ne meurt jamais, la soif et la
+  fatigue sont toujours récupérables.
 
 ## Prévu plus tard (documenté, non conçu)
 

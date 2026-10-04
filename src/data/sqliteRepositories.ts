@@ -33,17 +33,19 @@ export class SqliteHabitRepository implements HabitRepository {
   async save(habit: Habit): Promise<void> {
     const row = habitToRow(habit);
     await this.db.runAsync(
-      `INSERT INTO habits (id, name, seed, start_date, created_at)
-       VALUES ($id, $name, $seed, $start_date, $created_at)
+      `INSERT INTO habits (id, name, seed, species, start_date, created_at)
+       VALUES ($id, $name, $seed, $species, $start_date, $created_at)
        ON CONFLICT(id) DO UPDATE SET
          name = excluded.name,
          seed = excluded.seed,
+         species = excluded.species,
          start_date = excluded.start_date,
          created_at = excluded.created_at`,
       {
         $id: row.id,
         $name: row.name,
         $seed: row.seed,
+        $species: row.species,
         $start_date: row.start_date,
         $created_at: row.created_at,
       },

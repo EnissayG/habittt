@@ -26,7 +26,9 @@ Guide détaillé, avec les problèmes courants :
   de données, plante en fonction pure. **À lire en premier.**
 - [Décisions d'architecture](docs/decisions/) : le pourquoi de chaque choix
   ([0001 : stack et architecture](docs/decisions/0001-stack-et-architecture.md),
-  [0002 : rechutes et croissance](docs/decisions/0002-rechutes-et-croissance.md)).
+  [0002 : rechutes et croissance](docs/decisions/0002-rechutes-et-croissance.md),
+  [0003 : générateur de plantes](docs/decisions/0003-generateur-de-plantes.md)).
+- [Idées pour plus tard](docs/idees.md).
 - [Tester avec Expo Go](docs/tester-avec-expo-go.md) : lancer l'app sur son
   téléphone, dépannage.
 - [CLAUDE.md](CLAUDE.md) : résumé pour les assistants de code.

@@ -1,4 +1,5 @@
 import { createHabitTracker } from './habitTracker';
+import { SPECIES_IDS } from './plant/registry';
 import { relapseIdFor } from './relapse';
 import {
   InMemoryHabitRepository,
@@ -30,6 +31,23 @@ describe('habit tracker use cases', () => {
     expect(result.ok).toBe(true);
     expect(result.ok && result.value.startDate).toBe(day(-9));
     expect(habits.rows.size).toBe(1);
+  });
+
+  it('keeps the chosen species', async () => {
+    const { tracker } = setup();
+    const result = await tracker.addHabit({
+      name: 'No smoking',
+      startedDaysAgo: 0,
+      species: 'calathea',
+    });
+    expect(result.ok && result.value.species).toBe('calathea');
+  });
+
+  it('draws a species from the injected generator when none is chosen', async () => {
+    const { tracker } = setup();
+    // generateSeed() returns 7 here; 7 % 4 species = index 3 in the registry.
+    const result = await tracker.addHabit({ name: 'No smoking', startedDaysAgo: 0 });
+    expect(result.ok && result.value.species).toBe(SPECIES_IDS[3]);
   });
 
   it('does not save a refused habit', async () => {

@@ -1,5 +1,6 @@
 import { createHabit, type CreateHabitError, type Habit, type HabitId } from './habit';
 import { addDays, type LocalDate } from './localDate';
+import { FALLBACK_SPECIES_ID, SPECIES_IDS, type SpeciesId } from './plant/registry';
 import type { Clock, IdGenerator, SeedGenerator } from './ports';
 import { cancelRelapse, isActive, recordRelapse, type RecordRelapseError } from './relapse';
 import type { HabitRepository, RelapseRepository } from './repositories';
@@ -20,6 +21,8 @@ export interface AddHabitInput {
   name: string;
   /** 0 = starting today. */
   startedDaysAgo: number;
+  /** Chosen by the user; drawn at random until the picker screen exists. */
+  species?: SpeciesId;
 }
 
 export type ToggleRelapseError = RecordRelapseError | 'HABIT_NOT_FOUND';
@@ -61,7 +64,11 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
 
     async addHabit(input: AddHabitInput): Promise<Result<Habit, CreateHabitError>> {
       const startDate = addDays(clock.today(), -Math.max(0, Math.floor(input.startedDaysAgo)));
-      const result = createHabit({ name: input.name, startDate }, deps);
+      const species =
+        input.species ??
+        SPECIES_IDS[deps.generateSeed() % SPECIES_IDS.length] ??
+        FALLBACK_SPECIES_ID;
+      const result = createHabit({ name: input.name, startDate, species }, deps);
       if (result.ok) await habits.save(result.value);
       return result;
     },

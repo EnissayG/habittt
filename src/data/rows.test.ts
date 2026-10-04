@@ -5,6 +5,7 @@ const habit: Habit = {
   id: 'h1',
   name: 'No smoking',
   seed: 4294967295,
+  species: 'pothos',
   startDate: '2026-09-24' as LocalDate,
   createdAt: '2026-10-03T10:00:00.000Z',
 };
@@ -20,6 +21,13 @@ const relapse: Relapse = {
 describe('row mapping', () => {
   it('round-trips a habit', () => {
     expect(habitFromRow(habitToRow(habit))).toEqual(habit);
+  });
+
+  it('keeps an unknown species untouched (a newer app may have written it)', () => {
+    const row = { ...habitToRow(habit), species: 'orchid-from-the-future' };
+    const read = habitFromRow(row);
+    expect(read.species).toBe('orchid-from-the-future');
+    expect(habitToRow(read)).toEqual(row);
   });
 
   it('round-trips an active and a cancelled relapse', () => {

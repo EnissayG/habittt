@@ -7,6 +7,7 @@ export interface HabitRow {
   id: string;
   name: string;
   seed: number;
+  species: string;
   start_date: string;
   created_at: string;
 }
@@ -24,6 +25,7 @@ export function habitFromRow(row: HabitRow): Habit {
     id: row.id,
     name: row.name,
     seed: row.seed,
+    species: row.species,
     startDate: parseLocalDate(row.start_date),
     createdAt: row.created_at,
   };
@@ -34,6 +36,7 @@ export function habitToRow(habit: Habit): HabitRow {
     id: habit.id,
     name: habit.name,
     seed: habit.seed,
+    species: habit.species,
     start_date: habit.startDate,
     created_at: habit.createdAt,
   };

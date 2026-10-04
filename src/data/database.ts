@@ -24,6 +24,18 @@ const MIGRATIONS: readonly string[] = [
     UNIQUE (habit_id, date)
   );
   `,
+  // 2: plant species. SQLite needs a DEFAULT to add a NOT NULL column to a
+  // table that has rows; existing habits are then spread over the four
+  // first species by seed, once (the stored value never changes after).
+  `
+  ALTER TABLE habits ADD COLUMN species TEXT NOT NULL DEFAULT 'monstera';
+  UPDATE habits SET species = CASE CAST(seed AS INTEGER) % 4
+    WHEN 0 THEN 'monstera'
+    WHEN 1 THEN 'pothos'
+    WHEN 2 THEN 'calathea'
+    ELSE 'jade'
+  END;
+  `,
 ];
 
 export async function openHabitDatabase(): Promise<SQLiteDatabase> {

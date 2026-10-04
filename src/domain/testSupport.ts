@@ -28,6 +28,7 @@ export function makeHabit(overrides: Partial<Habit> = {}): Habit {
     id: '11111111-1111-4111-8111-111111111111',
     name: 'No smoking',
     seed: 42,
+    species: 'monstera',
     startDate: day(-9),
     createdAt: NOW,
     ...overrides,
