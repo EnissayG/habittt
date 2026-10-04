@@ -1,4 +1,5 @@
 import type { Species } from './species';
+import { aloe } from './species/aloe';
 import { cactus } from './species/cactus';
 import { calathea } from './species/calathea';
 import { jade } from './species/jade';
@@ -19,6 +20,7 @@ export const SPECIES_REGISTRY = {
   sansevieria,
   spider,
   cactus,
+  aloe,
 } as const satisfies Record<string, Species>;
 
 export type SpeciesId = keyof typeof SPECIES_REGISTRY;
