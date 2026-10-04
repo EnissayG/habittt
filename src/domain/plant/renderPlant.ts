@@ -9,7 +9,8 @@ import {
 import type { GrowthPlan } from './growthPlan';
 import { fnv1a, mulberry32 } from './random';
 import { resolveSpecies } from './registry';
-import { isBehindPot, paintScenery, SCENERY_DEPTH } from './scenery';
+import { paintScenery, POT_HALF_WIDTHS, SCENERY_DEPTH, SHELF_ROWS } from './scenery';
+import { settle } from './settle';
 
 /** Row of the pot rim for hanging plants: high on the canvas so they drape down. */
 const HANGING_RIM_Y = 8;
@@ -33,7 +34,10 @@ export interface PlanForSeed {
   rimY: number;
 }
 
-/** The full 120-day plan of a plant. Independent of elapsed days and relapses. */
+/**
+ * The full 120-day plan of a plant, settled so every day stays visible.
+ * Independent of elapsed days and relapses.
+ */
 export function planPlant(speciesId: string, seed: number): PlanForSeed {
   const { species, fallback } = resolveSpecies(speciesId);
   const { width, height } = PLANT_GRID;
@@ -46,7 +50,15 @@ export function planPlant(speciesId: string, seed: number): PlanForSeed {
 
   const anchorX = Math.floor(width / 2);
   const rimY = species.hanging ? HANGING_RIM_Y : height - SCENERY_DEPTH;
-  const plan = species.build({ random, width, height, anchorX, rimY });
+  const raw = species.build({ random, width, height, anchorX, rimY });
+  const plan = settle(raw, {
+    width,
+    height,
+    anchorX,
+    rimY,
+    potHalfWidths: POT_HALF_WIDTHS,
+    shelfRows: SHELF_ROWS,
+  });
 
   return { plan, potStyle, species: species.id, fallback, anchorX, rimY };
 }
@@ -68,11 +80,11 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
   paintScenery((x, y, tone) => paint(x, y, tone, 0), anchorX, rimY, width);
 
   // Days are painted in order: a later day may cover an earlier pixel, never
-  // the other way round. Strokes behind the pot are hidden.
+  // the other way round. The settled plan has no stroke behind the pot.
   const lastDay = Math.min(Math.max(0, Math.floor(params.elapsedDays)), MAX_GROWTH_DAYS);
   for (let day = 1; day <= lastDay; day++) {
     for (const { x, y, tone } of plan[day - 1] ?? []) {
-      if (!isBehindPot(x, y, anchorX, rimY)) paint(x, y, tone, day);
+      paint(x, y, tone, day);
     }
   }
 

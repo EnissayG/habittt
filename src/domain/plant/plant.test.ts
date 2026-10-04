@@ -131,6 +131,20 @@ describe.each(SPECIES_IDS)('plant generator: %s', (species) => {
     }
   });
 
+  it('8. every day keeps at least one visible pixel at day 120', () => {
+    for (const seed of SEEDS) {
+      for (const relapses of [[], RELAPSES]) {
+        const image = render(species, seed, MAX_GROWTH_DAYS, relapses);
+        const visibleDays = new Set(image.pixels.map((pixel) => pixel?.day ?? 0));
+        const hiddenDays: number[] = [];
+        for (let day = 1; day <= MAX_GROWTH_DAYS; day++) {
+          if (!visibleDays.has(day)) hiddenDays.push(day);
+        }
+        expect({ seed, hiddenDays }).toEqual({ seed, hiddenDays: [] });
+      }
+    }
+  });
+
   it('draws only the pot and shelf before the first day', () => {
     const image = render(species, 42, 0);
     expect(image.pixels.every((pixel) => pixel === null || pixel.day === 0)).toBe(true);

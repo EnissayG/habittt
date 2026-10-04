@@ -3,23 +3,15 @@ import type { SceneryTone } from './grid';
 // Pot and shelf, drawn under the plant on day 0. Dimensions are relative to
 // the pot's anchor so they follow the grid if it grows.
 
-const POT_HEIGHT = 10;
-const SHELF_OFFSET = POT_HEIGHT + 1;
-const SHELF_THICKNESS = 3;
+export const POT_HEIGHT = 10;
+/** Rows below the rim holding the shelf (inclusive). */
+export const SHELF_ROWS = [POT_HEIGHT + 1, POT_HEIGHT + 3] as const;
 
 /** Rows below the rim that the pot and shelf need, rim row included. */
-export const SCENERY_DEPTH = SHELF_OFFSET + SHELF_THICKNESS;
+export const SCENERY_DEPTH = SHELF_ROWS[1] + 1;
 
-/** Half-width of the pot `row` rows below the rim (1 <= row <= POT_HEIGHT). */
-function potHalfWidth(row: number): number {
-  return row <= 2 ? 7 : 6 - Math.floor((row - 3) / 3);
-}
-
-/** True if (x, y) is inside the pot body, where plant strokes are hidden. */
-export function isBehindPot(x: number, y: number, anchorX: number, rimY: number): boolean {
-  const row = y - rimY;
-  return row >= 1 && row <= POT_HEIGHT && Math.abs(x - anchorX) <= potHalfWidth(row);
-}
+/** Pot half-width for each row below the rim (flared pot). */
+export const POT_HALF_WIDTHS: readonly number[] = [7, 7, 6, 6, 6, 5, 5, 5, 4, 4];
 
 export function paintScenery(
   set: (x: number, y: number, tone: SceneryTone) => void,
@@ -27,19 +19,19 @@ export function paintScenery(
   rimY: number,
   width: number,
 ): void {
-  for (let x = anchorX - 6; x <= anchorX + 6; x++) set(x, rimY, 'soil');
+  const top = POT_HALF_WIDTHS[0]!;
+  for (let x = anchorX - top + 1; x <= anchorX + top - 1; x++) set(x, rimY, 'soil');
 
-  for (let row = 1; row <= POT_HEIGHT; row++) {
-    const half = potHalfWidth(row);
+  POT_HALF_WIDTHS.forEach((half, i) => {
     for (let x = anchorX - half; x <= anchorX + half; x++) {
       // The right edge is shaded to give the pot some volume.
-      set(x, rimY + row, x > anchorX + half - 3 ? 'potShade' : 'pot');
+      set(x, rimY + 1 + i, x > anchorX + half - 3 ? 'potShade' : 'pot');
     }
-  }
+  });
 
   for (let x = 0; x < width; x++) {
-    set(x, rimY + SHELF_OFFSET, 'shelf');
-    set(x, rimY + SHELF_OFFSET + 1, 'shelf');
-    set(x, rimY + SHELF_OFFSET + 2, 'shelfShade');
+    set(x, rimY + SHELF_ROWS[0], 'shelf');
+    set(x, rimY + SHELF_ROWS[0] + 1, 'shelf');
+    set(x, rimY + SHELF_ROWS[1], 'shelfShade');
   }
 }
