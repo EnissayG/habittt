@@ -37,6 +37,8 @@ export interface PlantImage {
   readonly potStyle: number;
   /** Species actually drawn (the fallback one if the requested id is unknown). */
   readonly species: string;
+  /** Variety id picked from the seed (null if the species has none). */
+  readonly variety: string | null;
   /** True when the requested species was unknown and a fallback was drawn. */
   readonly fallback: boolean;
 }

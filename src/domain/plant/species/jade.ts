@@ -105,6 +105,6 @@ export const jade: Species = {
       }
     }
 
-    return plan.build();
+    return { plan: plan.build(), variety: null };
   },
 };

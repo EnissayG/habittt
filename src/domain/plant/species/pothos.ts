@@ -70,6 +70,6 @@ export const pothos: Species = {
       }
     }
 
-    return plan.build();
+    return { plan: plan.build(), variety: null };
   },
 };

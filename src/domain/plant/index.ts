@@ -18,4 +18,4 @@ export {
   type SpeciesId,
 } from './registry';
 export { planPlant, renderPlant, type RenderPlantParams } from './renderPlant';
-export type { Species, SpeciesContext } from './species';
+export type { Species, SpeciesContext, SpeciesPlan } from './species';

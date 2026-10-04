@@ -19,5 +19,5 @@ const style: BigLeafStyle = {
 export const monstera: Species = {
   id: 'monstera',
   hanging: false,
-  build: (ctx) => buildBigLeafPlant(style, ctx),
+  build: (ctx) => ({ plan: buildBigLeafPlant(style, ctx), variety: null }),
 };

@@ -37,6 +37,7 @@ describe('buildColorRuns', () => {
     height: 2,
     potStyle: 0,
     species: 'monstera',
+    variety: null,
     fallback: false,
     // row 0: leaf leaf . bark   row 1: . bark bark bark
     pixels: [

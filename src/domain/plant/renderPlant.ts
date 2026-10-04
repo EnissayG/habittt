@@ -27,6 +27,7 @@ export interface RenderPlantParams {
 
 export interface PlanForSeed {
   plan: GrowthPlan;
+  variety: string | null;
   potStyle: number;
   species: string;
   fallback: boolean;
@@ -50,7 +51,7 @@ export function planPlant(speciesId: string, seed: number): PlanForSeed {
 
   const anchorX = Math.floor(width / 2);
   const rimY = species.hanging ? HANGING_RIM_Y : height - SCENERY_DEPTH;
-  const raw = species.build({ random, width, height, anchorX, rimY });
+  const { plan: raw, variety } = species.build({ random, width, height, anchorX, rimY });
   const plan = settle(raw, {
     width,
     height,
@@ -60,12 +61,12 @@ export function planPlant(speciesId: string, seed: number): PlanForSeed {
     shelfRows: SHELF_ROWS,
   });
 
-  return { plan, potStyle, species: species.id, fallback, anchorX, rimY };
+  return { plan, variety, potStyle, species: species.id, fallback, anchorX, rimY };
 }
 
 export function renderPlant(params: RenderPlantParams): PlantImage {
   const { width, height } = PLANT_GRID;
-  const { plan, potStyle, species, fallback, anchorX, rimY } = planPlant(
+  const { plan, variety, potStyle, species, fallback, anchorX, rimY } = planPlant(
     params.species,
     params.seed,
   );
@@ -88,5 +89,5 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
     }
   }
 
-  return { width, height, pixels, potStyle, species, fallback };
+  return { width, height, pixels, potStyle, species, variety, fallback };
 }
