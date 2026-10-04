@@ -9,6 +9,7 @@ import { createHabitTracker, type HabitTracker } from './src/domain';
 import { Root } from './src/ui/Root';
 import { colors, fonts } from './src/ui/theme/tokens';
 import { TrackerProvider } from './src/ui/TrackerContext';
+import { useAppFonts } from './src/ui/theme/useAppFonts';
 
 async function createTracker(): Promise<HabitTracker> {
   const db = await openHabitDatabase();
@@ -22,6 +23,7 @@ async function createTracker(): Promise<HabitTracker> {
 }
 
 export default function App() {
+  const fontsReady = useAppFonts();
   const [tracker, setTracker] = useState<HabitTracker | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -31,11 +33,18 @@ export default function App() {
       .catch((e: unknown) => setFailure(String(e)));
   }, []);
 
-  if (!tracker) {
+  if (failure) {
     return (
       <View style={styles.splash}>
-        <Text style={styles.text}>{failure ? `Erreur au démarrage :\n${failure}` : 'habittt'}</Text>
+        <Text style={styles.error}>{`Erreur au démarrage :\n${failure}`}</Text>
       </View>
+    );
+  }
+
+  if (!tracker || !fontsReady) {
+    // The name needs the pixel font: show it only once the font is ready.
+    return (
+      <View style={styles.splash}>{fontsReady && <Text style={styles.text}>habittt</Text>}</View>
     );
   }
 
@@ -54,5 +63,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  text: { fontFamily: fonts.display, fontSize: 20, color: colors.text, textAlign: 'center' },
+  text: { fontFamily: fonts.displayBold, fontSize: 44, color: colors.text, textAlign: 'center' },
+  error: { fontFamily: fonts.body, fontSize: 16, color: colors.text, textAlign: 'center' },
 });

@@ -40,14 +40,17 @@ export const colors = {
 } as const;
 
 /**
- * Two typographic roles. Screens use the role, never a font name.
- * - display: app name, titles and counters (pixel font, to be chosen;
- *   system monospace until then).
+ * Typographic roles. Screens use the role, never a font name.
+ * Each weight of a custom font is its own family in React Native (fontWeight
+ * cannot pick it); the pixel font files are loaded in useAppFonts.
+ * - display: titles and names (Pixelify Sans Medium).
+ * - displayBold: the app name and big counters (Pixelify Sans SemiBold).
  * - body: running text, kept in the readable system font.
  */
 export const fonts = {
-  display: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+  display: 'PixelifySans_500Medium',
+  displayBold: 'PixelifySans_600SemiBold',
   body: Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' }),
-} as const;
+} as const satisfies Record<string, string>;
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 } as const;

@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.lg },
   back: { fontFamily: fonts.body, fontSize: 16, color: colors.muted },
   name: { fontFamily: fonts.display, fontSize: 26, color: colors.text },
-  streak: { fontFamily: fonts.display, fontSize: 72, color: colors.text, lineHeight: 80 },
+  streak: { fontFamily: fonts.displayBold, fontSize: 72, color: colors.text, lineHeight: 80 },
   streakLabel: { fontFamily: fonts.body, fontSize: 16, color: colors.text },
   statsRow: { flexDirection: 'row', gap: spacing.md },
   stat: {

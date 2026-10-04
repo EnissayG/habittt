@@ -55,7 +55,7 @@ export function HomeScreen({ onOpenHabit, onNewHabit, onOpenLab }: HomeScreenPro
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg, gap: spacing.md },
-  title: { fontFamily: fonts.display, fontSize: 32, color: colors.text },
+  title: { fontFamily: fonts.displayBold, fontSize: 32, color: colors.text },
   empty: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, lineHeight: 22 },
   list: { gap: spacing.md },
   card: {
@@ -68,6 +68,6 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.7 },
   name: { fontFamily: fonts.display, fontSize: 18, color: colors.text },
-  streak: { fontFamily: fonts.display, fontSize: 28, color: colors.text },
+  streak: { fontFamily: fonts.displayBold, fontSize: 28, color: colors.text },
   meta: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
 });

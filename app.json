@@ -22,6 +22,6 @@
       "favicon": "./assets/favicon.png"
     },
     "backgroundColor": "#FDF6E3",
-    "plugins": ["expo-sqlite"]
+    "plugins": ["expo-sqlite", "expo-font", "expo-asset"]
   }
 }
