@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { MAX_GROWTH_DAYS, renderPlant, SPECIES_IDS, type SpeciesId } from '../../domain';
+import { describePlant, isRare, potLabel, SPECIES_LABELS } from '../plant/labels';
 import { PlantCanvas } from '../plant/PlantCanvas';
 import { colors, fonts, spacing } from '../theme/tokens';
 
@@ -50,17 +51,25 @@ export function LabScreen({ onBack }: LabScreenProps) {
       <Text style={styles.title}>Labo</Text>
 
       <PlantCanvas image={image} maxWidth={width - spacing.lg * 2} maxHeight={360} />
+      <Text style={styles.description}>
+        {describePlant(image)}
+        {isRare(image) ? ' · rare' : ''}
+      </Text>
       <Text style={styles.caption}>
-        {species} · graine {seed} · jour {days} · pot {image.genome.potColor}{' '}
-        {image.genome.potShape} · {image.genome.foliage}
-        {image.genome.trait !== 'none' ? ` · ${image.genome.trait}` : ''}
+        {potLabel(image.genome)}
+        {image.genome.mirrored ? ' · en miroir' : ''} · graine {seed} · jour {days}
         {relapseDays.length > 0 ? ` · rechutes ${relapseDays.join(', ')}` : ''}
       </Text>
 
       <Text style={styles.label}>Espèce</Text>
       <View style={styles.row}>
         {SPECIES_IDS.map((id) => (
-          <Chip key={id} label={id} selected={id === species} onPress={() => setSpecies(id)} />
+          <Chip
+            key={id}
+            label={SPECIES_LABELS[id]}
+            selected={id === species}
+            onPress={() => setSpecies(id)}
+          />
         ))}
       </View>
 
@@ -139,6 +148,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.md },
   back: { fontFamily: fonts.body, fontSize: 16, color: colors.muted },
   title: { fontFamily: fonts.display, fontSize: 26, color: colors.text },
+  description: { fontFamily: fonts.display, fontSize: 15, color: colors.text, textAlign: 'center' },
   caption: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
   label: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'center' },
