@@ -136,10 +136,10 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
           <Text style={styles.logo} maxFontSizeMultiplier={1}>
             habittt
           </Text>
-          <Text style={styles.subtitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
-            {shelf.totals.plants} {shelf.totals.plants > 1 ? 'plantes' : 'plante'} ·{' '}
-            {`${days(shelf.totals.currentDays)} d'affilée`}
-          </Text>
+          {/* The total is the sum of the current streaks, the numbers under the plants. */}
+          <NumberText style={styles.subtitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+            {`${shelf.totals.plants} ${shelf.totals.plants > 1 ? 'plantes' : 'plante'} · ${days(shelf.totals.currentDays)} de séries en cours`}
+          </NumberText>
         </View>
         <View style={styles.headerActions}>
           {__DEV__ && (
