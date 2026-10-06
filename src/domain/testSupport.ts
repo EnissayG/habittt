@@ -2,8 +2,15 @@
 import type { Habit, HabitId } from './habit';
 import type { LocalDate } from './localDate';
 import type { Clock } from './ports';
+import type { Note } from './note';
 import type { Relapse } from './relapse';
-import type { HabitRepository, RelapseRepository } from './repositories';
+import type {
+  HabitRepository,
+  NoteRepository,
+  RelapseRepository,
+  WateringRepository,
+} from './repositories';
+import type { Watering } from './watering';
 
 export const TODAY = '2026-10-03' as LocalDate;
 export const NOW = '2026-10-03T10:00:00.000Z';
@@ -61,6 +68,28 @@ export class InMemoryRelapseRepository implements RelapseRepository {
     this.rows.set(relapse.id, relapse);
   }
 }
+
+/** Rows keyed by id, found by (habitId, date): notes and waterings. */
+class InMemoryDailyRepository<T extends { id: string; habitId: HabitId; date: LocalDate }> {
+  readonly rows = new Map<string, T>();
+  async listByHabit(habitId: HabitId) {
+    return [...this.rows.values()].filter((row) => row.habitId === habitId);
+  }
+  async findByHabitAndDate(habitId: HabitId, date: LocalDate) {
+    return [...this.rows.values()].find((row) => row.habitId === habitId && row.date === date);
+  }
+  async save(row: T) {
+    this.rows.set(row.id, row);
+  }
+}
+
+export class InMemoryNoteRepository
+  extends InMemoryDailyRepository<Note>
+  implements NoteRepository {}
+
+export class InMemoryWateringRepository
+  extends InMemoryDailyRepository<Watering>
+  implements WateringRepository {}
 
 export function makeRelapse(date: LocalDate, overrides: Partial<Relapse> = {}): Relapse {
   return {

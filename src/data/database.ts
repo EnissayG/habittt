@@ -38,6 +38,26 @@ const MIGRATIONS: readonly string[] = [
     ELSE 'jade'
   END;
   `,
+  // 3: dated notes and waterings, one per habit and day, like relapses.
+  `
+  CREATE TABLE notes (
+    id TEXT PRIMARY KEY NOT NULL,
+    habit_id TEXT NOT NULL REFERENCES habits(id),
+    date TEXT NOT NULL,
+    text TEXT NOT NULL,
+    mood TEXT,
+    deleted_at TEXT,
+    updated_at TEXT NOT NULL,
+    UNIQUE (habit_id, date)
+  );
+  CREATE TABLE waterings (
+    id TEXT PRIMARY KEY NOT NULL,
+    habit_id TEXT NOT NULL REFERENCES habits(id),
+    date TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (habit_id, date)
+  );
+  `,
 ];
 
 export async function openHabitDatabase(name: string = DATABASE_NAME): Promise<SQLiteDatabase> {
@@ -51,7 +71,9 @@ export async function openHabitDatabase(name: string = DATABASE_NAME): Promise<S
 export async function openFreshDemoDatabase(): Promise<SQLiteDatabase> {
   const db = await openHabitDatabase(DEMO_DATABASE_NAME);
   await db.withTransactionAsync(async () => {
-    await db.execAsync('DELETE FROM relapses; DELETE FROM habits;');
+    await db.execAsync(
+      'DELETE FROM notes; DELETE FROM waterings; DELETE FROM relapses; DELETE FROM habits;',
+    );
   });
   return db;
 }

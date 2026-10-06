@@ -1,5 +1,14 @@
-import type { Habit, LocalDate, Relapse } from '../domain';
-import { habitFromRow, habitToRow, relapseFromRow, relapseToRow } from './rows';
+import type { Habit, LocalDate, Note, Relapse, Watering } from '../domain';
+import {
+  habitFromRow,
+  habitToRow,
+  noteFromRow,
+  noteToRow,
+  relapseFromRow,
+  relapseToRow,
+  wateringFromRow,
+  wateringToRow,
+} from './rows';
 
 const habit: Habit = {
   id: 'h1',
@@ -18,7 +27,34 @@ const relapse: Relapse = {
   updatedAt: '2026-10-03T10:00:00.000Z',
 };
 
+const note: Note = {
+  id: 'n1',
+  habitId: 'h1',
+  date: '2026-10-02' as LocalDate,
+  text: 'Envie forte.\nPassée.',
+  mood: 'craving',
+  deletedAt: null,
+  updatedAt: '2026-10-03T10:00:00.000Z',
+};
+
+const watering: Watering = {
+  id: 'w1',
+  habitId: 'h1',
+  date: '2026-10-02' as LocalDate,
+  updatedAt: '2026-10-03T10:00:00.000Z',
+};
+
 describe('row mapping', () => {
+  it('round-trips a note, with or without a mood, and a watering', () => {
+    expect(noteFromRow(noteToRow(note))).toEqual(note);
+    expect(noteFromRow(noteToRow({ ...note, mood: null }))).toEqual({ ...note, mood: null });
+    expect(wateringFromRow(wateringToRow(watering))).toEqual(watering);
+  });
+
+  it('reads an unknown mood as no mood', () => {
+    expect(noteFromRow({ ...noteToRow(note), mood: 'joy-from-the-future' }).mood).toBeNull();
+  });
+
   it('round-trips a habit', () => {
     expect(habitFromRow(habitToRow(habit))).toEqual(habit);
   });

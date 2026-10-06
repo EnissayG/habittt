@@ -5,16 +5,26 @@ import type {
   HabitId,
   HabitRepository,
   LocalDate,
+  Note,
+  NoteRepository,
   Relapse,
   RelapseRepository,
+  Watering,
+  WateringRepository,
 } from '../domain';
 import {
   habitFromRow,
   habitToRow,
+  noteFromRow,
+  noteToRow,
   relapseFromRow,
   relapseToRow,
+  wateringFromRow,
+  wateringToRow,
   type HabitRow,
+  type NoteRow,
   type RelapseRow,
+  type WateringRow,
 } from './rows';
 
 export class SqliteHabitRepository implements HabitRepository {
@@ -88,6 +98,80 @@ export class SqliteRelapseRepository implements RelapseRepository {
         $deleted_at: row.deleted_at,
         $updated_at: row.updated_at,
       },
+    );
+  }
+}
+
+export class SqliteNoteRepository implements NoteRepository {
+  constructor(private readonly db: SQLiteDatabase) {}
+
+  async listByHabit(habitId: HabitId): Promise<Note[]> {
+    const rows = await this.db.getAllAsync<NoteRow>(
+      'SELECT * FROM notes WHERE habit_id = ? ORDER BY date',
+      habitId,
+    );
+    return rows.map(noteFromRow);
+  }
+
+  async findByHabitAndDate(habitId: HabitId, date: LocalDate): Promise<Note | undefined> {
+    const row = await this.db.getFirstAsync<NoteRow>(
+      'SELECT * FROM notes WHERE habit_id = ? AND date = ?',
+      habitId,
+      date,
+    );
+    return row ? noteFromRow(row) : undefined;
+  }
+
+  async save(note: Note): Promise<void> {
+    const row = noteToRow(note);
+    await this.db.runAsync(
+      `INSERT INTO notes (id, habit_id, date, text, mood, deleted_at, updated_at)
+       VALUES ($id, $habit_id, $date, $text, $mood, $deleted_at, $updated_at)
+       ON CONFLICT(id) DO UPDATE SET
+         text = excluded.text,
+         mood = excluded.mood,
+         deleted_at = excluded.deleted_at,
+         updated_at = excluded.updated_at`,
+      {
+        $id: row.id,
+        $habit_id: row.habit_id,
+        $date: row.date,
+        $text: row.text,
+        $mood: row.mood,
+        $deleted_at: row.deleted_at,
+        $updated_at: row.updated_at,
+      },
+    );
+  }
+}
+
+export class SqliteWateringRepository implements WateringRepository {
+  constructor(private readonly db: SQLiteDatabase) {}
+
+  async listByHabit(habitId: HabitId): Promise<Watering[]> {
+    const rows = await this.db.getAllAsync<WateringRow>(
+      'SELECT * FROM waterings WHERE habit_id = ? ORDER BY date',
+      habitId,
+    );
+    return rows.map(wateringFromRow);
+  }
+
+  async findByHabitAndDate(habitId: HabitId, date: LocalDate): Promise<Watering | undefined> {
+    const row = await this.db.getFirstAsync<WateringRow>(
+      'SELECT * FROM waterings WHERE habit_id = ? AND date = ?',
+      habitId,
+      date,
+    );
+    return row ? wateringFromRow(row) : undefined;
+  }
+
+  async save(watering: Watering): Promise<void> {
+    const row = wateringToRow(watering);
+    await this.db.runAsync(
+      `INSERT INTO waterings (id, habit_id, date, updated_at)
+       VALUES ($id, $habit_id, $date, $updated_at)
+       ON CONFLICT(id) DO UPDATE SET updated_at = excluded.updated_at`,
+      { $id: row.id, $habit_id: row.habit_id, $date: row.date, $updated_at: row.updated_at },
     );
   }
 }

@@ -82,7 +82,12 @@ export {
   type RecordRelapseParams,
   type Relapse,
 } from './relapse';
-export type { HabitRepository, RelapseRepository } from './repositories';
+export type {
+  HabitRepository,
+  NoteRepository,
+  RelapseRepository,
+  WateringRepository,
+} from './repositories';
 export { err, ok, type Result } from './result';
 export { water, wateringIdFor, type WaterError, type Watering } from './watering';
 export { computeStats, type ComputeStatsParams, type HabitStats } from './stats';
