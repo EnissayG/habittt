@@ -1,7 +1,9 @@
 import {
+  HABIT_STATUSES,
   MOODS,
   parseLocalDate,
   type Habit,
+  type HabitStatus,
   type Mood,
   type Note,
   type Relapse,
@@ -18,6 +20,15 @@ export interface HabitRow {
   species: string;
   start_date: string;
   created_at: string;
+  status: string;
+  retired_on: string | null;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+/** An unknown status (written by a newer app) is read as the garden: in view, read only. */
+function statusFromRow(status: string): HabitStatus {
+  return HABIT_STATUSES.find((known) => known === status) ?? 'garden';
 }
 
 export interface RelapseRow {
@@ -36,6 +47,10 @@ export function habitFromRow(row: HabitRow): Habit {
     species: row.species,
     startDate: parseLocalDate(row.start_date),
     createdAt: row.created_at,
+    status: statusFromRow(row.status),
+    retiredOn: row.retired_on === null ? null : parseLocalDate(row.retired_on),
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   };
 }
 
@@ -47,6 +62,10 @@ export function habitToRow(habit: Habit): HabitRow {
     species: habit.species,
     start_date: habit.startDate,
     created_at: habit.createdAt,
+    status: habit.status,
+    retired_on: habit.retiredOn,
+    updated_at: habit.updatedAt,
+    deleted_at: habit.deletedAt,
   };
 }
 

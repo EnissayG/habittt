@@ -58,6 +58,15 @@ const MIGRATIONS: readonly string[] = [
     UNIQUE (habit_id, date)
   );
   `,
+  // 4: a habit leaves the shelf (garden, given) or is erased, leaving a
+  // trace. updated_at starts at the creation instant.
+  `
+  ALTER TABLE habits ADD COLUMN status TEXT NOT NULL DEFAULT 'shelf';
+  ALTER TABLE habits ADD COLUMN retired_on TEXT;
+  ALTER TABLE habits ADD COLUMN updated_at TEXT NOT NULL DEFAULT '';
+  ALTER TABLE habits ADD COLUMN deleted_at TEXT;
+  UPDATE habits SET updated_at = created_at;
+  `,
 ];
 
 export async function openHabitDatabase(name: string = DATABASE_NAME): Promise<SQLiteDatabase> {

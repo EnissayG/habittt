@@ -17,6 +17,10 @@ const habit: Habit = {
   species: 'pothos',
   startDate: '2026-09-24' as LocalDate,
   createdAt: '2026-10-03T10:00:00.000Z',
+  status: 'shelf',
+  retiredOn: null,
+  updatedAt: '2026-10-03T10:00:00.000Z',
+  deletedAt: null,
 };
 
 const relapse: Relapse = {
@@ -55,8 +59,23 @@ describe('row mapping', () => {
     expect(noteFromRow({ ...noteToRow(note), mood: 'joy-from-the-future' }).mood).toBeNull();
   });
 
-  it('round-trips a habit', () => {
+  it('round-trips a habit, on the shelf, retired or erased', () => {
     expect(habitFromRow(habitToRow(habit))).toEqual(habit);
+    const garden: Habit = {
+      ...habit,
+      status: 'garden',
+      retiredOn: '2026-10-01' as LocalDate,
+      updatedAt: '2026-10-01T09:00:00.000Z',
+    };
+    expect(habitFromRow(habitToRow(garden))).toEqual(garden);
+    const erased: Habit = { ...garden, name: '', deletedAt: '2026-10-02T09:00:00.000Z' };
+    expect(habitFromRow(habitToRow(erased))).toEqual(erased);
+  });
+
+  it('reads an unknown status as the garden: kept in view, never written to', () => {
+    expect(habitFromRow({ ...habitToRow(habit), status: 'compost-from-the-future' }).status).toBe(
+      'garden',
+    );
   });
 
   it('keeps an unknown species untouched (a newer app may have written it)', () => {

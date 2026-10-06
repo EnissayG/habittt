@@ -43,14 +43,20 @@ export class SqliteHabitRepository implements HabitRepository {
   async save(habit: Habit): Promise<void> {
     const row = habitToRow(habit);
     await this.db.runAsync(
-      `INSERT INTO habits (id, name, seed, species, start_date, created_at)
-       VALUES ($id, $name, $seed, $species, $start_date, $created_at)
+      `INSERT INTO habits (id, name, seed, species, start_date, created_at,
+         status, retired_on, updated_at, deleted_at)
+       VALUES ($id, $name, $seed, $species, $start_date, $created_at,
+         $status, $retired_on, $updated_at, $deleted_at)
        ON CONFLICT(id) DO UPDATE SET
          name = excluded.name,
          seed = excluded.seed,
          species = excluded.species,
          start_date = excluded.start_date,
-         created_at = excluded.created_at`,
+         created_at = excluded.created_at,
+         status = excluded.status,
+         retired_on = excluded.retired_on,
+         updated_at = excluded.updated_at,
+         deleted_at = excluded.deleted_at`,
       {
         $id: row.id,
         $name: row.name,
@@ -58,8 +64,21 @@ export class SqliteHabitRepository implements HabitRepository {
         $species: row.species,
         $start_date: row.start_date,
         $created_at: row.created_at,
+        $status: row.status,
+        $retired_on: row.retired_on,
+        $updated_at: row.updated_at,
+        $deleted_at: row.deleted_at,
       },
     );
+  }
+
+  async erase(trace: Habit): Promise<void> {
+    await this.db.withTransactionAsync(async () => {
+      for (const table of ['relapses', 'notes', 'waterings']) {
+        await this.db.runAsync(`DELETE FROM ${table} WHERE habit_id = ?`, trace.id);
+      }
+      await this.save(trace);
+    });
   }
 }
 
