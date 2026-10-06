@@ -4,11 +4,12 @@ import { PixelRatio, Pressable, StyleSheet, Text, useWindowDimensions, View } fr
 import { dayAt, daysBetween, usedRows } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
+import { NumberText } from '../components/NumberText';
 import { PixelIcon } from '../components/PixelIcon';
 import { Screen } from '../components/Screen';
 import { Sheet } from '../components/Sheet';
 import { TopBar } from '../components/TopBar';
-import { dayMonth, lowerFirst } from '../format';
+import { dayMonth, days, lowerFirst } from '../format';
 import { DaySheet } from '../habit/DaySheet';
 import { FallingDrop } from '../habit/FallingDrop';
 import { NoteSheet } from '../habit/NoteSheet';
@@ -224,12 +225,26 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
         <Text style={styles.name}>{habit.name}</Text>
         <Text style={styles.traits}>{describePlant(plant)}</Text>
       </View>
-      <View style={styles.chips}>
-        <Chip label={`record ${stats.longestStreak} j`} />
-        <Chip label={`depuis le ${dayMonth(habit.startDate, tracker.today())}`} />
-        {detail.notes.length > 0 && <Chip label={notesLabel(detail.notes.length)} />}
+      <View style={styles.facts}>
+        <Fact label="record" value={days(stats.longestStreak)} />
+        <Fact label="depuis le" value={dayMonth(habit.startDate, tracker.today())} />
       </View>
+      {detail.notes.length > 0 && (
+        <View style={styles.chips}>
+          <Chip label={notesLabel(detail.notes.length)} />
+        </View>
+      )}
     </Screen>
+  );
+}
+
+/** A fact about the habit: a quiet label above a value in the text color. */
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <View accessible accessibilityLabel={`${label} ${value}`}>
+      <Text style={styles.factLabel}>{label}</Text>
+      <NumberText style={styles.factValue}>{value}</NumberText>
+    </View>
   );
 }
 
@@ -241,6 +256,9 @@ const styles = StyleSheet.create({
   name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
   traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  facts: { flexDirection: 'row', gap: 32 },
+  factLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  factValue: { fontFamily: fonts.display, fontSize: 18, lineHeight: 26, color: colors.text },
   notice: { fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'center' },
   sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
   body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
