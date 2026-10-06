@@ -1,5 +1,5 @@
 import { Canvas, Group, Picture, type SkPicture } from '@shopify/react-native-skia';
-import { useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import {
   PixelRatio,
   Pressable,
@@ -48,7 +48,8 @@ const DOTS_HEIGHT = 24;
 
 /**
  * Screen 2: the shelf, a room seen one wall at a time. It fills the screen
- * edge to edge; the only gesture is a horizontal swipe from wall to wall.
+ * edge to edge; the only gesture is a horizontal scroll through the room,
+ * free with its natural deceleration, that settles on the nearest wall.
  */
 export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   const tracker = useTracker();
@@ -79,7 +80,9 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   }, [shelf, width, height, insets.top, insets.bottom, headerHeight, fontScale]);
 
   const floor = useMemo(
-    () => fit && drawFloor({ room: composeRoom(fit.plan), rows: fit.floorRows }),
+    () =>
+      fit &&
+      drawFloor({ room: composeRoom(fit.plan), rows: fit.floorRows, items: fit.plan.floorItems }),
     [fit],
   );
   const picture = useMemo(
@@ -87,22 +90,30 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
     [floor, fit, shelf],
   );
 
+  // Stable, so that the walls (memoized) do not redraw when the dots move.
+  const onOpen = useCallback((id: string) => navigation.navigate('Habit', { id }), [navigation]);
+  const onNew = useCallback(() => navigation.navigate('NewHabitName'), [navigation]);
+
   if (!shelf || !fit || !picture) return <View style={styles.screen} />;
 
   const walls = fit.plan.walls;
   const current = Math.min(page, walls.length - 1);
-  const onScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
+  // The dots follow the scroll: the wall that fills most of the screen.
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) =>
     setPage(Math.round(event.nativeEvent.contentOffset.x / width));
 
   return (
     <View style={styles.screen}>
       <ScrollView
         horizontal
-        pagingEnabled
+        snapToInterval={width}
+        snapToAlignment="start"
+        decelerationRate="normal"
         bounces={false}
         overScrollMode="never"
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScrollEnd}
+        scrollEventThrottle={32}
+        onScroll={onScroll}
       >
         {walls.map((wall) => (
           <WallPage
@@ -113,8 +124,8 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
             width={width}
             height={height}
             floor={picture}
-            onOpen={(id) => navigation.navigate('Habit', { id })}
-            onNew={() => navigation.navigate('NewHabitName')}
+            onOpen={onOpen}
+            onNew={onNew}
           />
         ))}
       </ScrollView>
@@ -189,7 +200,16 @@ interface WallPageProps {
  * whole wall as one picture, and the window. Transparent touch zones and the
  * labels lie on top.
  */
-function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: WallPageProps) {
+const WallPage = memo(function WallPage({
+  wall,
+  fit,
+  shelf,
+  width,
+  height,
+  floor,
+  onOpen,
+  onNew,
+}: WallPageProps) {
   const { cell } = fit;
   const pixelRatio = PixelRatio.get();
   const pageLeft = wall.wall.index * width;
@@ -286,7 +306,7 @@ function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: Wal
         ))}
     </View>
   );
-}
+});
 
 /**
  * The window in its own small canvas, so that only it redraws a few times
