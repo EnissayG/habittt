@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PixelRatio, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { dayAt, daysBetween, usedRows } from '../../domain';
+import { daysBetween, usedRows } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { NumberText } from '../components/NumberText';
@@ -10,7 +10,6 @@ import { Screen } from '../components/Screen';
 import { Sheet } from '../components/Sheet';
 import { TopBar } from '../components/TopBar';
 import { dayMonth, days, lowerFirst } from '../format';
-import { DaySheet } from '../habit/DaySheet';
 import { FallingDrop } from '../habit/FallingDrop';
 import { NoteSheet } from '../habit/NoteSheet';
 import { RelapseSheet } from '../habit/RelapseSheet';
@@ -30,7 +29,6 @@ type OpenSheet =
   | 'menu'
   | 'water'
   | 'relapse'
-  | { kind: 'day'; day: number }
   | { kind: 'note'; day: number }
   | { kind: 'askNote'; day: number }
   | null;
@@ -139,15 +137,6 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
             />
           )}
 
-          {dayOpen?.kind === 'day' && openEntry && (
-            <DaySheet
-              day={openEntry}
-              today={tracker.today()}
-              onWrite={() => setSheet({ kind: 'note', day: dayOpen.day })}
-              onClose={() => setSheet(null)}
-            />
-          )}
-
           {dayOpen?.kind === 'askNote' && (
             <Sheet visible onClose={() => setSheet(null)}>
               <Text style={styles.sheetTitle}>{"C'est noté."}</Text>
@@ -216,18 +205,15 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
       <View style={styles.scene}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="La plante : touche un endroit pour voir son jour"
-          onPress={(event) => {
-            const { locationX, locationY } = event.nativeEvent;
-            const day = dayAt(plant, locationX / scale.cellSize, locationY / scale.cellSize);
-            if (day !== null && entryOf(day)) setSheet({ kind: 'day', day });
-          }}
+          accessibilityLabel="La plante : ouvrir son journal"
+          onPress={() => navigation.navigate('Journal', { id })}
         >
           <PlantPixels image={plant} cellSize={scale.cellSize} />
         </Pressable>
         {counterInside && counter}
         <FallingDrop drop={drops} distance={freeAbove} />
       </View>
+      <Text style={styles.hint}>Touche la plante pour ouvrir son journal.</Text>
 
       <View>
         <Text style={styles.name}>{habit.name}</Text>
@@ -263,6 +249,7 @@ const styles = StyleSheet.create({
   countLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
   name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
   traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  hint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   facts: { flexDirection: 'row', gap: 32 },
   factLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
