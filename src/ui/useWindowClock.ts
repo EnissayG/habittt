@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, AppState } from 'react-native';
 
-/** Frames per second of the window: pixel art needs only a few. */
-const FPS = 4;
+/** Frames per second of the window: one per beat of drawWindow. */
+const FPS = 6;
 
 /**
  * Animation time of the window, in seconds, advancing a few times per

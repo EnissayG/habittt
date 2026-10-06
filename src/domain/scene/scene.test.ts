@@ -1,4 +1,4 @@
-import { drawWindow, GLASS, WINDOW_SIZE } from './drawWindow';
+import { BEATS_PER_SECOND, drawWindow, GLASS, STARS, WINDOW_SIZE } from './drawWindow';
 import type { SceneImage, SceneTone } from './sceneImage';
 import { WINDOW_VIEWS } from './windowView';
 
@@ -87,12 +87,69 @@ describe('drawWindow, animated', () => {
     expect(Math.abs(shift)).toBeLessThanOrEqual(8);
   });
 
-  it('makes the stars twinkle at night', () => {
-    const stars = (t: number) =>
-      drawWindow('night', t).pixels.filter((p) => p?.tone === 'star').length;
-    const counts = new Set([0, 0.5, 1, 1.5, 2, 2.5, 3].map(stars));
-    expect(counts.size).toBeGreaterThan(1);
-    for (const count of counts) expect(count).toBeGreaterThan(5);
+  describe('stars', () => {
+    const STAR_TONES = ['star', 'starBright', 'starDim', 'starFaint'];
+    // A passing cloud may hide a star for a while; nothing else may.
+    const VISIBLE_OR_CLOUDED = [...STAR_TONES, 'cloud', 'cloudShade'];
+    const frames = Array.from({ length: 250 }, (_, beat) =>
+      drawWindow('night', beat / BEATS_PER_SECOND),
+    );
+    const toneOf = (image: SceneImage, [x, y]: readonly [number, number, number, number]) =>
+      image.pixels[(GLASS.y + y) * WINDOW_SIZE.width + GLASS.x + x]?.tone ?? null;
+
+    it('never lets a star appear or disappear: it only changes brightness', () => {
+      for (const image of frames)
+        for (const star of STARS) expect(VISIBLE_OR_CLOUDED).toContain(toneOf(image, star));
+    });
+
+    it('gives every star all its levels of brightness, each at its own rhythm', () => {
+      const histories = STARS.map((star) => frames.map((image) => toneOf(image, star)));
+      for (const history of histories)
+        for (const tone of STAR_TONES) expect(history).toContain(tone);
+      expect(new Set(histories.map((history) => history.join())).size).toBe(STARS.length);
+    });
+
+    it('never changes all the stars at once', () => {
+      for (let i = 1; i < frames.length; i++) {
+        const changed = STARS.filter(
+          (star) => toneOf(frames[i]!, star) !== toneOf(frames[i - 1]!, star),
+        );
+        expect(changed.length).toBeLessThanOrEqual(STARS.length * 0.75);
+      }
+    });
+  });
+
+  it('lets a shooting star pass now and then', () => {
+    // Outside the stars' own places, a bright pixel can only be the meteor.
+    const starPlaces = new Set(
+      STARS.map(([x, y]) => (GLASS.y + y) * WINDOW_SIZE.width + GLASS.x + x),
+    );
+    const meteorAt = (t: number) =>
+      drawWindow('night', t).pixels.some((p, i) => p?.tone === 'starBright' && !starPlaces.has(i));
+    const moments = Array.from({ length: 240 }, (_, i) => i / 4);
+    const passing = moments.filter(meteorAt);
+    expect(passing.length).toBeGreaterThan(0);
+    expect(passing.length).toBeLessThan(moments.length / 5);
+  });
+
+  it('lets smoke rise from the chimney, in every view', () => {
+    const smoke = (view: (typeof WINDOW_VIEWS)[number], t: number) =>
+      drawWindow(view, t).pixels.flatMap((p, i) => (p?.tone === 'smoke' ? [i] : []));
+    for (const view of WINDOW_VIEWS) {
+      expect(smoke(view, 0).length).toBeGreaterThan(0);
+      expect(smoke(view, 1)).not.toEqual(smoke(view, 0));
+    }
+  });
+
+  it('makes the lamp of the house flicker after dark only', () => {
+    const glows = (view: (typeof WINDOW_VIEWS)[number]) =>
+      Array.from({ length: 120 }, (_, beat) => beat / BEATS_PER_SECOND).some((t) =>
+        drawWindow(view, t).pixels.some((p) => p?.tone === 'windowGlow'),
+      );
+    expect(glows('night')).toBe(true);
+    expect(glows('evening')).toBe(true);
+    expect(glows('day')).toBe(false);
+    expect(glows('winter')).toBe(false);
   });
 
   it('lets the snow fall in winter, and only then', () => {
@@ -102,6 +159,19 @@ describe('drawWindow, animated', () => {
       );
     expect(flakes('winter', 2)).not.toEqual(flakes('winter', 0));
     expect(flakes('day', 2)).toEqual([]);
+  });
+
+  it('lets each snowflake fall at its own speed', () => {
+    // Flakes do not move as one block: the set of rows they occupy changes shape.
+    const rows = (t: number) =>
+      drawWindow('winter', t)
+        .pixels.flatMap((p, i) => (p?.tone === 'snow' && insideGlass(i) ? [i] : []))
+        .map((i) => Math.floor(i / WINDOW_SIZE.width));
+    const shape = (t: number) =>
+      rows(t)
+        .map((row) => row - Math.min(...rows(t)))
+        .join();
+    expect(shape(3)).not.toEqual(shape(0));
   });
 
   it('is deterministic for a given t', () => {

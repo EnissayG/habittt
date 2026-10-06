@@ -184,17 +184,22 @@ describe('habit tracker use cases', () => {
   });
 
   describe('openingPlant', () => {
-    it('shows a grown bonsai when there is no habit', async () => {
-      expect(await setup().tracker.openingPlant()).toEqual(
-        renderPlant({ species: 'bonsai', seed: 12, elapsedDays: MAX_GROWTH_DAYS, relapseDays: [] }),
-      );
+    const bonsai = renderPlant({
+      species: 'bonsai',
+      seed: 12,
+      elapsedDays: MAX_GROWTH_DAYS,
+      relapseDays: [],
     });
 
-    it("shows the oldest habit's plant", async () => {
+    it('shows a grown bonsai when there is no habit', async () => {
+      expect(await setup().tracker.openingPlant()).toEqual(bonsai);
+    });
+
+    it('shows the same bonsai whatever the habits are', async () => {
       const { tracker } = setup();
       const added = await tracker.addHabit({ name: 'A', startDate: day(-5), species: 'aloe' });
       if (!added.ok) throw new Error('setup failed');
-      expect((await tracker.openingPlant()).species).toBe('aloe');
+      expect(await tracker.openingPlant()).toEqual(bonsai);
     });
   });
 });

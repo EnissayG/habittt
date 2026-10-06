@@ -7,9 +7,16 @@ import type { WindowView } from './windowView';
 // (docs/prototypes/maquette-habittt.html). As wide as two plants.
 //
 // Animated: the picture is a stack of layers, each a function of (view, t),
-// t in seconds. Only the view through the glass moves (clouds drift, stars
-// twinkle, snow falls), in whole pixels; the frame and the curtains never
-// change. t = 0 is the still window.
+// t in seconds. Only the view through the glass moves, in whole pixels; the
+// frame and the curtains never change. t = 0 is the still window.
+//
+// What moves (the mockup's animated drawWindow(cv, t) is the reference):
+// - day and evening: clouds cross the sky, smoke rises from the chimney,
+//   the sun's rays breathe;
+// - night: each star has its own rhythm and several levels of brightness
+//   (it never just appears or disappears), a shooting star passes now and
+//   then, the house's window flickers;
+// - winter: each snowflake falls at its own speed, swaying.
 
 export const WINDOW_SIZE = { width: PLANT_GRID.width * 2, height: 46 } as const;
 
@@ -27,33 +34,23 @@ const BAYER = [
   [15, 7, 13, 5],
 ];
 
-const STARS = [
-  [5, 4],
-  [12, 2],
-  [19, 9],
-  [27, 5],
-  [34, 12],
-  [41, 3],
-  [47, 8],
-  [65, 13],
-  [9, 13],
-  [30, 16],
-];
+/** Each star: x, y, phase and period (in beats) of its own rhythm. */
+export const STARS = [
+  [5, 4, 0, 23],
+  [12, 2, 7, 31],
+  [19, 9, 3, 17],
+  [27, 5, 11, 29],
+  [31, 13, 5, 37],
+  [41, 3, 2, 19],
+  [47, 8, 9, 41],
+  [62, 17, 4, 27],
+  [9, 13, 13, 33],
+  [30, 16, 1, 21],
+  [52, 15, 6, 25],
+  [22, 3, 10, 35],
+] as const;
 
-const SNOWFLAKES = [
-  [3, 9],
-  [10, 15],
-  [18, 6],
-  [25, 18],
-  [33, 11],
-  [44, 5],
-  [52, 16],
-  [61, 10],
-  [67, 19],
-  [6, 22],
-  [38, 21],
-  [57, 23],
-];
+const SNOWFLAKE_COUNT = 16;
 
 const TREES = [
   [7, 7],
@@ -68,10 +65,14 @@ const { x: gx, y: gy, width: gw, height: gh } = GLASS;
 const ground = gy + gh;
 
 /** Pixels per second. Slow: it is a window, not a screen saver. */
-const CLOUD_SPEEDS = [0.4, 0.25] as const;
-const SNOW_SPEED = 3;
-/** Star twinkles per second. */
-const TWINKLE_RATE = 2;
+const CLOUD_SPEEDS = [0.7, 0.45] as const;
+/** Beats per second: the rhythm of everything that changes step by step. */
+export const BEATS_PER_SECOND = 6;
+/** A shooting star crosses once per this many beats (15 s), for 7 beats. */
+const METEOR_PERIOD = 90;
+const METEOR_BEATS = 7;
+
+const beatOf = (t: number) => Math.floor(t * BEATS_PER_SECOND);
 
 /** Opaque rectangle clipped to the glass (things moving behind the frame). */
 function fillGlass(c: SceneCanvas, x: number, y: number, w: number, h: number, tone: SceneTone) {
@@ -107,11 +108,27 @@ const sky: Layer = (c) => {
   }
 };
 
+/** Brightness of a star on a given beat: it changes, it never vanishes. */
+function starTone(beat: number, phase: number, period: number): SceneTone {
+  const k = (beat + phase * 3) % period;
+  if (k < 2) return 'starBright';
+  if (k < 5 || k > period - 3) return 'star';
+  return k % 7 < 5 ? 'starDim' : 'starFaint';
+}
+
 const celestial: Layer = (c, view, t) => {
+  const beat = beatOf(t);
   if (view === 'day') {
     c.fill(gx + 58, gy + 3, 5, 5, 'sun');
     c.fill(gx + 59, gy + 2, 3, 7, 'sun');
     c.fill(gx + 59, gy + 4, 3, 3, 'sunCore');
+    // Four rays that come and go, once a second.
+    if (Math.floor(beat / 6) % 2 === 1) {
+      c.fill(gx + 56, gy + 5, 1, 1, 'sun');
+      c.fill(gx + 64, gy + 5, 1, 1, 'sun');
+      c.fill(gx + 60, gy, 1, 1, 'sun');
+      c.fill(gx + 60, gy + 10, 1, 1, 'sun');
+    }
   }
   if (view === 'winter') {
     c.fill(gx + 56, gy + 4, 5, 5, 'paleSun');
@@ -123,15 +140,25 @@ const celestial: Layer = (c, view, t) => {
     c.fill(gx + 22, ground - 12, 3, 3, 'sunCore');
   }
   if (view === 'night') {
+    for (const [x, y, phase, period] of STARS) {
+      const tone = starTone(beat, phase, period);
+      if (tone === 'starBright') {
+        // At its brightest a star is a small cross.
+        fillGlass(c, gx + x - 1, gy + y, 3, 1, 'starGlow');
+        fillGlass(c, gx + x, gy + y - 1, 1, 3, 'starGlow');
+      }
+      c.fill(gx + x, gy + y, 1, 1, tone);
+    }
+    const k = beat % METEOR_PERIOD;
+    if (beat > 0 && k < METEOR_BEATS) {
+      const trail = ['starBright', 'starDim', 'starFaint', 'starFaint'] as const;
+      trail.forEach((tone, i) =>
+        fillGlass(c, gx + 10 + k * 3 - i * 2, gy + 2 + k - Math.floor(i * 0.7), 1, 1, tone),
+      );
+    }
     c.fill(gx + 56, gy + 3, 5, 6, 'moon');
     c.fill(gx + 57, gy + 2, 3, 8, 'moon');
     c.fill(gx + 58, gy + 3, 3, 5, 'sky0'); // the crescent's bite
-    // A star or two rests for a moment, a different one each beat.
-    const beat = Math.floor(t * TWINKLE_RATE);
-    STARS.forEach(([x, y], i) => {
-      const resting = beat > 0 && (i * 7 + beat * 3) % 9 === 0;
-      if (!resting) c.fill(gx + x!, gy + y!, 1, 1, 'star');
-    });
   }
 };
 
@@ -158,14 +185,25 @@ const hills: Layer = (c) => {
   }
 };
 
-const house: Layer = (c) => {
+const house: Layer = (c, view, t) => {
   const hx = gx + 40;
   const hy = ground - 11;
+  const beat = beatOf(t);
+  c.fill(hx + 6, hy - 1, 1, 2, 'roof'); // the chimney
+  // Four puffs of smoke rise one after the other, swaying and thinning out.
+  for (let i = 0; i < 4; i++) {
+    const k = (beat / 3 + i * 2.5) % 10;
+    if (k >= 9) continue;
+    const px = hx + 6 + Math.round(sin(k * 0.9 + i) * 1.2 + k * 0.3);
+    fillGlass(c, px, hy - 2 - Math.floor(k), k < 3 ? 1 : 2, 1, 'smoke');
+  }
   c.fill(hx, hy + 3, 8, 5, 'houseWall');
   c.fill(hx - 1, hy + 2, 10, 1, 'roof');
   c.fill(hx, hy + 1, 8, 1, 'roof');
   c.fill(hx + 2, hy, 4, 1, 'roof');
-  c.fill(hx + 2, hy + 5, 2, 2, 'windowLit');
+  // After dark the lamp inside flickers for a moment, every six seconds.
+  const flicker = (view === 'night' || view === 'evening') && beat > 0 && beat % 37 < 2;
+  c.fill(hx + 2, hy + 5, 2, 2, flicker ? 'windowGlow' : 'windowLit');
   c.fill(hx + 5, hy + 5, 2, 3, 'trunk'); // the door
 };
 
@@ -187,13 +225,15 @@ const trees: Layer = (c, view) => {
   }
 };
 
-/** Snow falls through the glass, swaying by one pixel. */
+/** Snow: each flake falls at its own speed and sways from side to side. */
 const snow: Layer = (c, view, t) => {
   if (view !== 'winter') return;
-  for (const [x, y] of SNOWFLAKES) {
-    const fallen = y! + Math.floor(t * SNOW_SPEED);
-    const sway = Math.floor(fallen / 6) % 2;
-    fillGlass(c, gx + wrap(x! + sway, gw), gy + wrap(fallen, gh), 1, 1, 'snow');
+  const beat = beatOf(t);
+  for (let i = 0; i < SNOWFLAKE_COUNT; i++) {
+    const speed = 0.35 + (i % 3) * 0.2; // rows per beat
+    const y = Math.floor(i * 7 + beat * speed) % gh;
+    const x = wrap(i * 13 + 5 + Math.round(sin((beat + i * 9) / 7) * 1.5), gw);
+    c.fill(gx + x, gy + y, 1, 1, 'snow');
   }
 };
 
@@ -239,7 +279,7 @@ const sill: Layer = (c) => {
   c.blend(8, 44, 80, 1, { kind: 'tone', tone: 'shadow' }, 0.12);
 };
 
-/** Bottom to top. Only clouds, celestial and snow depend on t. */
+/** Bottom to top. Only celestial, clouds, house and snow depend on t. */
 const LAYERS: readonly Layer[] = [
   frame,
   sky,

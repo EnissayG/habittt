@@ -118,10 +118,8 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       };
     },
 
-    /** The plant of the opening screen: the oldest habit's, or a grown bonsai. */
+    /** The plant of the opening screen: always the same grown bonsai, the app's emblem. */
     async openingPlant(): Promise<PlantImage> {
-      const [oldest] = await oldestFirst();
-      if (oldest) return (await detail(oldest, clock.today())).plant;
       return renderPlant({ ...OPENING_DEFAULT, elapsedDays: MAX_GROWTH_DAYS, relapseDays: [] });
     },
 
