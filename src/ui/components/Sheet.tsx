@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, BackHandler, Pressable, StyleSheet } from 'react-native';
+import {
+  Animated,
+  BackHandler,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '../theme/tokens';
@@ -41,7 +48,11 @@ export function Sheet({ visible, onClose, children }: SheetProps) {
 
   if (!visible) return null;
   return (
-    <Animated.View style={StyleSheet.absoluteFill} accessibilityViewIsModal>
+    <KeyboardAvoidingView
+      style={[StyleSheet.absoluteFill, styles.root]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      accessibilityViewIsModal
+    >
       <Pressable style={styles.dim} onPress={onClose} accessibilityLabel="Fermer" />
       <Animated.View
         style={[
@@ -51,17 +62,14 @@ export function Sheet({ visible, onClose, children }: SheetProps) {
       >
         {children}
       </Animated.View>
-    </Animated.View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { justifyContent: 'flex-end' },
   dim: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.dim },
   sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     backgroundColor: colors.background,
     borderTopWidth: 3,
     borderTopColor: colors.strong,

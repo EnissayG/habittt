@@ -9,12 +9,14 @@ import { Screen } from '../components/Screen';
 import { Sheet } from '../components/Sheet';
 import { TopBar } from '../components/TopBar';
 import { dayMonth, lowerFirst } from '../format';
+import { FallingDrop } from '../habit/FallingDrop';
+import { NoteSheet } from '../habit/NoteSheet';
 import { RelapseSheet } from '../habit/RelapseSheet';
 import type { ScreenProps } from '../navigation/types';
 import { describePlant } from '../plant/labels';
 import { PlantPixels } from '../plant/PlantCanvas';
 import { pixelScale } from '../plant/pixelScale';
-import { colors, fonts, spacing } from '../theme/tokens';
+import { colors, fonts } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
 
@@ -22,6 +24,8 @@ import { useScreenData } from '../useLoader';
 const COUNTER_HEIGHT = 74;
 
 type OpenSheet = 'menu' | 'water' | 'relapse' | null;
+
+const notesLabel = (count: number) => `${count} ${count > 1 ? 'notes' : 'note'}`;
 
 /** How long a confirmation stays under the buttons. */
 const NOTICE_MS = 3000;
@@ -35,6 +39,8 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
   const { data: detail, reload } = useScreenData(load);
   const [sheet, setSheet] = useState<OpenSheet>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Counts waterings in this visit: each one lets a drop fall. */
+  const [drops, setDrops] = useState(0);
 
   useEffect(() => {
     if (!notice) return;
@@ -89,17 +95,25 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
             <Button label="Fermer" variant="quiet" onPress={() => setSheet(null)} />
           </Sheet>
 
-          <Sheet visible={sheet === 'water'} onClose={() => setSheet(null)}>
-            <View style={styles.sheetTitle}>
-              <PixelIcon name="drop" size={19} />
-              <Text style={styles.sheetTitleText}>Arroser et écrire une note</Text>
-            </View>
-            <Text style={styles.body}>
-              Bientôt : tu pourras arroser ta plante et écrire une note pour ce jour. Écrire restera
-              toujours facultatif.
-            </Text>
-            <Button label="D'accord" variant="alt" onPress={() => setSheet(null)} />
-          </Sheet>
+          {sheet === 'water' && (
+            <NoteSheet
+              habitId={id}
+              date={tracker.today()}
+              dayNumber={detail.days.length}
+              initial={detail.todayNote}
+              mode="water"
+              alreadyWatered={detail.wateredToday}
+              onClose={() => setSheet(null)}
+              onDone={(done) => {
+                setSheet(null);
+                if (done === 'watered') {
+                  setNotice('Ta plante est arrosée.');
+                  setDrops((n) => n + 1);
+                } else setNotice("C'est noté.");
+                void reload();
+              }}
+            />
+          )}
 
           <RelapseSheet
             habitId={id}
@@ -133,6 +147,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
       <View style={styles.scene}>
         <PlantPixels image={plant} cellSize={scale.cellSize} />
         {counterInside && counter}
+        <FallingDrop drop={drops} distance={freeAbove} />
       </View>
 
       <View>
@@ -142,6 +157,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
       <View style={styles.chips}>
         <Chip label={`record ${stats.longestStreak} j`} />
         <Chip label={`depuis le ${dayMonth(habit.startDate, tracker.today())}`} />
+        {detail.notes.length > 0 && <Chip label={notesLabel(detail.notes.length)} />}
       </View>
     </Screen>
   );
@@ -155,8 +171,5 @@ const styles = StyleSheet.create({
   name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
   traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  sheetTitleText: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
   notice: { fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'center' },
 });
