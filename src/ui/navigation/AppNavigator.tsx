@@ -9,6 +9,7 @@ import { LabScreen } from '../screens/LabScreen';
 import { NewHabitNameScreen } from '../screens/NewHabitNameScreen';
 import { OpeningScreen } from '../screens/OpeningScreen';
 import { PlantChoiceScreen } from '../screens/PlantChoiceScreen';
+import { RetireScreen } from '../screens/RetireScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ShelfScreen } from '../screens/ShelfScreen';
 import { colors } from '../theme/tokens';
@@ -40,6 +41,7 @@ export function AppNavigator() {
           <Stack.Screen name="Shelf" component={ShelfScreen} options={{ animation: 'fade' }} />
           <Stack.Screen name="Habit" component={HabitScreen} />
           <Stack.Screen name="History" component={HistoryScreen} />
+          <Stack.Screen name="Retire" component={RetireScreen} />
           <Stack.Screen name="NewHabitName" component={NewHabitNameScreen} />
           <Stack.Screen name="PlantChoice" component={PlantChoiceScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />

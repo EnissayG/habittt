@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Shelf: undefined;
   Habit: { id: HabitId };
   History: { id: HabitId };
+  Retire: { id: HabitId };
   NewHabitName: undefined;
   PlantChoice: { name: string; startDate: LocalDate };
   Settings: undefined;
