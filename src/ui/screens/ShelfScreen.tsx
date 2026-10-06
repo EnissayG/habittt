@@ -126,7 +126,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
           </Text>
           <Text style={styles.subtitle} maxFontSizeMultiplier={MAX_FONT_SCALE}>
             {shelf.totals.plants} {shelf.totals.plants > 1 ? 'plantes' : 'plante'} ·{' '}
-            {days(shelf.totals.currentDays)} d'affilée
+            {`${days(shelf.totals.currentDays)} d'affilée`}
           </Text>
         </View>
         <View style={styles.headerActions}>
