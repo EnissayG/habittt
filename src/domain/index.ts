@@ -17,6 +17,15 @@ export {
   retireHabit,
   type RetireError,
 } from './retirement';
+export {
+  journalMonths,
+  monthCalendar,
+  monthEntries,
+  monthOf,
+  noteMonth,
+  type CalendarDay,
+  type MonthId,
+} from './calendar';
 export { normalizeHabitName } from './habitName';
 export {
   isActiveNote,
