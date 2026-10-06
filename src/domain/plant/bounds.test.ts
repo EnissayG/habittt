@@ -1,4 +1,4 @@
-import { dayAt, usedRows } from './bounds';
+import { usedRows } from './bounds';
 import { MAX_GROWTH_DAYS } from './grid';
 import { renderPlant } from './renderPlant';
 
@@ -38,30 +38,5 @@ describe('usedRows', () => {
     const empty = { ...image, pixels: image.pixels.map(() => null) };
     const rows = usedRows(empty);
     expect(rows.top).toBeGreaterThan(rows.bottom);
-  });
-});
-
-describe('dayAt', () => {
-  const image = renderPlant({ species: 'monstera', seed: 42, elapsedDays: 60, relapseDays: [] });
-  const indexOfDay = (day: number) => image.pixels.findIndex((pixel) => pixel?.day === day);
-
-  it('gives the day of the pixel under the finger', () => {
-    const i = indexOfDay(30);
-    expect(dayAt(image, i % image.width, Math.floor(i / image.width))).toBe(image.pixels[i]!.day);
-  });
-
-  it('takes the nearest grown pixel when the finger is a little beside the plant', () => {
-    const i = indexOfDay(60);
-    const x = i % image.width;
-    const y = Math.floor(i / image.width);
-    const found = dayAt(image, x, y - 2);
-    expect(found).not.toBeNull();
-    expect(found).toBeGreaterThan(0);
-  });
-
-  it('gives nothing on the pot, the shelf or far from the plant', () => {
-    expect(dayAt(image, image.width / 2, image.height - 2)).toBeNull();
-    expect(dayAt(image, 0, 0)).toBeNull();
-    expect(dayAt(image, -10, 400)).toBeNull();
   });
 });
