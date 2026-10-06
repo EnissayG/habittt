@@ -18,23 +18,23 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 2          | Navigation, écrans 1, 2, 3, 4, 5, 7, 8, fenêtre et plancher                          | fait (ADR 0006), **à tester sur téléphone** |
 | Phase 2 bis      | Étagère en murs, plein écran, plancher miroir                                        | fait (ADR 0007), testé                      |
 | Phase 2 ter      | Retours du test : panneaux, dates, mise en page, reflet, animation, Labo             | fait (ADR 0008), **à tester sur téléphone** |
-| Phase 3          | Notes et arrosage, retrait, jardin, réglages, renommer                               | à faire                                     |
+| Phase 3a         | Total de l'en-tête, notes et arrosage (écrans 5 à 8)                                 | fait (ADR 0009), **à tester sur téléphone** |
+| Phase 3b         | Retrait, jardin, réglages, renommer                                                  | à faire, après le test                      |
 
-Chiffres au dernier commit : 426 tests, typecheck, lint et `expo-doctor`
-(21/21) au vert, bundles iOS et Android compilés.
+Chiffres au dernier commit : 495 tests, typecheck et lint au vert, bundles
+iOS et Android compilés. `expo-doctor` : 20/21, trois mises à jour de
+correctif publiées depuis (`expo` 57.0.27, `expo-asset` 57.0.19,
+`expo-sqlite` 57.0.4) ; à appliquer avec `npx expo install --check` quand
+tu le décides.
 
 ## Ce qui reste
 
-### Phase 3 (prochaine)
+### Phase 3b (prochaine, après le test des notes)
 
 Décisions déjà prises : voir
 [architecture.md, section « Prévu en phase 3 »](architecture.md). À faire :
 
-1. **Écran 6, notes et arrosage** : remplacer le panneau « Bientôt » de
-   l'écran 5 par le vrai panneau ; chip « N notes » sur l'écran 5 ; notes
-   encadrées dans la grille et listées sous l'historique (écran 7) ; petite
-   fleur sur le jour arrosé ; toucher la plante affiche le jour et sa note.
-   Après une rechute (écran 8), proposer d'écrire une note.
+1. Les notes et l'arrosage sont faits (ADR 0009).
 2. **Écran 9, retirer** : par appui long sur l'étagère ou par le menu de
    l'écran 5, jamais par glissement (il sert à changer de mur) ; « Elle rejoint le jardin » ou « Je
    la donne » ; « Tout effacer définitivement » avec une seconde
@@ -53,12 +53,26 @@ Décisions déjà prises : voir
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
 marques après 120 jours, meubles et décors.
 
-### À vérifier sur téléphone (phase 2 ter)
+### À vérifier sur téléphone (phase 3a)
+
+- Le total de l'en-tête : la somme des nombres sous les plantes, « jours
+  d'affilée ».
+- Arroser, avec et sans note ; la goutte qui tombe ; la petite fleur sur
+  une plante de moins de 120 jours ; « Ta plante est arrosée. ».
+- Le panneau au-dessus du clavier pendant qu'on écrit.
+- Toucher la plante : le bon jour, sa note, « Écrire une note » pour un
+  jour passé.
+- Après une rechute, la proposition d'écrire un mot.
+- L'historique : jours à note encadrés en rose, notes listées, modifiables.
+- La migration n°3 sur ta vraie base (tes habitudes doivent rester).
+- La démo du Labo, qui contient maintenant des notes et des arrosages.
+
+### Toujours à vérifier (phase 2 ter)
 
 - L'ouverture : toujours le bonsaï, 1,5 s (après avoir fermé complètement
   Expo Go).
-- Les panneaux : arrosage (« Bientôt »), menu, rechute ; « C'est noté. »
-  après une rechute ; une seconde rechute le même jour propose de l'annuler.
+- Les panneaux : menu, rechute ; une seconde rechute le même jour propose
+  de l'annuler.
 - L'année dans « depuis le … » pour une date d'une autre année.
 - Plus de coupure entre deux places de la tablette.
 - La mise en page : fenêtre sous l'en-tête, rangées espacées, plancher plus

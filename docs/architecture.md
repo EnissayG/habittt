@@ -90,7 +90,9 @@ violée (voir `eslint.config.js`).
 
 ## Modèle de données
 
-Deux entités, dans `src/domain/habit.ts` et `src/domain/relapse.ts` :
+Deux entités principales, dans `src/domain/habit.ts` et `src/domain/relapse.ts`
+(les notes et les arrosages, ajoutés en phase 3, sont décrits dans
+[l'ADR 0009](decisions/0009-notes-et-arrosage.md)) :
 
 ```ts
 type HabitId = string; // UUID
@@ -473,6 +475,7 @@ Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
 | 3. Le nom et la date     | `NewHabitNameScreen` | `checkHabitName()`              |
 | 4. Le choix de la plante | `PlantChoiceScreen`  | `addHabit()`                    |
 | 5. Une habitude          | `HabitScreen`        | `getHabit()`                    |
+| 6. Arroser, une note     | `habit/NoteSheet`    | `waterToday()`, `saveNote()`    |
 | 7. Historique            | `HistoryScreen`      | `getHabit()`, `toggleRelapse()` |
 | 8. Une rechute           | `habit/RelapseSheet` | `recordRelapse()`               |
 | 11. Réglages             | `SettingsScreen`     | (phase 3)                       |
@@ -542,22 +545,25 @@ forme.
 - Les principes sont respectés : la plante ne meurt jamais, la soif et la
   fatigue sont toujours récupérables.
 
+## Notes et arrosage (phase 3, fait)
+
+Décisions détaillées dans [l'ADR 0009](decisions/0009-notes-et-arrosage.md).
+
+- **Notes datées** (`note.ts`) : une par habitude et par jour, facultative,
+  modifiable, une seule humeur ; la vider la supprime logiquement.
+- **Arrosage** (`watering.ts`) : un par jour, aujourd'hui seulement, sans
+  pénalité. Un jour arrosé fleurit sur un seul pixel (`bloom`), la forme ne
+  change jamais ; au-delà du 120ᵉ jour, rien ne fleurit. La date du dernier
+  arrosage servira à la vitalité (soif), plus tard.
+- **Toucher la plante** (`dayAt`) : le pixel poussé le plus proche du doigt
+  donne le jour, dont on affiche la note.
+- **Migration SQLite n°3** : tables `notes` et `waterings`.
+
 ## Prévu en phase 3 (décidé, pas encore construit)
 
-Choix validés pendant la conception ; le détail se fera au début de la
-phase 3. Voir aussi [etat.md](etat.md).
+Choix validés pendant la conception ; le détail se fera au moment de les
+construire. Voir aussi [etat.md](etat.md).
 
-- **Notes datées** : `Note { id, habitId, date, text, mood, updatedAt, deletedAt }`.
-  Une note par jour et par habitude, facultative, modifiable ; identifiant
-  déterministe calculé à partir de `(habitId, date)`, comme les rechutes.
-  **Une seule humeur par note**, choisie dans une liste fixe (celle de la
-  maquette : fier, envie forte, stress, facile).
-- **Arrosage** : un geste facultatif et sans pénalité, enregistré par jour ; on
-  peut arroser sans écrire. Après l'arrosage, une petite fleur marque le jour
-  sur la plante (changement d'apparence, jamais de forme). La date du dernier
-  arrosage servira à la vitalité (soif), plus tard.
-- **Toucher la plante** : chaque pixel connaît son jour ; on prend le pixel
-  le plus proche du doigt et on affiche le jour et sa note.
 - **Retirer une habitude** : par un appui long sur la plante ou par le menu
   de l'habitude, jamais par un glissement (réservé au passage d'un mur à
   l'autre). Un statut (sur l'étagère, au jardin, donnée),
@@ -566,8 +572,8 @@ phase 3. Voir aussi [etat.md](etat.md).
   « Tout effacer définitivement » supprime le contenu (vie privée) mais garde
   une **trace minimale** (identifiant et date de suppression) pour que la
   future synchronisation ne fasse pas réapparaître l'habitude.
-- **Migration SQLite n°3** : tables des notes et des arrosages, colonnes de
-  statut, de date de retrait, `updatedAt` et `deletedAt` sur `habits`.
+- **Migration SQLite n°4** : colonnes de statut, de date de retrait,
+  `updatedAt` et `deletedAt` sur `habits`.
 - **Comptes et synchronisation (Supabase)**, plus tard : une seconde
   implémentation des repositories dans `data/`. Fusion ligne à ligne par
   identifiant, la version au `updatedAt` le plus récent gagne.
