@@ -108,6 +108,14 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
                 navigation.navigate('History', { id });
               }}
             />
+            <Button
+              label="Retirer"
+              variant="alt"
+              onPress={() => {
+                setSheet(null);
+                navigation.navigate('Retire', { id });
+              }}
+            />
             <Button label="Fermer" variant="quiet" onPress={() => setSheet(null)} />
           </Sheet>
 
