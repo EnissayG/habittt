@@ -479,7 +479,7 @@ Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
 | 4. Le choix de la plante | `PlantChoiceScreen`  | `addHabit()`                    |
 | 5. Une habitude          | `HabitScreen`        | `getHabit()`                    |
 | 6. Arroser, une note     | `habit/NoteSheet`    | `waterToday()`, `saveNote()`    |
-| 7. Historique            | `HistoryScreen`      | `getHabit()`, `toggleRelapse()` |
+| 7. Journal               | `JournalScreen`      | `getHabit()`, `toggleRelapse()` |
 | 8. Une rechute           | `habit/RelapseSheet` | `recordRelapse()`               |
 | 9. Retirer               | `RetireScreen`       | `retireHabit()`, `eraseHabit()` |
 | 11. Réglages             | `SettingsScreen`     | (phase 3)                       |
@@ -566,8 +566,9 @@ Décisions détaillées dans [l'ADR 0009](decisions/0009-notes-et-arrosage.md).
   pénalité. Un jour arrosé fleurit sur un seul pixel (`bloom`), la forme ne
   change jamais ; au-delà du 120ᵉ jour, rien ne fleurit. La date du dernier
   arrosage servira à la vitalité (soif), plus tard.
-- **Toucher la plante** (`dayAt`) : le pixel poussé le plus proche du doigt
-  donne le jour, dont on affiche la note.
+- **Le journal** (`calendar.ts`, ADR 0012) : toucher la plante, n'importe
+  où, ouvre un calendrier d'un mois à la fois et les notes et rechutes du
+  mois ; toucher un jour ouvre son panneau (note, rechute).
 - **Migration SQLite n°3** : tables `notes` et `waterings`.
 
 ## Retirer et effacer (phase 3, fait)
