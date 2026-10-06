@@ -442,12 +442,54 @@ Les pixels sont regroupés par couleur (`buildColorRuns`) : un chemin Skia
 par couleur, fait de rectangles fusionnés par ligne. La plante grandit par
 paliers et se centre dans l'espace disponible.
 
+`PlantCanvas` repose sur `PixelCanvas`, un composant générique qui dessine
+n'importe quelle grille (plantes, fenêtre, plancher, icônes) et peut n'en
+montrer qu'une bande de lignes (recadrage sur l'étagère).
+
 ### Écran « Labo »
 
-Accessible depuis l'accueil, **seulement en mode développement** (`__DEV__`).
-Il appelle directement `renderPlant` : choix de l'espèce, de la graine, du
-nombre de jours (1 à 120) et de deux jours de rechute, avec la plante mise à
-jour en direct. Il ne lit ni n'écrit la base.
+Accessible depuis l'étagère, **seulement en mode développement** (`__DEV__`).
+Il appelle directement le domaine : choix de l'espèce, de la graine, du
+nombre de jours (1 à 120), de deux jours de rechute, et de la vue de la
+fenêtre (jour, soir, nuit, hiver), avec la plante, la fenêtre et le plancher
+mis à jour en direct. Il ne lit ni n'écrit la base.
+
+## Les écrans (`src/ui/screens/`)
+
+Décisions détaillées dans
+[l'ADR 0006](decisions/0006-ecrans-et-etagere.md). Cible visuelle :
+`docs/prototypes/maquette-habittt.html`.
+
+Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
+écran dessine sa barre du haut ; les panneaux montent du bas (`Sheet`).
+
+| Écran                    | Fichier              | Données (cas d'usage)           |
+| ------------------------ | -------------------- | ------------------------------- |
+| 1. Ouverture             | `OpeningScreen`      | `openingPlant()`                |
+| 2. L'étagère             | `ShelfScreen`        | `getShelf()`                    |
+| 3. Le nom et la date     | `NewHabitNameScreen` | `checkHabitName()`              |
+| 4. Le choix de la plante | `PlantChoiceScreen`  | `addHabit()`                    |
+| 5. Une habitude          | `HabitScreen`        | `getHabit()`                    |
+| 7. Historique            | `HistoryScreen`      | `getHabit()`, `toggleRelapse()` |
+| 8. Une rechute           | `habit/RelapseSheet` | `recordRelapse()`               |
+| 11. Réglages             | `SettingsScreen`     | (phase 3)                       |
+
+### L'étagère
+
+- **Disposition** (`arrangeShelf`, domaine) : à côté de la fenêtre, la plus
+  ancienne plante retombante (sinon la plus ancienne plante) ; les autres
+  plantes retombantes dans leurs propres rangées sous la fenêtre ; puis les
+  tablettes de trois, terminées par le pot en pointillé.
+- **Rangées** (`ui/shelf/shelfRows.ts`) : chaque rangée montre la bande de
+  lignes réellement occupée par sa plante la plus haute ; rien n'est coupé.
+- **Une seule échelle entière** pour la scène : trois plantes sur la largeur
+  de l'écran.
+- **Fenêtre et plancher** (`drawWindow`, `drawRoom`, domaine) : tons
+  symboliques et calques translucides ; `scenePalette.ts` donne les couleurs
+  de chaque vue et mélange les calques. La fenêtre est une pile de couches
+  `(vue, t)`, prête à être animée.
+- **La vue** (`windowView`, domaine) : nuit de 21 h à 6 h, soir de 18 h à
+  21 h, sinon jour, enneigé de décembre à février.
 
 ## Prévu pour l'étape suivante : la vitalité (documenté, non conçu)
 

@@ -30,7 +30,8 @@ Voir `docs/architecture.md` et `docs/decisions/`.
   interfaces de repository. Aucun import de React, Expo, SQLite, Skia, Zustand.
   Tout y est testé.
 - `src/data/` : implémentations des repositories (SQLite ; Supabase plus tard).
-- `src/ui/` : écrans et composants. Affichent et délèguent, ne calculent pas.
+- `src/ui/` : écrans (React Navigation, pile native) et composants. Affichent et
+  délèguent, ne calculent pas. Cible visuelle : `docs/prototypes/maquette-habittt.html`.
 - `App.tsx` : racine de composition, seul endroit qui relie les trois couches.
 - Règle : `ui -> domain <- data`. Le domaine n'importe jamais les deux autres.
   Appliquée par ESLint, ne pas la contourner.
@@ -53,7 +54,6 @@ L'API Expo change à chaque SDK : consulter https://docs.expo.dev/versions/v57.0
 - Code, identifiants et commits en anglais ; documentation en français.
 - Couleurs et polices : uniquement les rôles de `src/ui/theme/`, jamais en dur.
 - Commits atomiques : un changement logique par commit.
-- Décision d'architecture importante : nouvel ADR dans `docs/decisions/`
-  (`NNNN-titre.md`).
+- Décision d'architecture importante : nouvel ADR `docs/decisions/NNNN-titre.md`.
 - Ne rien installer pour Supabase, les comptes ou les stores avant la
   fonctionnalité correspondante.

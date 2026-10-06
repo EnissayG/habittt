@@ -29,7 +29,8 @@ Guide détaillé, avec les problèmes courants :
   [0002 : rechutes et croissance](docs/decisions/0002-rechutes-et-croissance.md),
   [0003 : générateur de plantes](docs/decisions/0003-generateur-de-plantes.md),
   [0004 : rendu des plantes](docs/decisions/0004-rendu-des-plantes.md),
-  [0005 : générateur v2](docs/decisions/0005-generateur-v2.md)).
+  [0005 : générateur v2](docs/decisions/0005-generateur-v2.md),
+  [0006 : écrans et étagère](docs/decisions/0006-ecrans-et-etagere.md)).
 - [Idées pour plus tard](docs/idees.md).
 - [Tester avec Expo Go](docs/tester-avec-expo-go.md) : lancer l'app sur son
   téléphone, dépannage.

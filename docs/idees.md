@@ -3,21 +3,30 @@
 Idées notées, **à ne pas concevoir pour l'instant**. Chacune devra respecter
 les [principes du produit](architecture.md#principes-du-produit) le moment venu.
 
-## Pour l'étape suivante
+## Phase 3 (prévue)
 
-- **Un écran d'accueil** avec une plante et le nom « habittt ».
-- **L'étagère à la place de la liste** des habitudes.
-- **Glisser pour retirer une habitude**, avec confirmation et suppression
-  logique.
+- **Les notes et l'arrosage** (écran 6) : une note par jour, facultative, avec
+  une humeur choisie dans une liste fixe ; toucher la plante affiche le jour et
+  sa note.
+- **Retirer une habitude** (écran 9) par glissement, appui long ou menu, avec
+  confirmation et suppression logique ; « Tout effacer définitivement » garde
+  une trace minimale pour la synchronisation.
+- **Le jardin** (écran 10) : les plantes retirées, qui cessent de pousser.
+- **Les réglages** (écran 11).
+- **Renommer une habitude** (menu de l'écran 5).
 
-## Plus tard
+## Hors périmètre pour l'instant
 
-- **Partager une image de son étagère.**
-- **Autocollants et décorations à débloquer.**
-- **Un jardinier animé** qui passe de temps en temps.
-- **Une musique douce.**
+- **La musique et sa barre** (lecture, suivant, titre, égaliseur).
+- **La vitalité** de la plante : la soif et la fatigue (voir
+  [architecture.md](architecture.md)).
+- **Le compte et la synchronisation** (Supabase).
 - **Des marques de long terme après 120 jours** : une floraison mensuelle, un
   pot annuel.
-- **Retirer une habitude**, qu'elle soit réussie ou abandonnée.
-- **Pas de limite au nombre d'habitudes** : trois plantes par tablette, une
-  nouvelle tablette quand elle est pleine.
+- **L'animation de la fenêtre** : nuages qui passent, neige qui tombe, étoiles
+  qui scintillent. Le dessin est déjà découpé en couches qui reçoivent un
+  temps `t`.
+- **Les meubles et éléments de décor à débloquer**, autocollants et
+  décorations.
+- **Partager une image de son étagère.**
+- **Un jardinier animé** qui passe de temps en temps.

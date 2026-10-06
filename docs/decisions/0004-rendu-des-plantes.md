@@ -1,6 +1,7 @@
 # 0004. Rendu des plantes et thème
 
-- **Statut :** accepté
+- **Statut :** accepté, complété par
+  [0006](0006-ecrans-et-etagere.md) (écrans, navigation, étagère)
 - **Date :** 2026-10-04
 - **Complète :** [0003](0003-generateur-de-plantes.md)
 
