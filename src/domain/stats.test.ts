@@ -7,7 +7,7 @@ const d = (value: string) => value as LocalDate;
 
 // The validated edge cases. D = startDate, A = today.
 //   [#, description, startDate, relapses, today, expected]
-const cases: [number, string, LocalDate, Relapse[], LocalDate, HabitStats][] = [
+const cases: [number, string, LocalDate, Relapse[], LocalDate, Streaks][] = [
   [1, 'start day, no relapse', TODAY, [], TODAY, stats(1, 1, 1)],
   [2, 'start day, relapse today', TODAY, [makeRelapse(TODAY)], TODAY, stats(0, 0, 1)],
   [3, 'D = A-9, no relapse', day(-9), [], TODAY, stats(10, 10, 10)],
@@ -62,13 +62,28 @@ const cases: [number, string, LocalDate, Relapse[], LocalDate, HabitStats][] = [
   ],
 ];
 
-function stats(currentStreak: number, longestStreak: number, totalDays: number): HabitStats {
+// The 17 validated cases check the streaks; clean days have their own test.
+type Streaks = Omit<HabitStats, 'cleanDays'>;
+
+function stats(currentStreak: number, longestStreak: number, totalDays: number): Streaks {
   return { currentStreak, longestStreak, totalDays };
 }
 
 describe('computeStats', () => {
   it.each(cases)('case %i: %s', (_n, _label, startDate, relapses, today, expected) => {
-    expect(computeStats({ startDate, relapses, today })).toEqual(expected);
+    expect(computeStats({ startDate, relapses, today })).toEqual(expect.objectContaining(expected));
+  });
+
+  it('counts clean days: total days minus active relapse days in range', () => {
+    const relapses = [
+      makeRelapse(day(-2)),
+      makeRelapse(day(-1)),
+      makeRelapse(day(-3), { deletedAt: NOW }), // cancelled
+      makeRelapse(day(1)), // after today
+      makeRelapse(day(-20)), // before start
+    ];
+    expect(computeStats({ startDate: day(-9), relapses, today: TODAY }).cleanDays).toBe(8);
+    expect(computeStats({ startDate: TODAY, relapses: [], today: day(-1) }).cleanDays).toBe(0);
   });
 
   it('does not depend on the order of relapses', () => {

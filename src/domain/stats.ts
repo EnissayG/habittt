@@ -8,6 +8,8 @@ export interface HabitStats {
   longestStreak: number;
   /** Days in [startDate, today], both ends included. */
   totalDays: number;
+  /** Days in [startDate, today] without an active relapse ("days won"). */
+  cleanDays: number;
 }
 
 export interface ComputeStatsParams {
@@ -19,7 +21,7 @@ export interface ComputeStatsParams {
 
 export function computeStats({ startDate, relapses, today }: ComputeStatsParams): HabitStats {
   const totalDays = daysBetween(startDate, today) + 1;
-  if (totalDays <= 0) return { currentStreak: 0, longestStreak: 0, totalDays: 0 };
+  if (totalDays <= 0) return { currentStreak: 0, longestStreak: 0, totalDays: 0, cleanDays: 0 };
 
   // Day indexes (0 = startDate) that hold an active relapse within range.
   const relapseDays = new Set(
@@ -37,5 +39,10 @@ export function computeStats({ startDate, relapses, today }: ComputeStatsParams)
     longest = Math.max(longest, run);
   }
 
-  return { currentStreak: run, longestStreak: longest, totalDays };
+  return {
+    currentStreak: run,
+    longestStreak: longest,
+    totalDays,
+    cleanDays: totalDays - relapseDays.size,
+  };
 }
