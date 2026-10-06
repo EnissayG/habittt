@@ -35,14 +35,19 @@ describe('demo data', () => {
     );
   });
 
-  it('has at least three hanging plants, several species and three walls', async () => {
+  it('has at least three hanging plants, several species, three walls of shelves and the decor', async () => {
     const shelf = await demoShelf();
     const species = DEMO_HABITS.map((h) => h.species);
     expect(
       species.filter((id) => resolveSpecies(id).species.hanging).length,
     ).toBeGreaterThanOrEqual(3);
     expect(new Set(species).size).toBeGreaterThanOrEqual(10);
-    expect(shelf.layout.walls).toHaveLength(3);
+    expect(shelf.layout.walls.map((wall) => wall.kind)).toEqual([
+      'plants',
+      'plants',
+      'plants',
+      'decor',
+    ]);
   });
 
   it('has a few notes and plants watered today', async () => {

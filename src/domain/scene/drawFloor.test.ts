@@ -1,3 +1,4 @@
+import { drawRug } from './drawDecor';
 import { drawFloor, FLOOR_ROWS, FLOOR_TOP } from './drawFloor';
 import type { RoomImage, RoomSource } from './roomPlan';
 import type { SceneImage } from './sceneImage';
@@ -129,6 +130,39 @@ describe('drawFloor', () => {
     (image.pixels as (RoomSource | null)[])[9 * 170 + 50] = plant;
     const floor = drawFloor({ room: image, rows: FLOOR_ROWS.max });
     expect(floor.pixels[FLOOR_TOP * 170 + 50]!.layers.at(-1)!.source).toBe(plant);
+  });
+
+  it('lays the rug over the planks, the reflection and the seams, opaque', () => {
+    const rug = drawRug();
+    const full = room(
+      170,
+      60,
+      Array.from(
+        { length: 170 * 60 },
+        (_, i) => [i % 170, Math.floor(i / 170)] as [number, number],
+      ),
+    );
+    const floor = drawFloor({
+      room: full,
+      rows: FLOOR_ROWS.min,
+      items: [{ x: 20, y: 2, image: rug }],
+    });
+    for (let y = 0; y < rug.height; y++) {
+      for (let x = 0; x < rug.width; x++) {
+        const below = floor.pixels[(2 + y) * 170 + 20 + x]!;
+        const pixel = rug.pixels[y * rug.width + x];
+        if (pixel) expect(below).toEqual(pixel);
+        else expect(below.tone).not.toMatch(/^rug/);
+      }
+    }
+  });
+
+  it('cuts what lies past the edges of the floor', () => {
+    const rug = drawRug();
+    const floor = drawFloor({ room: room(50, 10), rows: 8, items: [{ x: 10, y: 4, image: rug }] });
+    expect(floor.width).toBe(50);
+    expect(floor.height).toBe(8);
+    expect(floor.pixels.some((p) => p?.tone === 'rugA' || p?.tone === 'rugB')).toBe(true);
   });
 
   it('is deterministic', () => {

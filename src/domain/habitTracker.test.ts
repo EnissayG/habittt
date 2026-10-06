@@ -185,7 +185,7 @@ describe('habit tracker use cases', () => {
       // Smoking: relapse yesterday, 1 day in a row; Sugar: 3 days in a row.
       expect(shelf.totals).toEqual({ plants: 2, currentDays: 1 + 3 });
       expect(Object.keys(shelf.habits).sort()).toEqual([a.value.id, b.value.id].sort());
-      expect(shelf.layout.walls).toHaveLength(1);
+      expect(shelf.layout.walls.map((wall) => wall.kind)).toEqual(['plants', 'plants', 'decor']);
     });
 
     it('chooses the window view from the clock and draws the window', async () => {

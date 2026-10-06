@@ -36,10 +36,13 @@ export {
 } from './habitTracker';
 export {
   arrangeShelf,
+  MIN_PLANT_WALLS,
   SHELVES_PER_WALL,
   SLOTS_PER_SHELF,
   TOP_SLOTS_FIRST_WALL,
   TOP_SLOTS_PER_WALL,
+  type DecorWall,
+  type PlantsWall,
   type ShelfItem,
   type ShelfLayout,
   type StandingSlot,
@@ -52,6 +55,7 @@ export { drawSlot, type SlotKind } from './scene/drawSlot';
 export {
   composeRoom,
   planRoom,
+  type FloorItem,
   type PlacedContent,
   type PlacedItem,
   type PlanRoomParams,

@@ -2,6 +2,14 @@ import { usedRows } from '../plant/bounds';
 import { PLANT_GRID, type PlantImage } from '../plant/grid';
 import { renderPlant } from '../plant/renderPlant';
 import { arrangeShelf, type ShelfItem } from '../shelf';
+import {
+  ARMCHAIR_SIZE,
+  drawArmchair,
+  drawFloorLamp,
+  drawPainting,
+  drawRug,
+  FLOOR_LAMP_SIZE,
+} from './drawDecor';
 import { drawWindow, WINDOW_SIZE } from './drawWindow';
 import { composeRoom, planRoom, type PlacedItem, type RoomPlan } from './roomPlan';
 
@@ -39,8 +47,8 @@ describe('planRoom', () => {
       Object.fromEntries(Array.from({ length: 6 }, (_, i) => [`s${i}`, grown('cactus')])),
       { pageWidth: 160.5, labelRows: 10 },
     );
-    expect(room.walls.map((wall) => wall.left)).toEqual([8, 169]);
-    expect(room.width).toBe(321);
+    expect(room.walls.map((wall) => wall.left)).toEqual([8, 169, 329]);
+    expect(room.width).toBe(482);
   });
 
   it('puts the window in the top band of the first wall, beside its spot', () => {
@@ -111,8 +119,8 @@ describe('planRoom', () => {
     ];
     const images = Object.fromEntries(items.map((it) => [it.id, grown(it.species)]));
     const room = plan(items, images);
-    expect(room.walls).toHaveLength(2);
-    for (const wall of room.walls) {
+    expect(room.walls).toHaveLength(3);
+    for (const wall of room.walls.slice(0, 2)) {
       const bottom = Math.max(...wall.items.map((p) => p.y + p.rows.to - p.rows.from));
       expect(bottom + GEOMETRY.labelRows).toBe(room.height);
     }
@@ -133,12 +141,56 @@ describe('planRoom', () => {
     expect(ys(spread)).toEqual(ys(tight).map((y, i) => y + i * 5));
   });
 
-  it('shows a bare wall instead of an empty top band', () => {
+  it('shows a bare wall with a painting instead of an empty top band', () => {
     const items = Array.from({ length: 6 }, (_, i) => item(`s${i}`, 'cactus', i + 1));
     const images = Object.fromEntries(items.map((it) => [it.id, grown('cactus')]));
     const room = plan(items, images);
-    expect(room.walls[1]!.items).toHaveLength(6);
+    const wall = room.walls[1]!;
+    expect(wall.items).toHaveLength(7);
     expect(plantsOf(room, 1)).toHaveLength(0);
+    const painting = wall.items.find((p) => p.content.kind === 'decor')!;
+    expect(painting.content.image).toEqual(drawPainting('sunset'));
+    expect(painting.x).toBe(wall.left + 8);
+    expect(painting.y).toBe(4);
+    expect(painting.labelled).toBe(false);
+  });
+
+  it('takes the painting down as soon as a plant hangs on that wall', () => {
+    const items = [item('h1', 'pothos', 1), item('h2', 'pearls', 2)];
+    const room = plan(items, { h1: grown('pothos'), h2: grown('pearls') });
+    expect(room.walls[1]!.items.some((p) => p.content.kind === 'decor')).toBe(false);
+  });
+
+  it('furnishes the last wall: armchair and lamp on the floor line, a painting, no shelf', () => {
+    const room = plan([], {});
+    const wall = room.walls[2]!;
+    expect(wall.wall.kind).toBe('decor');
+    expect(wall.items.map((p) => p.content.kind)).toEqual(['decor', 'decor', 'decor']);
+    const [painting, armchair, lamp] = wall.items;
+    expect(armchair!.content.image).toEqual(drawArmchair());
+    expect(armchair!.x).toBe(wall.left + 22);
+    expect(armchair!.y + ARMCHAIR_SIZE.height).toBe(room.height);
+    expect(lamp!.content.image).toEqual(drawFloorLamp());
+    expect(lamp!.x).toBe(wall.left + 104);
+    expect(lamp!.y + FLOOR_LAMP_SIZE.height).toBe(room.height);
+    expect(painting!.content.image).toEqual(drawPainting('day'));
+    expect(painting!.x).toBe(wall.left + 78);
+    expect(painting!.y).toBe(Math.max(0, room.height - 130));
+    for (const placed of wall.items) {
+      expect(placed.rows).toEqual({ from: 0, to: placed.content.image.height });
+      expect(placed.labelled).toBe(false);
+    }
+  });
+
+  it('lays the rug on the floor in front of the armchair', () => {
+    const room = plan([], {});
+    const wall = room.walls[2]!;
+    expect(room.floorItems).toEqual([{ x: wall.left + 8, y: 2, image: drawRug() }]);
+  });
+
+  it('is always tall enough for the floor lamp', () => {
+    const room = plan([], {}, { pageWidth: 160, labelRows: 0 });
+    expect(room.height).toBeGreaterThanOrEqual(FLOOR_LAMP_SIZE.height);
   });
 
   it('fills a partial top band with bare hanging shelves', () => {
@@ -166,6 +218,15 @@ describe('composeRoom', () => {
         else expect(source ?? null).toBeNull();
       }
     }
+  });
+
+  it('includes the furniture, so that the floor mirrors it', () => {
+    const image = composeRoom(plan([], {}));
+    const tones = new Set(
+      image.pixels.map((source) => (source?.kind === 'tone' ? source.tone : null)),
+    );
+    expect(tones.has('chair')).toBe(true);
+    expect(tones.has('lampShade')).toBe(true);
   });
 
   it('includes the window by its base tones', () => {

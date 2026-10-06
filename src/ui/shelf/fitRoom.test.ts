@@ -10,6 +10,7 @@ const planOf =
     width: Math.ceil(pageWidth),
     height: rows + 3 * labelRows + 2 * rowGap,
     walls: [],
+    floorItems: [],
   });
 
 const IPHONE: Omit<FitRoomParams, 'plan'> = {

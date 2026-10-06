@@ -1,4 +1,4 @@
-import type { RoomImage } from './roomPlan';
+import type { FloorItem, RoomImage } from './roomPlan';
 import { SceneCanvas, type SceneImage } from './sceneImage';
 
 // The polished floor, as wide as the whole room: dark planks that mirror
@@ -6,7 +6,8 @@ import { SceneCanvas, type SceneImage } from './sceneImage';
 // element: the composed room is flipped at its lowest drawn row, one row out
 // of two is kept (whole pixels, nothing resampled, pots and plants stay
 // recognizable), and it fades away from the wall. What is too high to fit
-// is left out. The seams pass over it. Its t is reserved for animation,
+// is left out. The seams pass over it. What lies on the floor (the rug) is
+// drawn last, opaque, and is not mirrored. Its t is reserved for animation,
 // like the window's.
 
 /** Floor height in rows: as tall as the screen allows, within these bounds. */
@@ -30,11 +31,13 @@ export interface DrawFloorParams {
   room: RoomImage;
   /** Floor height in rows, between FLOOR_ROWS.min and FLOOR_ROWS.max. */
   rows: number;
+  /** Lying on the floor, in front of everything (see RoomPlan.floorItems). */
+  items?: readonly FloorItem[];
   /** Animation time, reserved: always 0 today. */
   t?: number;
 }
 
-export function drawFloor({ room, rows }: DrawFloorParams): SceneImage {
+export function drawFloor({ room, rows, items = [] }: DrawFloorParams): SceneImage {
   const width = room.width;
   const c = new SceneCanvas(width, rows);
 
@@ -72,6 +75,13 @@ export function drawFloor({ room, rows }: DrawFloorParams): SceneImage {
   for (const { y: top, h, columns } of seams) {
     for (const x of columns) c.fill(x, top, 1, h, 'seam');
     if (top + h < rows) c.fill(0, top + h - 1, width, 1, 'seam');
+  }
+
+  for (const { x, y, image } of items) {
+    image.pixels.forEach((pixel, i) => {
+      if (pixel?.tone)
+        c.fill(x + (i % image.width), y + Math.floor(i / image.width), 1, 1, pixel.tone);
+    });
   }
 
   return c.toImage();

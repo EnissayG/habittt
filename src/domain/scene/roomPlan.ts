@@ -1,7 +1,14 @@
 import type { HabitId } from '../habit';
 import { usedRows } from '../plant/bounds';
 import { PLANT_GRID, type PlantImage } from '../plant/grid';
-import { SHELVES_PER_WALL, type ShelfLayout, type StandingSlot, type Wall } from '../shelf';
+import {
+  SHELVES_PER_WALL,
+  type PlantsWall,
+  type ShelfLayout,
+  type StandingSlot,
+  type Wall,
+} from '../shelf';
+import { drawArmchair, drawFloorLamp, drawPainting, drawRug, FLOOR_LAMP_SIZE } from './drawDecor';
 import { drawSlot, type SlotKind } from './drawSlot';
 import { WINDOW_SIZE } from './drawWindow';
 import type { SceneImage, SceneLayer } from './sceneImage';
@@ -21,7 +28,9 @@ export interface RowBand {
 export type PlacedContent =
   | { kind: 'plant'; id: HabitId; image: PlantImage }
   | { kind: 'slot'; slot: SlotKind; image: SceneImage }
-  | { kind: 'window'; image: SceneImage };
+  | { kind: 'window'; image: SceneImage }
+  /** Furniture and paintings: opaque, never labelled, never touched. */
+  | { kind: 'decor'; image: SceneImage };
 
 export interface PlacedItem {
   /** Left edge, in cells from the room's left edge. */
@@ -45,12 +54,22 @@ export interface WallPlan {
   items: PlacedItem[];
 }
 
+/** Something lying on the floor (the rug): drawn on the planks, not mirrored. */
+export interface FloorItem {
+  /** Left edge, in cells from the room's left edge. */
+  x: number;
+  /** Top edge, in rows from the top of the floor image. */
+  y: number;
+  image: SceneImage;
+}
+
 export interface RoomPlan {
   /** Cells across all the pages. */
   width: number;
   /** Rows from the top of the tallest wall down to the floor line. */
   height: number;
   walls: WallPlan[];
+  floorItems: FloorItem[];
 }
 
 export interface PlanRoomParams {
@@ -75,7 +94,29 @@ const SLOTS: Record<'standing' | 'hanging', Record<SlotKind, SceneImage>> = {
   hanging: { empty: drawSlot('empty', true), new: drawSlot('new', true) },
 };
 
-type Cell = Exclude<PlacedContent, { kind: 'window' }>;
+type Cell = Extract<PlacedContent, { kind: 'plant' | 'slot' }>;
+
+// The decor, placed like the third wall of the mockup's whole room
+// (drawPano), in cells from the wall's left edge or from the floor line.
+const DECOR = {
+  /** The painting of a wall of shelves, in its top band. */
+  wallPainting: { x: 8, y: 4 },
+  armchair: { x: 22 },
+  lamp: { x: 104 },
+  /** The decor wall's painting: its top this many rows above the floor line. */
+  painting: { x: 78, above: 130 },
+  /** The rug, in front of the armchair, a little below the baseboard. */
+  rug: { x: 8, y: 2 },
+} as const;
+
+const IMAGES = {
+  armchair: drawArmchair(),
+  lamp: drawFloorLamp(),
+  rug: drawRug(),
+  day: drawPainting('day'),
+  sunset: drawPainting('sunset'),
+  leaf: drawPainting('leaf'),
+};
 
 /** Hanging rows show the top of the images, down to the lowest vine. */
 function topBand(cells: Cell[], minimum: number): RowBand {
@@ -108,21 +149,27 @@ export function planRoom({
   const standingCell = (slot: StandingSlot): Cell =>
     slot.kind === 'plant' ? plantCell(slot.id) : slotCell(slot.kind, false);
 
-  // The cells of every wall, row by row: the top band (null = bare wall),
-  // then the shelves.
+  // The cells of every wall of shelves, row by row: the top band (null =
+  // bare wall), then the shelves. The decor wall has none.
   const tops = layout.walls.map((wall): (Cell | null)[] => {
+    if (wall.kind !== 'plants') return [];
     const hangs = wall.top.some((id) => id !== null);
     return wall.top.map((id) =>
       id !== null ? plantCell(id) : hangs ? slotCell('empty', true) : null,
     );
   });
-  const shelves = layout.walls.map((wall) => wall.shelves.map((shelf) => shelf.map(standingCell)));
+  const shelves = layout.walls.map((wall) =>
+    wall.kind === 'plants' ? wall.shelves.map((shelf) => shelf.map(standingCell)) : [],
+  );
 
   // Rows line up from one wall to the next: each row takes the band of its
   // tallest content on any wall, so shelves continue across the swipe.
   const topCells = tops.flat().filter((cell): cell is Cell => cell !== null);
   const bands: RowBand[] = [
-    topBand(topCells, layout.walls.some((wall) => wall.window) ? WINDOW_SIZE.height : 0),
+    topBand(
+      topCells,
+      layout.walls.some((wall) => wall.kind === 'plants' && wall.window) ? WINDOW_SIZE.height : 0,
+    ),
     ...Array.from({ length: SHELVES_PER_WALL }, (_, row) =>
       bottomBand(shelves.flatMap((wall) => wall[row] ?? [])),
     ),
@@ -134,11 +181,17 @@ export function planRoom({
     rowTops.push(y);
     y += height(band) + labelRows;
   });
-  const roomHeight = y;
+  // The floor lamp stands on the floor line: the room is never lower than it.
+  const roomHeight = Math.max(y, FLOOR_LAMP_SIZE.height);
+  const floorItems: FloorItem[] = [];
 
   const walls = layout.walls.map((wall, w): WallPlan => {
     const left = Math.round(wall.index * pageWidth + (pageWidth - WALL_WIDTH) / 2);
-    const items: PlacedItem[] = [];
+    if (wall.kind === 'decor') {
+      floorItems.push({ x: left + DECOR.rug.x, y: DECOR.rug.y, image: IMAGES.rug });
+      return { wall, left, height: roomHeight, items: decorItems(left, roomHeight) };
+    }
+    const items: PlacedItem[] = plantsWallDecor(wall, left, rowTops[0]!);
     if (wall.window) {
       items.push({
         x: left + COLUMN,
@@ -175,7 +228,43 @@ export function planRoom({
     return { wall, left, height: roomHeight, items };
   });
 
-  return { width: Math.ceil(layout.walls.length * pageWidth), height: roomHeight, walls };
+  return {
+    width: Math.ceil(layout.walls.length * pageWidth),
+    height: roomHeight,
+    walls,
+    floorItems,
+  };
+}
+
+/** A whole image placed at (x, y). */
+function placeDecor(image: SceneImage, x: number, y: number): PlacedItem {
+  return {
+    x,
+    y,
+    rows: { from: 0, to: image.height },
+    content: { kind: 'decor', image },
+    labelled: false,
+  };
+}
+
+/** A wall of shelves: its painting, in the top band, behind everything. */
+function plantsWallDecor(wall: PlantsWall, left: number, top: number): PlacedItem[] {
+  if (!wall.painting) return [];
+  const { x, y } = DECOR.wallPainting;
+  return [placeDecor(IMAGES[wall.painting], left + x, top + y)];
+}
+
+/** The decor wall, back to front: the painting, the armchair, the lamp beside it. */
+function decorItems(left: number, floorLine: number): PlacedItem[] {
+  const standing = (image: SceneImage, x: number) =>
+    placeDecor(image, left + x, floorLine - image.height);
+  // In a low room the painting comes down rather than being cut (the room
+  // is always taller than the lamp, so the furniture never is).
+  return [
+    placeDecor(IMAGES.day, left + DECOR.painting.x, Math.max(0, floorLine - DECOR.painting.above)),
+    standing(IMAGES.armchair, DECOR.armchair.x),
+    standing(IMAGES.lamp, DECOR.lamp.x),
+  ];
 }
 
 /** What one cell of the composed room shows: a scene tone or a plant pixel. */
