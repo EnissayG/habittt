@@ -6,6 +6,13 @@ import { err, ok, type Result } from './result';
 
 export type HabitId = string;
 
+/**
+ * Where the plant is: on the shelf (it grows), in the garden (kept in view,
+ * read only) or given away (out of the app, its data kept and exported).
+ */
+export type HabitStatus = 'shelf' | 'garden' | 'given';
+export const HABIT_STATUSES: readonly HabitStatus[] = ['shelf', 'garden', 'given'];
+
 export interface Habit {
   readonly id: HabitId;
   readonly name: string;
@@ -20,6 +27,13 @@ export interface Habit {
   readonly startDate: LocalDate;
   /** Instant, ISO 8601 UTC. */
   readonly createdAt: string;
+  readonly status: HabitStatus;
+  /** The day it left the shelf: its plant stops growing there. null on the shelf. */
+  readonly retiredOn: LocalDate | null;
+  /** Instant of the last change (sync: the latest wins). */
+  readonly updatedAt: string;
+  /** Instant it was erased for good; only a trace remains. */
+  readonly deletedAt: string | null;
 }
 
 export const HABIT_NAME_MAX_LENGTH = 50;
@@ -73,12 +87,17 @@ export function createHabit(
     throw new RangeError(`Seed generator returned ${seed}; expected an integer in [0, 2^32 - 1]`);
   }
 
+  const now = deps.clock.now();
   return ok({
     id: deps.generateId(),
     name,
     seed,
     species: input.species,
     startDate: input.startDate,
-    createdAt: deps.clock.now(),
+    createdAt: now,
+    status: 'shelf',
+    retiredOn: null,
+    updatedAt: now,
+    deletedAt: null,
   });
 }

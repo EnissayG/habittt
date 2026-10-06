@@ -2,12 +2,21 @@ export {
   checkHabitName,
   createHabit,
   HABIT_NAME_MAX_LENGTH,
+  HABIT_STATUSES,
   type CreateHabitDeps,
   type CreateHabitError,
   type CreateHabitInput,
   type Habit,
   type HabitId,
+  type HabitStatus,
 } from './habit';
+export {
+  eraseHabit,
+  growthEnd,
+  isOnShelf,
+  retireHabit,
+  type RetireError,
+} from './retirement';
 export { normalizeHabitName } from './habitName';
 export {
   isActiveNote,
@@ -24,6 +33,7 @@ export {
 export {
   createHabitTracker,
   type AddHabitInput,
+  type HabitAccessError,
   type HabitDetail,
   type HabitSummary,
   type HabitTracker,

@@ -1,4 +1,10 @@
-import { createHabit, type CreateHabitError, type Habit, type HabitId } from './habit';
+import {
+  createHabit,
+  type CreateHabitError,
+  type Habit,
+  type HabitId,
+  type HabitStatus,
+} from './habit';
 import type { LocalDate } from './localDate';
 import { MAX_GROWTH_DAYS, type PlantImage } from './plant/grid';
 import { FALLBACK_SPECIES_ID, SPECIES_IDS, type SpeciesId } from './plant/registry';
@@ -19,6 +25,7 @@ import type {
   WateringRepository,
 } from './repositories';
 import { err, ok, type Result } from './result';
+import { eraseHabit, growthEnd, isOnShelf, retireHabit } from './retirement';
 import { drawWindow } from './scene/drawWindow';
 import type { SceneImage } from './scene/sceneImage';
 import { windowView, type WindowView } from './scene/windowView';
@@ -47,7 +54,9 @@ export interface NoteInput {
   mood: Mood | null;
 }
 
-export type SaveNoteError = WriteNoteError | 'HABIT_NOT_FOUND';
+/** HABIT_RETIRED: the plant left the shelf, nothing more is written about it. */
+export type HabitAccessError = 'HABIT_NOT_FOUND' | 'HABIT_RETIRED';
+export type SaveNoteError = WriteNoteError | HabitAccessError;
 export type WaterTodayError = SaveNoteError | WaterError;
 
 export interface Shelf {
@@ -67,7 +76,7 @@ export interface AddHabitInput {
   species?: SpeciesId;
 }
 
-export type ToggleRelapseError = RecordRelapseError | 'HABIT_NOT_FOUND';
+export type ToggleRelapseError = RecordRelapseError | HabitAccessError;
 
 export interface HabitTrackerDeps {
   habits: HabitRepository;
@@ -89,7 +98,18 @@ const OPENING_DEFAULT = { species: 'bonsai', seed: 12 } as const;
 export function createHabitTracker(deps: HabitTrackerDeps) {
   const { habits, relapses, notes, waterings, clock } = deps;
 
-  async function detail(habit: Habit, today: LocalDate): Promise<HabitDetail> {
+  /** A habit that can still be written about: on the shelf, not erased. */
+  async function writable(id: HabitId): Promise<Result<Habit, HabitAccessError>> {
+    const habit = await habits.getById(id);
+    if (!habit || habit.deletedAt !== null) return err('HABIT_NOT_FOUND');
+    if (habit.status !== 'shelf') return err('HABIT_RETIRED');
+    return ok(habit);
+  }
+
+  async function detail(habit: Habit, now: LocalDate): Promise<HabitDetail> {
+    // A retired plant stops growing on the day it left the shelf.
+    const today = growthEnd(habit, now);
+    const live = isOnShelf(habit);
     const [habitRelapses, habitNotes, habitWaterings] = await Promise.all([
       relapses.listByHabit(habit.id),
       notes.listByHabit(habit.id),
@@ -113,14 +133,15 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       days,
       plant,
       notes: days.flatMap((day) => (day.note ? [day.note] : [])).reverse(),
-      todayNote: todayEntry?.note ?? null,
-      wateredToday: todayEntry?.watered ?? false,
+      todayNote: live ? (todayEntry?.note ?? null) : null,
+      wateredToday: live && (todayEntry?.watered ?? false),
     };
   }
 
+  /** The habits of the shelf, oldest first. */
   async function oldestFirst(): Promise<Habit[]> {
-    const all = await habits.list();
-    return [...all].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const all = (await habits.list()).filter(isOnShelf);
+    return all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   return {
@@ -135,9 +156,31 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       return details.map(({ habit, stats, plant }) => ({ habit, stats, plant }));
     },
 
+    /** A habit of the shelf or the garden (a given one too); never an erased one. */
     async getHabit(id: HabitId): Promise<HabitDetail | undefined> {
       const habit = await habits.getById(id);
-      return habit && detail(habit, clock.today());
+      return habit && habit.deletedAt === null ? detail(habit, clock.today()) : undefined;
+    },
+
+    /** Takes a plant off the shelf, to the garden or given away. */
+    async retireHabit(
+      id: HabitId,
+      to: Exclude<HabitStatus, 'shelf'>,
+    ): Promise<Result<void, HabitAccessError>> {
+      const found = await writable(id);
+      if (!found.ok) return found;
+      const retired = retireHabit(found.value, to, clock);
+      if (!retired.ok) return err('HABIT_RETIRED');
+      await habits.save(retired.value);
+      return ok(undefined);
+    },
+
+    /** Erases a habit for good, from the shelf or the garden: only a trace remains. */
+    async eraseHabit(id: HabitId): Promise<Result<void, 'HABIT_NOT_FOUND'>> {
+      const habit = await habits.getById(id);
+      if (!habit || habit.deletedAt !== null) return err('HABIT_NOT_FOUND');
+      await habits.erase(eraseHabit(habit, clock));
+      return ok(undefined);
     },
 
     /** Everything the shelf screen shows. */
@@ -182,8 +225,9 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       date: LocalDate,
       input: NoteInput,
     ): Promise<Result<WriteNoteOutcome['change'], SaveNoteError>> {
-      const habit = await habits.getById(habitId);
-      if (!habit) return err('HABIT_NOT_FOUND');
+      const found = await writable(habitId);
+      if (!found.ok) return found;
+      const habit = found.value;
       const existing = await notes.findByHabitAndDate(habitId, date);
       const result = writeNote({ habit, date, ...input, existing, clock });
       if (!result.ok) return result;
@@ -206,8 +250,9 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
         WaterTodayError
       >
     > {
-      const habit = await habits.getById(habitId);
-      if (!habit) return err('HABIT_NOT_FOUND');
+      const found = await writable(habitId);
+      if (!found.ok) return found;
+      const habit = found.value;
       const today = clock.today();
       const watered = water({
         habit,
@@ -239,8 +284,9 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       habitId: HabitId,
       date: LocalDate,
     ): Promise<Result<'recorded' | 'unchanged', ToggleRelapseError>> {
-      const habit = await habits.getById(habitId);
-      if (!habit) return err('HABIT_NOT_FOUND');
+      const found = await writable(habitId);
+      if (!found.ok) return found;
+      const habit = found.value;
       const existing = await relapses.findByHabitAndDate(habitId, date);
       const result = recordRelapse({ habit, date, existing, clock });
       if (!result.ok) return result;
@@ -254,8 +300,9 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       habitId: HabitId,
       date: LocalDate,
     ): Promise<Result<'recorded' | 'cancelled', ToggleRelapseError>> {
-      const habit = await habits.getById(habitId);
-      if (!habit) return err('HABIT_NOT_FOUND');
+      const found = await writable(habitId);
+      if (!found.ok) return found;
+      const habit = found.value;
 
       const existing = await relapses.findByHabitAndDate(habitId, date);
       if (existing && isActive(existing)) {

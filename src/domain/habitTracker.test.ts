@@ -14,10 +14,10 @@ import {
 } from './testSupport';
 
 function setup(hour = 10) {
-  const habits = new InMemoryHabitRepository();
   const relapses = new InMemoryRelapseRepository();
   const notes = new InMemoryNoteRepository();
   const waterings = new InMemoryWateringRepository();
+  const habits = new InMemoryHabitRepository([relapses, notes, waterings]);
   let nextId = 0;
   const tracker = createHabitTracker({
     habits,
@@ -298,6 +298,81 @@ describe('habit tracker use cases', () => {
       expect((await tracker.getHabit(id))!.todayNote).toMatchObject({
         text: 'Ce matin.',
         mood: 'craving',
+      });
+    });
+  });
+
+  describe('retiring and erasing', () => {
+    it('takes a plant off the shelf to the garden, still readable, its growth stopped', async () => {
+      const { tracker, id } = await withHabit(-9);
+      expect(await tracker.retireHabit(id, 'garden')).toEqual({ ok: true, value: undefined });
+
+      const shelf = await tracker.getShelf();
+      expect(shelf.habits[id]).toBeUndefined();
+      expect(shelf.totals.plants).toBe(0);
+      expect(await tracker.listHabits()).toEqual([]);
+      const detail = await tracker.getHabit(id);
+      expect(detail?.habit.status).toBe('garden');
+      expect(detail?.habit.retiredOn).toBe(TODAY);
+    });
+
+    it('computes a retired plant only up to the day it was retired', async () => {
+      const { tracker, habits, id } = await withHabit(-9);
+      const habit = habits.rows.get(id)!;
+      await habits.save({ ...habit, status: 'garden', retiredOn: day(-3) });
+      const detail = await tracker.getHabit(id);
+      expect(detail?.stats.totalDays).toBe(7);
+      expect(detail?.days).toHaveLength(7);
+      expect(detail?.wateredToday).toBe(false);
+    });
+
+    it('refuses relapses, notes and watering on a retired plant', async () => {
+      const { tracker, id } = await withHabit(-9);
+      await tracker.retireHabit(id, 'given');
+      const refused = { ok: false, error: 'HABIT_RETIRED' };
+      expect(await tracker.recordRelapse(id, TODAY)).toEqual(refused);
+      expect(await tracker.toggleRelapse(id, TODAY)).toEqual(refused);
+      expect(await tracker.waterToday(id)).toEqual(refused);
+      expect(await tracker.saveNote(id, TODAY, { text: 'x', mood: null })).toEqual(refused);
+      expect(await tracker.retireHabit(id, 'garden')).toEqual(refused);
+    });
+
+    it('erases a habit for good: only a trace of it remains, nothing that belongs to it', async () => {
+      const { tracker, habits, relapses, notes, waterings, id } = await withHabit(-9);
+      await tracker.recordRelapse(id, day(-2));
+      await tracker.waterToday(id, { text: 'Une note', mood: null });
+
+      expect(await tracker.eraseHabit(id)).toEqual({ ok: true, value: undefined });
+      expect(habits.rows.get(id)).toMatchObject({ id, name: '', deletedAt: expect.any(String) });
+      expect(relapses.rows.size).toBe(0);
+      expect(notes.rows.size).toBe(0);
+      expect(waterings.rows.size).toBe(0);
+      expect(await tracker.getHabit(id)).toBeUndefined();
+      expect((await tracker.getShelf()).totals.plants).toBe(0);
+    });
+
+    it('erases a plant of the garden too, and leaves the other habits alone', async () => {
+      const { tracker, relapses, id } = await withHabit(-9);
+      const other = await tracker.addHabit({ name: 'Sucre', startDate: day(-5) });
+      if (!other.ok) throw new Error('setup failed');
+      await tracker.recordRelapse(other.value.id, day(-1));
+      await tracker.retireHabit(id, 'garden');
+      expect(await tracker.eraseHabit(id)).toEqual({ ok: true, value: undefined });
+      expect(relapses.rows.size).toBe(1);
+      expect((await tracker.getShelf()).totals.plants).toBe(1);
+    });
+
+    it('answers HABIT_NOT_FOUND for an unknown or erased habit', async () => {
+      const { tracker, id } = await withHabit(-9);
+      expect(await tracker.retireHabit('nope', 'garden')).toEqual({
+        ok: false,
+        error: 'HABIT_NOT_FOUND',
+      });
+      await tracker.eraseHabit(id);
+      expect(await tracker.eraseHabit(id)).toEqual({ ok: false, error: 'HABIT_NOT_FOUND' });
+      expect(await tracker.recordRelapse(id, TODAY)).toEqual({
+        ok: false,
+        error: 'HABIT_NOT_FOUND',
       });
     });
   });

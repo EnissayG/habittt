@@ -6,13 +6,19 @@ import type { Watering } from './watering';
 
 /**
  * Persistence contracts, owned by the domain and implemented in src/data/.
- * save() is an upsert by id. There is no delete: cancellation is a soft
- * delete carried by the entity itself.
+ * save() is an upsert by id. Cancelling is a soft delete carried by the
+ * entity itself; erasing a habit is the one hard delete (see erase()).
  */
 export interface HabitRepository {
   getById(id: HabitId): Promise<Habit | undefined>;
   list(): Promise<Habit[]>;
   save(habit: Habit): Promise<void>;
+  /**
+   * Saves the trace of an erased habit and deletes, for real and at once,
+   * everything that belongs to it (relapses, notes, waterings). The only
+   * hard delete of the app: what was written must not survive an erase.
+   */
+  erase(trace: Habit): Promise<void>;
 }
 
 export interface RelapseRepository {

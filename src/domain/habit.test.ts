@@ -25,6 +25,10 @@ describe('createHabit', () => {
         species: 'pothos',
         startDate: TODAY,
         createdAt: NOW,
+        status: 'shelf',
+        retiredOn: null,
+        updatedAt: NOW,
+        deletedAt: null,
       },
     });
   });

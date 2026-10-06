@@ -11,6 +11,7 @@ export const toggleRelapseErrorMessage: Record<ToggleRelapseError, string> = {
   RELAPSE_IN_FUTURE: 'On ne peut pas déclarer une rechute dans le futur.',
   RELAPSE_BEFORE_START: 'Ce jour est avant le début du suivi.',
   HABIT_NOT_FOUND: "Cette habitude n'existe plus.",
+  HABIT_RETIRED: "Cette plante a quitté l'étagère : son histoire ne change plus.",
 };
 
 export const noteErrorMessage: Record<WaterTodayError, string> = {
@@ -20,6 +21,7 @@ export const noteErrorMessage: Record<WaterTodayError, string> = {
   WATERING_IN_FUTURE: 'On ne peut pas arroser un jour à venir.',
   WATERING_BEFORE_START: 'Ce jour est avant le début du suivi.',
   HABIT_NOT_FOUND: "Cette habitude n'existe plus.",
+  HABIT_RETIRED: "Cette plante a quitté l'étagère : son histoire ne change plus.",
 };
 
 /** The mockup's moods, in its order. */

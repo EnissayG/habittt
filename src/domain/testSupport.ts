@@ -38,6 +38,10 @@ export function makeHabit(overrides: Partial<Habit> = {}): Habit {
     species: 'monstera',
     startDate: day(-9),
     createdAt: NOW,
+    status: 'shelf',
+    retiredOn: null,
+    updatedAt: NOW,
+    deletedAt: null,
     ...overrides,
   };
 }
@@ -45,6 +49,14 @@ export function makeHabit(overrides: Partial<Habit> = {}): Habit {
 /** Repositories backed by Maps, for use-case tests. */
 export class InMemoryHabitRepository implements HabitRepository {
   readonly rows = new Map<HabitId, Habit>();
+  /** The rows that belong to a habit, deleted when it is erased. */
+  constructor(private readonly children: { rows: Map<string, { habitId: HabitId }> }[] = []) {}
+  async erase(trace: Habit) {
+    this.rows.set(trace.id, trace);
+    for (const { rows } of this.children) {
+      for (const [key, row] of rows) if (row.habitId === trace.id) rows.delete(key);
+    }
+  }
   async getById(id: HabitId) {
     return this.rows.get(id);
   }
