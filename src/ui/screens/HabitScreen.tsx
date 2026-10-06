@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PixelRatio, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { usedRows } from '../../domain';
+import { dayAt, usedRows } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { PixelIcon } from '../components/PixelIcon';
@@ -9,6 +9,7 @@ import { Screen } from '../components/Screen';
 import { Sheet } from '../components/Sheet';
 import { TopBar } from '../components/TopBar';
 import { dayMonth, lowerFirst } from '../format';
+import { DaySheet } from '../habit/DaySheet';
 import { FallingDrop } from '../habit/FallingDrop';
 import { NoteSheet } from '../habit/NoteSheet';
 import { RelapseSheet } from '../habit/RelapseSheet';
@@ -23,7 +24,14 @@ import { useScreenData } from '../useLoader';
 /** Height the counter needs (big number and its label), in points. */
 const COUNTER_HEIGHT = 74;
 
-type OpenSheet = 'menu' | 'water' | 'relapse' | null;
+/** A day is a plant day number: 1 on the start day. */
+type OpenSheet =
+  | 'menu'
+  | 'water'
+  | 'relapse'
+  | { kind: 'day'; day: number }
+  | { kind: 'note'; day: number }
+  | null;
 
 const notesLabel = (count: number) => `${count} ${count > 1 ? 'notes' : 'note'}`;
 
@@ -51,6 +59,9 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
   if (!detail) return <Screen>{null}</Screen>;
 
   const { habit, stats, plant } = detail;
+  const entryOf = (day: number) => detail.days[day - 1];
+  const dayOpen = typeof sheet === 'object' && sheet !== null ? sheet : null;
+  const openEntry = dayOpen ? entryOf(dayOpen.day) : undefined;
   const sceneWidth = width - 28;
   const scale = pixelScale(plant, { width: sceneWidth, height: height * 0.5 }, PixelRatio.get());
 
@@ -59,7 +70,10 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
   const freeAbove = usedRows(plant).top * scale.cellSize;
   const counterInside = freeAbove >= COUNTER_HEIGHT;
   const counter = (
-    <View style={counterInside ? styles.counterOverlay : undefined}>
+    <View
+      style={counterInside ? styles.counterOverlay : undefined}
+      pointerEvents={counterInside ? 'none' : 'auto'}
+    >
       <Text style={styles.count}>{stats.currentStreak}</Text>
       <Text style={styles.countLabel}>
         {stats.currentStreak > 1 ? 'jours' : 'jour'} sans {lowerFirst(habit.name)}
@@ -115,6 +129,31 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
             />
           )}
 
+          {dayOpen?.kind === 'day' && openEntry && (
+            <DaySheet
+              day={openEntry}
+              today={tracker.today()}
+              onWrite={() => setSheet({ kind: 'note', day: dayOpen.day })}
+              onClose={() => setSheet(null)}
+            />
+          )}
+
+          {dayOpen?.kind === 'note' && openEntry && (
+            <NoteSheet
+              habitId={id}
+              date={openEntry.date}
+              dayNumber={dayOpen.day}
+              initial={openEntry.note}
+              mode="edit"
+              onClose={() => setSheet(null)}
+              onDone={() => {
+                setSheet(null);
+                setNotice("C'est noté.");
+                void reload();
+              }}
+            />
+          )}
+
           <RelapseSheet
             habitId={id}
             startDate={habit.startDate}
@@ -145,7 +184,17 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
 
       {!counterInside && counter}
       <View style={styles.scene}>
-        <PlantPixels image={plant} cellSize={scale.cellSize} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="La plante : touche un endroit pour voir son jour"
+          onPress={(event) => {
+            const { locationX, locationY } = event.nativeEvent;
+            const day = dayAt(plant, locationX / scale.cellSize, locationY / scale.cellSize);
+            if (day !== null && entryOf(day)) setSheet({ kind: 'day', day });
+          }}
+        >
+          <PlantPixels image={plant} cellSize={scale.cellSize} />
+        </Pressable>
         {counterInside && counter}
         <FallingDrop drop={drops} distance={freeAbove} />
       </View>
