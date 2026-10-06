@@ -80,13 +80,23 @@ export const MIN_TEXT_CONTRAST = 4.5;
  * Each weight of a custom font is its own family in React Native (fontWeight
  * cannot pick it); the pixel font files are loaded in useAppFonts.
  * - display: titles and names (Pixelify Sans Medium).
- * - displayBold: the app name and big counters (Pixelify Sans SemiBold).
+ * - displayBold: the app name (Pixelify Sans SemiBold).
+ * - numeric: every number, counters included (Jersey 10: its 5, 8, 6 and 1
+ *   are told apart at a glance, where Pixelify's 951 read as 981).
  * - body: running text, kept in the readable system font.
  */
 export const fonts = {
   display: 'PixelifySans_500Medium',
   displayBold: 'PixelifySans_600SemiBold',
+  numeric: 'Jersey10_400Regular',
   body: Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' }),
 } as const satisfies Record<string, string>;
+
+/**
+ * Jersey 10's capitals (and digits) are 0.536 em tall, Pixelify Sans's and
+ * the system font's about 0.70 em: numbers in a line of text are drawn this
+ * much larger so they look the same height as the words around them.
+ */
+export const NUMERIC_SCALE = 1.3;
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 } as const;
