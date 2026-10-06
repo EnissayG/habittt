@@ -20,6 +20,7 @@ import {
 import { Chip } from '../components/Chip';
 import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
+import { DigitBoard } from '../dev/DigitBoard';
 import type { ScreenProps } from '../navigation/types';
 import { describePlant, isRare, potLabel, SPECIES_LABELS } from '../plant/labels';
 import { PixelCanvas } from '../plant/PixelCanvas';
@@ -159,6 +160,9 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
         <PixelCanvas grid={windowImage} colorOf={sceneColorOf} cellSize={sceneCell} />
         <PixelCanvas grid={room} colorOf={sceneColorOf} cellSize={sceneCell} />
       </View>
+
+      <Text style={styles.label}>Polices des chiffres</Text>
+      <DigitBoard />
     </Screen>
   );
 }
