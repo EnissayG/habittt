@@ -17,6 +17,13 @@ export {
   type HabitTrackerDeps,
   type ToggleRelapseError,
 } from './habitTracker';
+export {
+  arrangeShelf,
+  SLOTS_PER_SHELF,
+  type ShelfItem,
+  type ShelfLayout,
+  type ShelfSlot,
+} from './shelf';
 export { buildTimeline, type DayEntry } from './timeline';
 export { addDays, daysBetween, isLocalDate, parseLocalDate, type LocalDate } from './localDate';
 export * from './plant';
