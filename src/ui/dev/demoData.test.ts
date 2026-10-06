@@ -2,7 +2,9 @@ import { createHabitTracker, resolveSpecies } from '../../domain';
 import {
   fixedClock,
   InMemoryHabitRepository,
+  InMemoryNoteRepository,
   InMemoryRelapseRepository,
+  InMemoryWateringRepository,
 } from '../../domain/testSupport';
 import { DEMO_HABITS, demoSeeds, seedDemo } from './demoData';
 
@@ -11,6 +13,8 @@ async function demoShelf() {
   const tracker = createHabitTracker({
     habits: new InMemoryHabitRepository(),
     relapses: new InMemoryRelapseRepository(),
+    notes: new InMemoryNoteRepository(),
+    waterings: new InMemoryWateringRepository(),
     clock: fixedClock(),
     generateId: () => `demo-${++next}`,
     generateSeed: demoSeeds(),

@@ -3,7 +3,12 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { openFreshDemoDatabase, openHabitDatabase } from './src/data/database';
-import { SqliteHabitRepository, SqliteRelapseRepository } from './src/data/sqliteRepositories';
+import {
+  SqliteHabitRepository,
+  SqliteNoteRepository,
+  SqliteRelapseRepository,
+  SqliteWateringRepository,
+} from './src/data/sqliteRepositories';
 import { generateId, generateSeed, systemClock } from './src/data/system';
 import { createHabitTracker, type HabitTracker } from './src/domain';
 import { demoSeeds, seedDemo } from './src/ui/dev/demoData';
@@ -19,6 +24,8 @@ function trackerOn(db: Database, seeds: () => number = generateSeed): HabitTrack
   return createHabitTracker({
     habits: new SqliteHabitRepository(db),
     relapses: new SqliteRelapseRepository(db),
+    notes: new SqliteNoteRepository(db),
+    waterings: new SqliteWateringRepository(db),
     clock: systemClock,
     generateId,
     generateSeed: seeds,

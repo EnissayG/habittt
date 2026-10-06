@@ -5,7 +5,9 @@ import { renderPlant } from './plant/renderPlant';
 import { relapseIdFor } from './relapse';
 import {
   InMemoryHabitRepository,
+  InMemoryNoteRepository,
   InMemoryRelapseRepository,
+  InMemoryWateringRepository,
   TODAY,
   day,
   fixedClock,
@@ -14,15 +16,26 @@ import {
 function setup(hour = 10) {
   const habits = new InMemoryHabitRepository();
   const relapses = new InMemoryRelapseRepository();
+  const notes = new InMemoryNoteRepository();
+  const waterings = new InMemoryWateringRepository();
   let nextId = 0;
   const tracker = createHabitTracker({
     habits,
     relapses,
+    notes,
+    waterings,
     clock: fixedClock(undefined, undefined, hour),
     generateId: () => `habit-${++nextId}`,
     generateSeed: () => 7,
   });
-  return { tracker, habits, relapses };
+  return { tracker, habits, relapses, notes, waterings };
+}
+
+async function withHabit(startOffset = -9) {
+  const context = setup();
+  const added = await context.tracker.addHabit({ name: 'Fumer', startDate: day(startOffset) });
+  if (!added.ok) throw new Error('setup failed');
+  return { ...context, id: added.value.id };
 }
 
 describe('habit tracker use cases', () => {
@@ -201,6 +214,91 @@ describe('habit tracker use cases', () => {
       const added = await tracker.addHabit({ name: 'A', startDate: day(-5), species: 'aloe' });
       if (!added.ok) throw new Error('setup failed');
       expect(await tracker.openingPlant()).toEqual(bonsai);
+    });
+  });
+
+  describe('notes and watering', () => {
+    it('saves the note of a past day, then updates and deletes it', async () => {
+      const { tracker, id, notes } = await withHabit();
+      expect(await tracker.saveNote(id, day(-3), { text: 'Dur.', mood: 'stress' })).toEqual({
+        ok: true,
+        value: 'created',
+      });
+      expect(await tracker.saveNote(id, day(-3), { text: 'Moins dur.', mood: null })).toEqual({
+        ok: true,
+        value: 'updated',
+      });
+      expect(await tracker.saveNote(id, day(-3), { text: ' ', mood: null })).toEqual({
+        ok: true,
+        value: 'deleted',
+      });
+      expect([...notes.rows.values()]).toHaveLength(1);
+    });
+
+    it('refuses a note for an unknown habit or an impossible day, saving nothing', async () => {
+      const { tracker, id, notes } = await withHabit();
+      expect(await tracker.saveNote('nope', TODAY, { text: 'x', mood: null })).toEqual({
+        ok: false,
+        error: 'HABIT_NOT_FOUND',
+      });
+      expect(await tracker.saveNote(id, day(1), { text: 'x', mood: null })).toEqual({
+        ok: false,
+        error: 'NOTE_IN_FUTURE',
+      });
+      expect(notes.rows.size).toBe(0);
+    });
+
+    it('waters today, with or without a note, once a day', async () => {
+      const { tracker, id, notes, waterings: stored } = await withHabit();
+      expect(await tracker.waterToday(id)).toEqual({
+        ok: true,
+        value: { watering: 'created', note: null },
+      });
+      expect(await tracker.waterToday(id, { text: 'Fier.', mood: 'proud' })).toEqual({
+        ok: true,
+        value: { watering: 'unchanged', note: 'created' },
+      });
+      expect(stored.rows.size).toBe(1);
+      expect([...notes.rows.values()][0]).toMatchObject({ date: TODAY, text: 'Fier.' });
+    });
+
+    it('does not water when the note is refused', async () => {
+      const { tracker, id, waterings: stored } = await withHabit();
+      const result = await tracker.waterToday(id, { text: 'x'.repeat(5000), mood: null });
+      expect(result).toEqual({ ok: false, error: 'NOTE_TOO_LONG' });
+      expect(stored.rows.size).toBe(0);
+    });
+
+    it('shows notes, waterings and blooms in the habit detail', async () => {
+      const { tracker, id } = await withHabit();
+      await tracker.saveNote(id, day(-5), { text: 'Ancienne', mood: null });
+      await tracker.saveNote(id, day(-1), { text: 'Récente', mood: 'easy' });
+      await tracker.saveNote(id, day(-2), { text: 'Effacée', mood: null });
+      await tracker.saveNote(id, day(-2), { text: '', mood: null });
+      await tracker.waterToday(id);
+
+      const detail = (await tracker.getHabit(id))!;
+      expect(detail.notes.map((note) => note.text)).toEqual(['Récente', 'Ancienne']);
+      expect(detail.todayNote).toBeNull();
+      expect(detail.wateredToday).toBe(true);
+      const byDate = Object.fromEntries(detail.days.map((entry) => [entry.date, entry]));
+      expect(byDate[day(-1)]!.note?.text).toBe('Récente');
+      expect(byDate[day(-2)]!.note).toBeNull();
+      expect(byDate[TODAY]!.watered).toBe(true);
+      expect(byDate[day(-1)]!.watered).toBe(false);
+      // Today is day 10 of the plant: it blooms once.
+      expect(
+        detail.plant.pixels.filter((pixel) => pixel?.bloom).map((pixel) => pixel!.day),
+      ).toEqual([10]);
+    });
+
+    it("gives today's note for the watering panel", async () => {
+      const { tracker, id } = await withHabit();
+      await tracker.waterToday(id, { text: 'Ce matin.', mood: 'craving' });
+      expect((await tracker.getHabit(id))!.todayNote).toMatchObject({
+        text: 'Ce matin.',
+        mood: 'craving',
+      });
     });
   });
 });

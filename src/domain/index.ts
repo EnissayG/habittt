@@ -28,6 +28,9 @@ export {
   type HabitSummary,
   type HabitTracker,
   type HabitTrackerDeps,
+  type NoteInput,
+  type SaveNoteError,
+  type WaterTodayError,
   type Shelf,
   type ToggleRelapseError,
 } from './habitTracker';

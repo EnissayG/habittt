@@ -4,8 +4,20 @@ import { MAX_GROWTH_DAYS, type PlantImage } from './plant/grid';
 import { FALLBACK_SPECIES_ID, SPECIES_IDS, type SpeciesId } from './plant/registry';
 import { renderPlant } from './plant/renderPlant';
 import type { Clock, IdGenerator, SeedGenerator } from './ports';
+import {
+  writeNote,
+  type Mood,
+  type Note,
+  type WriteNoteError,
+  type WriteNoteOutcome,
+} from './note';
 import { cancelRelapse, isActive, recordRelapse, type RecordRelapseError } from './relapse';
-import type { HabitRepository, RelapseRepository } from './repositories';
+import type {
+  HabitRepository,
+  NoteRepository,
+  RelapseRepository,
+  WateringRepository,
+} from './repositories';
 import { err, ok, type Result } from './result';
 import { drawWindow } from './scene/drawWindow';
 import type { SceneImage } from './scene/sceneImage';
@@ -13,6 +25,7 @@ import { windowView, type WindowView } from './scene/windowView';
 import { arrangeShelf, type ShelfLayout } from './shelf';
 import { computeStats, type HabitStats } from './stats';
 import { buildTimeline, type DayEntry } from './timeline';
+import { water, type WaterError } from './watering';
 
 export interface HabitSummary {
   habit: Habit;
@@ -22,7 +35,20 @@ export interface HabitSummary {
 
 export interface HabitDetail extends HabitSummary {
   days: DayEntry[];
+  /** Active notes, newest first. */
+  notes: Note[];
+  /** Today's note, to prefill the watering panel. */
+  todayNote: Note | null;
+  wateredToday: boolean;
 }
+
+export interface NoteInput {
+  text: string;
+  mood: Mood | null;
+}
+
+export type SaveNoteError = WriteNoteError | 'HABIT_NOT_FOUND';
+export type WaterTodayError = SaveNoteError | WaterError;
 
 export interface Shelf {
   layout: ShelfLayout;
@@ -46,6 +72,8 @@ export type ToggleRelapseError = RecordRelapseError | 'HABIT_NOT_FOUND';
 export interface HabitTrackerDeps {
   habits: HabitRepository;
   relapses: RelapseRepository;
+  notes: NoteRepository;
+  waterings: WateringRepository;
   clock: Clock;
   generateId: IdGenerator;
   generateSeed: SeedGenerator;
@@ -59,21 +87,35 @@ const OPENING_DEFAULT = { species: 'bonsai', seed: 12 } as const;
  * interfaces, applies the pure domain rules, and saves the result.
  */
 export function createHabitTracker(deps: HabitTrackerDeps) {
-  const { habits, relapses, clock } = deps;
+  const { habits, relapses, notes, waterings, clock } = deps;
 
   async function detail(habit: Habit, today: LocalDate): Promise<HabitDetail> {
-    const habitRelapses = await relapses.listByHabit(habit.id);
+    const [habitRelapses, habitNotes, habitWaterings] = await Promise.all([
+      relapses.listByHabit(habit.id),
+      notes.listByHabit(habit.id),
+      waterings.listByHabit(habit.id),
+    ]);
     const params = { startDate: habit.startDate, relapses: habitRelapses, today };
     const stats = computeStats(params);
-    const days = buildTimeline(params);
+    const days = buildTimeline({ ...params, notes: habitNotes, waterings: habitWaterings });
     const plant = renderPlant({
       species: habit.species,
       seed: habit.seed,
       elapsedDays: stats.totalDays,
       // Plant day numbers start at 1 on startDate; timeline indexes at 0.
       relapseDays: days.filter((day) => day.relapsed).map((day) => day.index + 1),
+      wateredDays: days.filter((day) => day.watered).map((day) => day.index + 1),
     });
-    return { habit, stats, days, plant };
+    const todayEntry = days[days.length - 1];
+    return {
+      habit,
+      stats,
+      days,
+      plant,
+      notes: days.flatMap((day) => (day.note ? [day.note] : [])).reverse(),
+      todayNote: todayEntry?.note ?? null,
+      wateredToday: todayEntry?.watered ?? false,
+    };
   }
 
   async function oldestFirst(): Promise<Habit[]> {
@@ -132,6 +174,64 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       const result = createHabit({ name: input.name, startDate: input.startDate, species }, deps);
       if (result.ok) await habits.save(result.value);
       return result;
+    },
+
+    /** Writes, updates or deletes (when emptied) the note of a day. */
+    async saveNote(
+      habitId: HabitId,
+      date: LocalDate,
+      input: NoteInput,
+    ): Promise<Result<WriteNoteOutcome['change'], SaveNoteError>> {
+      const habit = await habits.getById(habitId);
+      if (!habit) return err('HABIT_NOT_FOUND');
+      const existing = await notes.findByHabitAndDate(habitId, date);
+      const result = writeNote({ habit, date, ...input, existing, clock });
+      if (!result.ok) return result;
+      if (result.value.change !== 'unchanged' && result.value.note) {
+        await notes.save(result.value.note);
+      }
+      return ok(result.value.change);
+    },
+
+    /**
+     * Waters the plant today, and writes today's note when one is given.
+     * Checked before anything is saved: a refused note waters nothing.
+     */
+    async waterToday(
+      habitId: HabitId,
+      note?: NoteInput,
+    ): Promise<
+      Result<
+        { watering: 'created' | 'unchanged'; note: WriteNoteOutcome['change'] | null },
+        WaterTodayError
+      >
+    > {
+      const habit = await habits.getById(habitId);
+      if (!habit) return err('HABIT_NOT_FOUND');
+      const today = clock.today();
+      const watered = water({
+        habit,
+        date: today,
+        existing: await waterings.findByHabitAndDate(habitId, today),
+        clock,
+      });
+      if (!watered.ok) return watered;
+      const written = note
+        ? writeNote({
+            habit,
+            date: today,
+            ...note,
+            existing: await notes.findByHabitAndDate(habitId, today),
+            clock,
+          })
+        : null;
+      if (written && !written.ok) return written;
+
+      if (watered.value.change === 'created') await waterings.save(watered.value.watering);
+      if (written && written.value.change !== 'unchanged' && written.value.note) {
+        await notes.save(written.value.note);
+      }
+      return ok({ watering: watered.value.change, note: written ? written.value.change : null });
     },
 
     /** Records a relapse on that day; does nothing if one is already active. */

@@ -5,9 +5,9 @@ describe('buildTimeline', () => {
   it('lists every day from start to today, oldest first', () => {
     const timeline = buildTimeline({ startDate: day(-2), relapses: [], today: TODAY });
     expect(timeline).toEqual([
-      { index: 0, date: day(-2), relapsed: false },
-      { index: 1, date: day(-1), relapsed: false },
-      { index: 2, date: TODAY, relapsed: false },
+      { index: 0, date: day(-2), relapsed: false, note: null, watered: false },
+      { index: 1, date: day(-1), relapsed: false, note: null, watered: false },
+      { index: 2, date: TODAY, relapsed: false, note: null, watered: false },
     ]);
   });
 
