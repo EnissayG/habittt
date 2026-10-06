@@ -26,6 +26,17 @@ export {
 } from './shelf';
 export { buildTimeline, type DayEntry } from './timeline';
 export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';
+export { drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
+export { drawRoom, ROOM_SIZE, type DrawRoomParams } from './scene/drawRoom';
+export type {
+  LightTone,
+  RoomTone,
+  SceneImage,
+  SceneLayer,
+  ScenePixel,
+  SceneTone,
+  WindowTone,
+} from './scene/sceneImage';
 export { addDays, daysBetween, isLocalDate, parseLocalDate, type LocalDate } from './localDate';
 export * from './plant';
 export type { Clock, IdGenerator, SeedGenerator } from './ports';
