@@ -28,7 +28,8 @@ export interface Shelf {
   layout: ShelfLayout;
   /** Every habit on the shelf, by id. */
   habits: Readonly<Record<HabitId, HabitSummary>>;
-  totals: { plants: number; cleanDays: number };
+  /** currentDays: the sum of the current streaks, the numbers shown under the plants. */
+  totals: { plants: number; currentDays: number };
   view: WindowView;
   window: SceneImage;
 }
@@ -111,7 +112,7 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
         habits: byId,
         totals: {
           plants: summaries.length,
-          cleanDays: summaries.reduce((sum, { stats }) => sum + stats.cleanDays, 0),
+          currentDays: summaries.reduce((sum, { stats }) => sum + stats.currentStreak, 0),
         },
         view,
         window: drawWindow(view),

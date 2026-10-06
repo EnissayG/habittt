@@ -161,7 +161,7 @@ describe('habit tracker use cases', () => {
   });
 
   describe('getShelf', () => {
-    it('arranges habits and totals the clean days', async () => {
+    it('arranges habits and totals the current streaks, as shown under the plants', async () => {
       const { tracker } = setup();
       const a = await tracker.addHabit({ name: 'Smoking', startDate: day(-9), species: 'cactus' });
       const b = await tracker.addHabit({ name: 'Sugar', startDate: day(-2), species: 'fern' });
@@ -169,7 +169,8 @@ describe('habit tracker use cases', () => {
       await tracker.recordRelapse(a.value.id, day(-1));
 
       const shelf = await tracker.getShelf();
-      expect(shelf.totals).toEqual({ plants: 2, cleanDays: 9 + 3 });
+      // Smoking: relapse yesterday, 1 day in a row; Sugar: 3 days in a row.
+      expect(shelf.totals).toEqual({ plants: 2, currentDays: 1 + 3 });
       expect(Object.keys(shelf.habits).sort()).toEqual([a.value.id, b.value.id].sort());
       expect(shelf.layout.walls).toHaveLength(1);
     });
