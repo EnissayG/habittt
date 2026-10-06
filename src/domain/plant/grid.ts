@@ -44,6 +44,11 @@ export interface PlantPixel {
   readonly day: number;
   /** True if `day` is a relapse day. */
   readonly relapse: boolean;
+  /**
+   * Present (true) on the one pixel that marks a watered day with a small
+   * flower: a change of color, never of shape. Absent everywhere else.
+   */
+  readonly bloom?: true;
 }
 
 export interface PlantImage {

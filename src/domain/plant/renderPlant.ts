@@ -44,6 +44,8 @@ export interface RenderPlantParams {
   elapsedDays: number;
   /** Day numbers (1 = start day) that hold an active relapse. */
   relapseDays: Iterable<number>;
+  /** Day numbers (1 = start day) when the plant was watered: each blooms once. */
+  wateredDays?: Iterable<number>;
 }
 
 export interface PlanForSeed {
@@ -163,6 +165,19 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
   const lastDay = Math.min(Math.max(0, Math.floor(params.elapsedDays)), MAX_GROWTH_DAYS);
   for (let day = 1; day <= lastDay; day++) {
     for (const { x, y, tone } of plan[day - 1] ?? []) paint(x, y, tone, day);
+  }
+
+  // A watered day blooms on its highest visible pixel (leftmost on a tie):
+  // the tip of what grew that day. Nothing moves; one pixel changes color.
+  const watered = new Set(params.wateredDays ?? []);
+  if (watered.size > 0) {
+    const bloomed = new Set<number>();
+    for (let i = 0; i < pixels.length; i++) {
+      const pixel = pixels[i];
+      if (!pixel || pixel.day === 0 || !watered.has(pixel.day) || bloomed.has(pixel.day)) continue;
+      bloomed.add(pixel.day);
+      pixels[i] = { ...pixel, bloom: true };
+    }
   }
 
   return { width, height, pixels, species, variety, genome, fallback };

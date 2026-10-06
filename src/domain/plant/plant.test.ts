@@ -11,7 +11,7 @@ function render(species: string, seed: number, elapsedDays: number, relapseDays:
 
 function samePixel(a: PlantPixel | null, b: PlantPixel | null): boolean {
   if (a === null || b === null) return a === b;
-  return a.tone === b.tone && a.day === b.day && a.relapse === b.relapse;
+  return a.tone === b.tone && a.day === b.day && a.relapse === b.relapse && a.bloom === b.bloom;
 }
 
 const TONE_CHAR: Record<Tone, string> = {
@@ -110,6 +110,62 @@ describe.each(SPECIES_IDS)('plant generator: %s', (species) => {
         expect({ seed, days, wrong }).toEqual({ seed, days, wrong: [] });
       }
     }
+  });
+
+  it('3b. a watered day blooms on exactly one of its pixels, nothing else changes', () => {
+    const WATERED = [1, 5, 17, 60, 119, 120, 130];
+    for (const seed of SEEDS) {
+      const clean = render(species, seed, MAX_GROWTH_DAYS, RELAPSES);
+      const watered = renderPlant({
+        species,
+        seed,
+        elapsedDays: MAX_GROWTH_DAYS,
+        relapseDays: RELAPSES,
+        wateredDays: WATERED,
+      });
+      const wrong = clean.pixels.flatMap((pixel, index) => {
+        const other = watered.pixels[index] ?? null;
+        // Same tone, day and relapse everywhere; only the bloom flag may be added.
+        const same = samePixel(pixel, other && { ...other, bloom: undefined });
+        return same && pixel?.bloom === undefined ? [] : [index];
+      });
+      expect({ seed, wrong }).toEqual({ seed, wrong: [] });
+      const blooms = watered.pixels.filter((pixel) => pixel?.bloom);
+      // One per watered day that grew (day 130 is past the last growing day).
+      expect(blooms.map((pixel) => pixel!.day).sort((a, b) => a - b)).toEqual(
+        WATERED.filter((day) => day <= MAX_GROWTH_DAYS),
+      );
+    }
+  });
+
+  it('3c. a bloom is the highest visible pixel of its day', () => {
+    for (const seed of SEEDS) {
+      const image = renderPlant({
+        species,
+        seed,
+        elapsedDays: 90,
+        relapseDays: [],
+        wateredDays: [30, 90],
+      });
+      for (const day of [30, 90]) {
+        const rows = image.pixels.flatMap((pixel, index) =>
+          pixel?.day === day ? [Math.floor(index / image.width)] : [],
+        );
+        const bloom = image.pixels.findIndex((pixel) => pixel?.bloom && pixel.day === day);
+        expect(Math.floor(bloom / image.width)).toBe(Math.min(...rows));
+      }
+    }
+  });
+
+  it('3d. a watered day that has not grown yet leaves no bloom', () => {
+    const image = renderPlant({
+      species,
+      seed: 1,
+      elapsedDays: 10,
+      relapseDays: [],
+      wateredDays: [11, 12],
+    });
+    expect(image.pixels.some((pixel) => pixel?.bloom)).toBe(false);
   });
 
   it('4. every day from 1 to 120 adds at least one visible pixel', () => {
