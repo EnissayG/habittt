@@ -54,7 +54,8 @@ rechute, arrosage) sont des `Modal` qui montent du bas.
 ### Écrans
 
 - **Ouverture** : la plante de l'habitude la plus ancienne, ou un bonsaï
-  adulte, pendant 1,5 s, puis l'étagère.
+  adulte, pendant 1,5 s, puis l'étagère. (Remplacé par l'ADR 0008 : toujours
+  le bonsaï.)
 - **Création** en deux étapes : nom et date (Aujourd'hui, Hier, ou une date
   du sélecteur natif, jamais dans le futur), puis choix de la plante parmi
   toutes les espèces adultes, ou Surprise.

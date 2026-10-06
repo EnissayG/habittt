@@ -507,8 +507,9 @@ Décisions détaillées dans [l'ADR 0007](decisions/0007-etagere-en-murs.md).
   transparentes et noms par-dessus ; la fenêtre a son petit canevas.
 - **Fenêtre** (`drawWindow`, domaine) : tons symboliques et calques
   translucides ; `scenePalette.ts` donne les couleurs de chaque vue et
-  mélange les calques. Une pile de couches `(vue, t)` : nuages, étoiles et
-  neige bougent avec `t` ; `useWindowClock` l'avance 4 fois par seconde,
+  mélange les calques. Une pile de couches `(vue, t)` : nuages, fumée, soleil,
+  étoiles, étoile filante et neige bougent avec `t`, comme dans la
+  maquette ; `useWindowClock` l'avance 6 fois par seconde,
   seulement écran affiché et si « Réduire les animations » est désactivé.
 - **Panneaux** (`components/Sheet.tsx`) : une couche de l'écran, passée en
   `overlay` à `Screen`, jamais un `Modal` natif (ADR 0008).

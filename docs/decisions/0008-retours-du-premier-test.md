@@ -65,12 +65,22 @@ une seule fonction générale (`drawFloor`) :
 
 ### L'animation de la fenêtre
 
-`drawWindow(vue, t)`, avec `t` en secondes : les nuages glissent (0,25 à
-0,4 pixel par seconde) et reviennent par la gauche, une étoile ou deux se
-reposent à chaque battement, la neige tombe (3 pixels par seconde) en
-oscillant d'un pixel. Seule la vue derrière la vitre bouge ; `t = 0` est la
-fenêtre immobile. Côté écran, `useWindowClock` fait avancer `t` 4 fois par
-seconde, seulement quand l'écran est affiché, l'app au premier plan et
+`drawWindow(vue, t)`, avec `t` en secondes, reprend l'animation de la
+maquette (`drawWindow(cv, t)`), qui en est la référence. Tout ce qui change
+par à-coups suit un battement de 6 par seconde :
+
+- jour et soir : les nuages traversent le ciel (0,45 à 0,7 pixel par
+  seconde) et reviennent par la gauche, la fumée monte de la cheminée, les
+  rayons du soleil vont et viennent ;
+- nuit : chaque étoile a son propre rythme et plusieurs éclats (elle ne
+  disparaît jamais d'un coup ; à son plus brillant, c'est une petite
+  croix), une étoile filante passe toutes les 15 s, la fenêtre de la
+  maison vacille ;
+- hiver : chaque flocon tombe à sa propre vitesse, en oscillant.
+
+Seule la vue derrière la vitre bouge ; `t = 0` est la fenêtre immobile.
+Côté écran, `useWindowClock` fait avancer `t` 6 fois par seconde (un
+battement par image), seulement quand l'écran est affiché, l'app au premier plan et
 « Réduire les animations » désactivé (`t` reste alors à 0). Le plancher ne
 suit pas : la fenêtre n'y est plus reflétée.
 
@@ -92,6 +102,12 @@ L'année s'affiche quand elle n'est pas celle du jour (« depuis le 28 février
 2024 »). Le calcul des jours était juste (952 jours lus 982 : le 5 et le 8
 se confondent dans Pixelify Sans) ; des tests couvrent minuit, le passage
 d'année et le 29 février.
+
+### L'ouverture
+
+L'écran d'ouverture montre toujours le même bonsaï adulte, emblème de
+l'app, et plus la plante de l'habitude la plus ancienne. Il reste 1,5 s
+après l'apparition de la plante, 3 s au plus.
 
 ## Conséquences
 

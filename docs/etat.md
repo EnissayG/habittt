@@ -51,12 +51,12 @@ Décisions déjà prises : voir
 ### Hors périmètre pour l'instant
 
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
-marques après 120 jours, animation de la fenêtre, meubles et décors.
+marques après 120 jours, meubles et décors.
 
 ### À vérifier sur téléphone (phase 2 ter)
 
-- L'ouverture : 1,5 s après l'apparition de la plante (après avoir fermé
-  complètement Expo Go).
+- L'ouverture : toujours le bonsaï, 1,5 s (après avoir fermé complètement
+  Expo Go).
 - Les panneaux : arrosage (« Bientôt »), menu, rechute ; « C'est noté. »
   après une rechute ; une seconde rechute le même jour propose de l'annuler.
 - L'année dans « depuis le … » pour une date d'une autre année.
@@ -64,8 +64,10 @@ marques après 120 jours, animation de la fenêtre, meubles et décors.
 - La mise en page : fenêtre sous l'en-tête, rangées espacées, plancher plus
   haut, tablettes alignées d'un mur à l'autre.
 - Le reflet : pots et plantes reconnaissables, net sous la plinthe.
-- L'animation de la fenêtre (Labo pour chaque vue), arrêtée hors de
-  l'étagère et avec « Réduire les animations ».
+- L'animation de la fenêtre, reprise de la maquette (nuages, fumée, soleil,
+  étoiles à plusieurs éclats, étoile filante, flocons), à 6 images par
+  seconde : la voir dans le Labo pour chaque vue, vérifier qu'elle s'arrête
+  hors de l'étagère et avec « Réduire les animations ».
 - La démo (Labo) : trois murs, le glissement, puis le retour à tes données.
 - **Choisir la police des chiffres** dans la planche du Labo ; ensuite, en
   faire un rôle du thème et désinstaller les autres.
