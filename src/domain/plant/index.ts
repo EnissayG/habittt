@@ -1,3 +1,4 @@
+export { usedRows, type RowRange } from './bounds';
 export {
   computeGenome,
   FOLIAGES,
