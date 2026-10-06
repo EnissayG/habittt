@@ -1,5 +1,3 @@
-import type { PlantImage } from './grid';
-
 export interface RowRange {
   /** First row holding a pixel (plant, pot or shelf). */
   top: number;
@@ -8,11 +6,15 @@ export interface RowRange {
 }
 
 /**
- * Rows actually used by a plant image. The shelf uses it to give each row
+ * Rows actually used by an image (a plant, or any row-major grid). The shelf uses it to give each row
  * the height of its tallest plant: young plants keep the shelves low, and a
  * grown plant is never cut.
  */
-export function usedRows(image: PlantImage): RowRange {
+export function usedRows(image: {
+  readonly width: number;
+  readonly height: number;
+  readonly pixels: readonly unknown[];
+}): RowRange {
   let top = image.height;
   let bottom = -1;
   for (let y = 0; y < image.height; y++) {

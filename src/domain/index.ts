@@ -34,6 +34,18 @@ export { buildTimeline, type DayEntry } from './timeline';
 export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';
 export { drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
 export { drawSlot, type SlotKind } from './scene/drawSlot';
+export {
+  composeRoom,
+  planRoom,
+  type PlacedContent,
+  type PlacedItem,
+  type PlanRoomParams,
+  type RoomImage,
+  type RoomPlan,
+  type RoomSource,
+  type RowBand,
+  type WallPlan,
+} from './scene/roomPlan';
 export { drawRoom, ROOM_SIZE, type DrawRoomParams } from './scene/drawRoom';
 export type {
   LightTone,
