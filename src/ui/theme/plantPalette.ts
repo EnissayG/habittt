@@ -123,12 +123,17 @@ function isFoliageTone(tone: PlantTone): tone is FoliageTone {
   return tone in FOLIAGE.classic;
 }
 
+/** The small flower that marks a watered day: a soft pink, apart from the magenta flowers. */
+export const BLOOM = '#F59AC4';
+
 export function plantColor(
   pixel: PlantPixel,
   genome: Genome,
   // Not used yet: kept in the signature so callers already pass it.
   _vitality: Vitality = NEUTRAL_VITALITY,
 ): string {
+  // The small flower of a watered day: one pixel, whatever it was.
+  if (pixel.bloom) return BLOOM;
   switch (pixel.tone) {
     case 'soil':
     case 'potPattern':

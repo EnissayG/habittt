@@ -5,7 +5,7 @@ import {
   type PlantImage,
   type PlantPixel,
 } from '../../domain';
-import { NEUTRAL_VITALITY, plantColor } from '../theme/plantPalette';
+import { BLOOM, NEUTRAL_VITALITY, plantColor } from '../theme/plantPalette';
 import { buildColorRuns } from './colorRuns';
 import { pixelScale } from './pixelScale';
 
@@ -23,6 +23,12 @@ const genome: Genome = {
 describe('plantColor', () => {
   it('gives a yellowed color on a relapse day, same tone otherwise', () => {
     expect(plantColor(leaf(true), genome)).not.toBe(plantColor(leaf(false), genome));
+  });
+
+  it('colors the flower of a watered day, even on a relapse day', () => {
+    const bloom: PlantPixel = { ...leaf(true), bloom: true };
+    expect(plantColor(bloom, genome)).toBe(BLOOM);
+    expect(plantColor(leaf(false), genome)).not.toBe(BLOOM);
   });
 
   it('colors the pot by pot color and the leaves by foliage hue', () => {
