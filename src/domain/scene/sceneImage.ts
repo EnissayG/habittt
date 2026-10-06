@@ -53,10 +53,26 @@ export type RoomTone =
   /** The dotted pot that creates a habit. */
   | 'outline';
 
+/** Furniture and pictures (drawDecor). */
+export type DecorTone =
+  | 'chair'
+  | 'chairLight'
+  | 'chairShade'
+  | 'chairDark'
+  | 'lampShade'
+  | 'lampLight'
+  | 'paintSky'
+  | 'paintDusk'
+  | 'paintHill'
+  | 'paintHillDark'
+  | 'paintPaper'
+  | 'rugA'
+  | 'rugB';
+
 /** Tones only ever used as translucent layers. */
 export type LightTone = 'glare' | 'shine' | 'shadow';
 
-export type SceneTone = WindowTone | RoomTone | LightTone;
+export type SceneTone = WindowTone | RoomTone | DecorTone | LightTone;
 
 /** A translucent layer painted over a pixel (as with canvas globalAlpha). */
 export interface SceneLayer {
