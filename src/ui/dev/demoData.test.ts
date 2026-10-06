@@ -45,6 +45,13 @@ describe('demo data', () => {
     expect(shelf.layout.walls).toHaveLength(3);
   });
 
+  it('has a few notes and plants watered today', async () => {
+    const shelf = await demoShelf();
+    // Sugar is 45 days old: watered today, its plant blooms (past 120 days nothing grows).
+    const sugar = Object.values(shelf.habits).find((s) => s.habit.name === 'Sucre')!;
+    expect(sugar.plant.pixels.some((pixel) => pixel?.bloom)).toBe(true);
+  });
+
   it('draws the same plants every time', async () => {
     const [a, b] = await Promise.all([demoShelf(), demoShelf()]);
     expect(Object.values(a.habits).map((s) => s.habit.seed)).toEqual(

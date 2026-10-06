@@ -1,4 +1,4 @@
-import { addDays, type HabitTracker, type SpeciesId } from '../../domain';
+import { addDays, type HabitTracker, type Mood, type SpeciesId } from '../../domain';
 
 // Demo habits for testing the shelf on a phone (development only): ages
 // from 3 to 400 days, relapses, every kind of plant, four hanging ones, and
@@ -33,6 +33,23 @@ export const DEMO_HABITS: readonly DemoHabit[] = [
   { name: 'Se ronger', species: 'monstera', age: 400, relapses: [399, 250] },
 ];
 
+/** A few notes (in days before today) on the first habits, and today's watering. */
+const DEMO_NOTES: Record<string, readonly { daysAgo: number; text: string; mood: Mood | null }[]> =
+  {
+    Fumer: [
+      {
+        daysAgo: 0,
+        text: "Envie forte après le café ce matin. J'ai marché dix minutes et c'est passé.",
+        mood: 'craving',
+      },
+      { daysAgo: 22, text: "Presque pas pensé à ça aujourd'hui.", mood: 'easy' },
+      { daysAgo: 122, text: 'Soirée difficile. Je repars demain.', mood: 'stress' },
+    ],
+    Sucre: [{ daysAgo: 3, text: '', mood: 'proud' }],
+    Soda: [{ daysAgo: 10, text: "De l'eau pétillante à la place. Ça marche.", mood: 'proud' }],
+  };
+const DEMO_WATERED_TODAY = ['Fumer', 'Sucre', 'Café', 'Séries'];
+
 /** Fixed seeds, so the demo plants are the same every time. */
 export function demoSeeds(): () => number {
   let state = 0x9e3779b9;
@@ -55,5 +72,9 @@ export async function seedDemo(tracker: HabitTracker): Promise<void> {
     for (const daysAgo of demo.relapses) {
       await tracker.recordRelapse(result.value.id, addDays(today, -daysAgo));
     }
+    for (const { daysAgo, text, mood } of DEMO_NOTES[demo.name] ?? []) {
+      await tracker.saveNote(result.value.id, addDays(today, -daysAgo), { text, mood });
+    }
+    if (DEMO_WATERED_TODAY.includes(demo.name)) await tracker.waterToday(result.value.id);
   }
 }
