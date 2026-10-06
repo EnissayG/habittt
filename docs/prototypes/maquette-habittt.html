@@ -33,6 +33,9 @@ canvas.room{image-rendering:pixelated;display:block;width:calc(100% + 28px);marg
 .views div{display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--pixel);font-size:12px}
 .views canvas{image-rendering:pixelated;width:134px;height:auto;background:#FDF6E3;display:block}
 canvas.win{image-rendering:pixelated;display:block;width:100%;height:auto}
+canvas.pano{image-rendering:pixelated;display:block;width:100%;height:auto;background:#FDF6E3;border:3px solid #073642}
+.panocap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;font-size:13px}
+.panocap b{font-family:var(--pixel);font-weight:500;color:var(--strong);display:block}
 canvas.ic{image-rendering:pixelated;display:inline-block;width:14px;height:14px;vertical-align:-2px}
 .top{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--p-muted)}
 .logo{font-size:30px;font-weight:600;color:var(--p-strong);line-height:1}
@@ -135,9 +138,17 @@ canvas.ic{image-rendering:pixelated;display:inline-block;width:14px;height:14px;
 <div class="music" style="margin-top:-12px"><canvas class="ic" data-ic="play"></canvas><canvas class="ic" data-ic="next"></canvas><div class="ttl">pluie sur la serre</div><div class="eq"><i style="height:5px"></i><i style="height:11px"></i><i style="height:7px"></i><i style="height:9px"></i></div></div>
 </div>
 <div class="views"><div><canvas class="win" data-view="jour"></canvas>jour</div><div><canvas class="win" data-view="soir"></canvas>soir</div><div><canvas class="win" data-view="nuit"></canvas>nuit</div><div><canvas class="win" data-view="hiver"></canvas>hiver</div></div>
-<ul class="spec"><li>L'étagère est un lieu : un mur, une grande fenêtre et un plancher de bois sombre, poli, qui reflète la fenêtre et la tablette du bas. Aucun meuble pour l'instant.</li><li>La fenêtre est large comme deux plantes. Elle a un cadre, huit carreaux, des rideaux et un paysage : ciel, nuages, collines, arbres, une petite maison.</li><li>La vue suit l'heure locale (jour, soir, nuit) et la saison (neige en hiver). Le reflet au sol prend la même lumière.</li><li>Plus tard : la vue s'anime (nuages qui passent, neige qui tombe, étoiles qui scintillent).</li><li>Trois plantes par tablette. Une tablette s'ajoute quand la précédente est pleine ; le mur défile, le plancher reste en bas.</li><li>Les plantes retombantes vont en haut, à côté de la fenêtre.</li><li>Toucher une plante ouvre son habitude. Appui long : menu « Retirer ».</li><li>Le pot en pointillé crée une habitude.</li><li>La barre de musique reste en bas : lecture, suivant, titre. Elle se masque dans les réglages.</li></ul></div>
+<ul class="spec"><li>L'étagère est un lieu : un mur, une grande fenêtre et un plancher de bois sombre, poli, qui reflète la fenêtre et la tablette du bas. Aucun meuble pour l'instant.</li><li>La fenêtre est large comme deux plantes. Elle a un cadre, huit carreaux, des rideaux et un paysage : ciel, nuages, collines, arbres, une petite maison.</li><li>La vue suit l'heure locale (jour, soir, nuit) et la saison (neige en hiver). Le reflet au sol prend la même lumière.</li><li>Plus tard : la vue s'anime (nuages qui passent, neige qui tombe, étoiles qui scintillent).</li><li>Trois plantes par tablette, deux tablettes par mur. Quand le mur est plein, un nouveau mur apparaît à droite : voir « La pièce en entier ».</li><li>Les plantes retombantes vont en haut, à côté de la fenêtre.</li><li>Toucher une plante ouvre son habitude. Appui long : menu « Retirer ». Glisser à l'horizontale : changer de mur.</li><li>Le pot en pointillé crée une habitude.</li><li>La barre de musique reste en bas : lecture, suivant, titre. Elle se masque dans les réglages.</li></ul></div>
 
 </div>
+</section>
+
+<section>
+<h2>La pièce en entier</h2>
+<p>L'écran 2 ne montre qu'un mur. La pièce est plus large : on glisse vers la gauche pour passer au mur suivant. Le cadre foncé marque ce que le téléphone affiche.</p>
+<canvas class="pano" aria-hidden="true"></canvas>
+<div class="panocap"><div><b>Mur 1</b>La fenêtre et les premières habitudes. C'est l'écran d'arrivée.</div><div><b>Mur 2</b>Il apparaît quand le mur 1 est plein. Six places, plus un tableau.</div><div><b>Mur 3</b>Un coin de décor : fauteuil, lampe, tableau. À la bonne échelle par rapport aux pots.</div></div>
+<ul class="spec"><li>On passe d'un mur à l'autre en glissant à l'horizontale, mur par mur. Des points en bas indiquent le mur affiché.</li><li>Le plancher est continu d'un mur à l'autre. La fenêtre n'existe que sur le mur 1.</li><li>Un mur porte au plus six plantes, sur deux tablettes, plus la place à côté de la fenêtre sur le mur 1. Les nouvelles habitudes remplissent le premier mur qui a une place libre.</li><li>Le pot en pointillé se trouve toujours à la première place libre.</li><li>Le glissement horizontal sert à se déplacer dans la pièce. On ne retire donc plus une habitude en la glissant : seulement par un appui long ou par son menu.</li><li>Pour commencer : seulement les murs à plantes. Les meubles, les tableaux et le mur de décor viennent plus tard, avec les éléments à débloquer.</li></ul>
 </section>
 
 <section>
@@ -249,9 +260,6 @@ canvas.ic{image-rendering:pixelated;display:inline-block;width:14px;height:14px;
 <div class="unit"><h3>9. Retirer une habitude</h3>
 <div class="phone">
 <div class="top"><span><canvas class="ic" data-ic="back"></canvas> étagère</span><span></span></div>
-<div class="swipe"><div class="keep row3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-<div class="slot"><canvas class="pl" data-sp="monstera" data-seed="100" data-days="34" data-crop="-40"></canvas></div>
-<div class="slot"><canvas class="pl" data-sp="cactus" data-seed="174" data-days="60" data-crop="-40"></canvas></div></div><div class="act">Retirer</div></div>
 <div class="t1" style="font-size:19px">Que devient ta plante ?</div>
 <div class="card on"><canvas class="pl" data-sp="cactus" data-seed="174" data-days="60" data-crop="-44"></canvas><div><b>Elle rejoint le jardin</b><span class="sys small">Je n'ai plus besoin de la suivre. Elle reste visible, avec ses notes.</span></div></div>
 <div class="card"><canvas class="pl" data-blank="give" data-crop="-44"></canvas><div><b>Je la donne</b><span class="sys small">J'arrête de la suivre pour l'instant. Elle quitte l'étagère.</span></div></div>
@@ -259,7 +267,7 @@ canvas.ic{image-rendering:pixelated;display:inline-block;width:14px;height:14px;
 <div class="btn">Confirmer</div>
 <div class="quiet">Tout effacer définitivement</div>
 </div>
-<ul class="spec"><li>On y arrive en glissant une plante vers la gauche, par un appui long, ou par le menu de l'habitude.</li><li>Toujours une confirmation. Rien n'est effacé sans le lien du bas, qui redemande confirmation.</li><li>Les deux sorties sont une suppression logique : les données restent.</li></ul></div>
+<ul class="spec"><li>On y arrive par un appui long sur la plante ou par le menu de l'habitude. Pas par un glissement, réservé au passage d'un mur à l'autre.</li><li>Toujours une confirmation. Rien n'est effacé sans le lien du bas, qui redemande confirmation.</li><li>Les deux sorties sont une suppression logique : les données restent.</li></ul></div>
 
 <div class="unit"><h3>10. Le jardin</h3>
 <div class="phone">
@@ -826,6 +834,43 @@ function drawRoom(cv){
  c.globalAlpha=1;
 }
 document.querySelectorAll('canvas.room').forEach(drawRoom);
+// La pièce en entier : trois murs côte à côte, sur un seul canevas de 432 x 176.
+function drawPano(cv){
+ const WW=144,Hh=176,FL=148;cv.width=WW*3;cv.height=Hh;const c=cv.getContext('2d'),R=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};
+ const plant=(sp,seed,days,x,y,rows,fromTop)=>{const g=P.render(sp,seed,days,[]),y0=fromTop?0:P.H-rows;for(let r=0;r<rows;r++)for(let i=0;i<P.W;i++){const col=g.grid[(y0+r)*P.W+i];if(col)R(x+i,y+r,1,1,col)}};
+ const shelf=(x,y)=>{R(x,y,WW,2,'#B58900');R(x,y+2,WW,1,'#93710A')};
+ const slot=(x,y)=>{c.fillStyle='#93A1A1';for(let i=17;i<=31;i+=2){R(x+i,y,1,1,'#93A1A1');R(x+i,y+10,1,1,'#93A1A1')}for(let j=0;j<=10;j+=2){R(x+17,y+j,1,1,'#93A1A1');R(x+31,y+j,1,1,'#93A1A1')}R(x+22,y+5,5,1,'#93A1A1');R(x+24,y+3,1,5,'#93A1A1')};
+ const frame=(x,y,w,h,sky,hill)=>{R(x,y,w,h,'#5B4636');R(x+1,y+1,w-2,h-2,'#B58900');R(x+3,y+3,w-6,h-6,sky);for(let i=0;i<w-6;i++){const hh=Math.round(4+2*Math.sin(i/4));R(x+3+i,y+h-3-hh,1,hh,hill)}R(x+w-10,y+5,3,3,'#F7D774')};
+ // plancher continu
+ R(0,FL-3,WW*3,2,'#D3CBB7');R(0,FL-1,WW*3,1,'#A89F88');
+ let y=FL,k=0;for(const h of [4,5,6,7,8]){R(0,y,WW*3,h,['#6B4423','#74492A','#633F20'][k%3]);for(let x=(k*53+17)%61;x<WW*3;x+=61+k*7)R(x,y,1,h,'#4A2E16');y+=h;if(y<=Hh)R(0,y-1,WW*3,1,'#4A2E16');k++}
+ // mur 1 : fenêtre, plante retombante, deux tablettes
+ const tmp=document.createElement('canvas');tmp.dataset.view='jour';drawWindow(tmp);c.drawImage(tmp,48,6);
+ plant('pothos',174,45,0,6,46,true);
+ plant('bonsai',12,87,0,56,40);plant('monstera',100,34,48,56,40);plant('cactus',174,60,96,56,40);
+ plant('sansevieria',100,120,0,102,40);plant('calathea',248,14,48,102,40);shelf(96,139);slot(96,128);
+ c.globalAlpha=.45;for(let fy=FL;fy<Hh;fy++)for(let x=61;x<131;x++){const q=x-61;if(q===34||q===35||q===16||q===53)continue;R(x,fy,1,1,'#CDEAF0')}c.globalAlpha=1;
+ // mur 2 : six places et un tableau
+ const x2=WW;frame(x2+8,10,34,26,'#F6B26B','#46580A');
+ plant('pearls',211,45,x2+96,6,46,true);
+ plant('ficus',137,90,x2,56,40);plant('bamboo',285,70,x2+48,56,40);plant('fern',174,80,x2+96,56,40);
+ plant('jade',100,100,x2,102,40);plant('aloe',137,60,x2+48,102,40);plant('spider',100,60,x2+96,102,40);
+ // mur 3 : le coin de décor, à l'échelle des pots
+ const x3=WW*2;frame(x3+78,18,40,30,'#A8D8E8','#859900');
+ for(let i=0;i<8;i++)R(x3+8+(i===0||i===7?3:0),FL+8+i,84-(i===0||i===7?6:0),1,i%4<2?'#D33682':'#EEE8D5');
+ const ax=x3+22,ay=FL+10-52;
+ R(ax+6,ay,44,30,'#2AA198');R(ax+7,ay-1,42,1,'#2AA198');R(ax+6,ay,44,2,'#5FC4B8');R(ax+44,ay+2,6,28,'#22817A');
+ R(ax,ay+18,10,28,'#22817A');R(ax+46,ay+18,10,28,'#1F7A72');R(ax,ay+18,10,2,'#2AA198');R(ax+46,ay+18,10,2,'#2AA198');
+ R(ax+10,ay+26,36,10,'#5FC4B8');R(ax+10,ay+34,36,2,'#2AA198');R(ax+4,ay+36,48,10,'#2AA198');R(ax+4,ay+44,48,2,'#22817A');
+ R(ax+6,ay+46,3,6,'#5B4636');R(ax+47,ay+46,3,6,'#5B4636');
+ const lx=x3+112,ly=FL+6;R(lx,ly-66,1,66,'#5B4636');R(lx-4,ly,9,2,'#5B4636');
+ for(let i=0;i<10;i++)R(lx-3-Math.floor(i/2),ly-76+i,7+Math.floor(i/2)*2,1,i<2?'#FDE9A8':'#F2C94C');
+ plant('monstera',1,120,x3+92,FL+10-64,64);
+ // le cadre du téléphone sur le mur 1
+ c.strokeStyle='#073642';c.lineWidth=2;c.strokeRect(1,1,WW-2,Hh-2);
+}
+document.querySelectorAll('canvas.pano').forEach(drawPano);
+
 // data-crop : nombre de lignes à garder. Positif = depuis le haut (plantes retombantes), négatif = depuis le bas.
 function crop(cv,n){if(!n)return{y0:0,h:P.H};const h=Math.abs(n),y0=n>0?0:P.H-h;cv.height=h;return{y0,h}}
 document.querySelectorAll('canvas.pl').forEach(cv=>{
