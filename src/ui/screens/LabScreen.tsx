@@ -20,7 +20,9 @@ import {
 import { Chip } from '../components/Chip';
 import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
+import { useDevData } from '../dev/DevData';
 import { DigitBoard } from '../dev/DigitBoard';
+import { Button } from '../components/Button';
 import type { ScreenProps } from '../navigation/types';
 import { describePlant, isRare, potLabel, SPECIES_LABELS } from '../plant/labels';
 import { PixelCanvas } from '../plant/PixelCanvas';
@@ -50,6 +52,18 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
   const [relapseA, setRelapseA] = useState('');
   const [relapseB, setRelapseB] = useState('');
   const [view, setView] = useState<WindowView>('day');
+  const devData = useDevData();
+  const [filling, setFilling] = useState(false);
+
+  async function fillDemo() {
+    if (!devData) return;
+    setFilling(true);
+    try {
+      await devData.fillDemo();
+    } finally {
+      setFilling(false);
+    }
+  }
 
   const seed = parseNumber(seedText);
   const relapseDays = [parseNumber(relapseA), parseNumber(relapseB)].filter((d) => d > 0);
@@ -82,6 +96,26 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
   return (
     <Screen scroll>
       <TopBar backLabel="étagère" onBack={navigation.goBack} right="Labo" />
+
+      {devData && (
+        <>
+          <Text style={styles.label}>
+            Données : {devData.source === 'demo' ? 'démo' : 'les miennes'}
+          </Text>
+          <Button
+            label={filling ? 'Remplissage…' : 'Remplir la démo'}
+            variant="alt"
+            disabled={filling}
+            onPress={() => void fillDemo()}
+          />
+          <Button
+            label="Revenir à mes données"
+            variant="quiet"
+            disabled={devData.source === 'real'}
+            onPress={devData.showRealData}
+          />
+        </>
+      )}
 
       <PlantCanvas image={image} maxWidth={width - 28} maxHeight={360} />
       <Text style={styles.description}>

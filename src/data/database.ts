@@ -1,6 +1,8 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
 const DATABASE_NAME = 'habittt.db';
+/** A separate file for the demo data (development only): the real data is never touched. */
+export const DEMO_DATABASE_NAME = 'habittt-demo.db';
 
 /**
  * Ordered schema migrations. The database stores how many have run in
@@ -38,10 +40,19 @@ const MIGRATIONS: readonly string[] = [
   `,
 ];
 
-export async function openHabitDatabase(): Promise<SQLiteDatabase> {
-  const db = await openDatabaseAsync(DATABASE_NAME);
+export async function openHabitDatabase(name: string = DATABASE_NAME): Promise<SQLiteDatabase> {
+  const db = await openDatabaseAsync(name);
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
   await migrate(db);
+  return db;
+}
+
+/** Opens the demo database and empties it (it may already be open: same connection). */
+export async function openFreshDemoDatabase(): Promise<SQLiteDatabase> {
+  const db = await openHabitDatabase(DEMO_DATABASE_NAME);
+  await db.withTransactionAsync(async () => {
+    await db.execAsync('DELETE FROM relapses; DELETE FROM habits;');
+  });
   return db;
 }
 
