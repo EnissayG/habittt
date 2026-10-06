@@ -25,6 +25,7 @@ import {
   type WallPlan,
   type WindowView,
 } from '../../domain';
+import { NumberText } from '../components/NumberText';
 import { PixelIcon } from '../components/PixelIcon';
 import { days } from '../format';
 import type { ScreenProps } from '../navigation/types';
@@ -38,8 +39,8 @@ import { useWindowClock } from '../useWindowClock';
 // Text sizes are fixed so the room can be planned in whole cells; large
 // accessibility sizes are allowed up to this factor.
 const MAX_FONT_SCALE = 1.3;
-const NAME_LINE = 16;
-const COUNT_LINE = 15;
+const COUNT_LINE = 22;
+const NAME_LINE = 15;
 const LABEL_TOP = 3;
 const LABEL_GAP = 6;
 const LOGO_LINE = 32;
@@ -323,20 +324,21 @@ function AnimatedWindow({ view, cell }: { view: WindowView; cell: number }) {
   );
 }
 
+/** Under a plant: its days first, large, then its name, quieter. */
 function Label({ placed, shelf }: { placed: PlacedItem; shelf: Shelf }) {
   const plant = placed.content.kind === 'plant' ? shelf.habits[placed.content.id] : undefined;
   return (
     <>
-      <Text
-        style={[styles.name, !plant && styles.newName]}
+      <NumberText
+        style={[styles.count, !plant && styles.newCount]}
         numberOfLines={1}
         maxFontSizeMultiplier={MAX_FONT_SCALE}
       >
-        {plant ? plant.habit.name : 'Nouvelle'}
-      </Text>
-      <Text style={styles.small} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>
-        {plant ? `${plant.stats.currentStreak} j` : 'habitude'}
-      </Text>
+        {plant ? days(plant.stats.currentStreak) : 'Nouvelle'}
+      </NumberText>
+      <NumberText style={styles.name} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+        {plant ? plant.habit.name : 'habitude'}
+      </NumberText>
     </>
   );
 }
@@ -368,15 +370,21 @@ const styles = StyleSheet.create({
     paddingTop: LABEL_TOP,
     paddingHorizontal: 2,
   },
-  name: {
+  count: {
     fontFamily: fonts.display,
-    fontSize: 13,
-    lineHeight: NAME_LINE,
+    fontSize: 15,
+    lineHeight: COUNT_LINE,
     color: colors.text,
     textAlign: 'center',
   },
-  newName: { color: colors.muted },
-  small: { fontFamily: fonts.display, fontSize: 12, lineHeight: COUNT_LINE, color: colors.muted },
+  newCount: { color: colors.muted },
+  name: {
+    fontFamily: fonts.display,
+    fontSize: 12,
+    lineHeight: NAME_LINE,
+    color: colors.muted,
+    textAlign: 'center',
+  },
   dots: {
     position: 'absolute',
     left: 0,
