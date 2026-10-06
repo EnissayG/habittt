@@ -1,15 +1,15 @@
 import { PLANT_GRID } from '../plant/grid';
 import { sin } from '../plant/trig';
-import { SceneCanvas, type SceneImage } from './sceneImage';
+import { SceneCanvas, type SceneImage, type SceneTone } from './sceneImage';
 import type { WindowView } from './windowView';
 
 // The shelf window, ported from drawWindow() in the mockup
 // (docs/prototypes/maquette-habittt.html). As wide as two plants.
 //
-// Ready to be animated later: the picture is a stack of layers, each a
-// function of (view, t). Today t is always 0; animating means calling
-// drawWindow with a moving t (clouds drifting, snow falling, stars
-// twinkling) without touching the frame or the curtains.
+// Animated: the picture is a stack of layers, each a function of (view, t),
+// t in seconds. Only the view through the glass moves (clouds drift, stars
+// twinkle, snow falls), in whole pixels; the frame and the curtains never
+// change. t = 0 is the still window.
 
 export const WINDOW_SIZE = { width: PLANT_GRID.width * 2, height: 46 } as const;
 
@@ -67,6 +67,24 @@ type Layer = (c: SceneCanvas, view: WindowView, t: number) => void;
 const { x: gx, y: gy, width: gw, height: gh } = GLASS;
 const ground = gy + gh;
 
+/** Pixels per second. Slow: it is a window, not a screen saver. */
+const CLOUD_SPEEDS = [0.4, 0.25] as const;
+const SNOW_SPEED = 3;
+/** Star twinkles per second. */
+const TWINKLE_RATE = 2;
+
+/** Opaque rectangle clipped to the glass (things moving behind the frame). */
+function fillGlass(c: SceneCanvas, x: number, y: number, w: number, h: number, tone: SceneTone) {
+  const left = Math.max(gx, x);
+  const top = Math.max(gy, y);
+  const right = Math.min(gx + gw, x + w);
+  const bottom = Math.min(gy + gh, y + h);
+  if (right > left && bottom > top) c.fill(left, top, right - left, bottom - top, tone);
+}
+
+/** a mod n, always in [0, n). */
+const wrap = (a: number, n: number) => ((a % n) + n) % n;
+
 const frame: Layer = (c) => {
   c.fill(9, 3, 78, 38, 'frameDark');
   c.fill(10, 4, 76, 36, 'frame');
@@ -89,7 +107,7 @@ const sky: Layer = (c) => {
   }
 };
 
-const celestial: Layer = (c, view) => {
+const celestial: Layer = (c, view, t) => {
   if (view === 'day') {
     c.fill(gx + 58, gy + 3, 5, 5, 'sun');
     c.fill(gx + 59, gy + 2, 3, 7, 'sun');
@@ -108,21 +126,27 @@ const celestial: Layer = (c, view) => {
     c.fill(gx + 56, gy + 3, 5, 6, 'moon');
     c.fill(gx + 57, gy + 2, 3, 8, 'moon');
     c.fill(gx + 58, gy + 3, 3, 5, 'sky0'); // the crescent's bite
-    for (const [x, y] of STARS) c.fill(gx + x!, gy + y!, 1, 1, 'star');
+    // A star or two rests for a moment, a different one each beat.
+    const beat = Math.floor(t * TWINKLE_RATE);
+    STARS.forEach(([x, y], i) => {
+      const resting = beat > 0 && (i * 7 + beat * 3) % 9 === 0;
+      if (!resting) c.fill(gx + x!, gy + y!, 1, 1, 'star');
+    });
   }
 };
 
-/** Clouds will drift with t once animated. */
-const clouds: Layer = (c, view) => {
-  const cloud = (x: number, y: number, w: number) => {
-    c.fill(gx + x + 2, gy + y, w - 5, 1, 'cloud');
-    c.fill(gx + x, gy + y + 1, w, 2, 'cloud');
-    c.fill(gx + x + 1, gy + y + 3, w - 3, 1, 'cloudShade');
+/** Clouds drift to the right and come back in from the left. */
+const clouds: Layer = (c, view, t) => {
+  const cloud = (x0: number, y: number, w: number, speed: number) => {
+    const x = wrap(x0 + w + Math.floor(t * speed), gw + w) - w;
+    fillGlass(c, gx + x + 2, gy + y, w - 5, 1, 'cloud');
+    fillGlass(c, gx + x, gy + y + 1, w, 2, 'cloud');
+    fillGlass(c, gx + x + 1, gy + y + 3, w - 3, 1, 'cloudShade');
   };
   if (view !== 'night') {
-    cloud(6, 5, 12);
-    cloud(34, 9, 9);
-  } else cloud(30, 7, 11);
+    cloud(6, 5, 12, CLOUD_SPEEDS[0]);
+    cloud(34, 9, 9, CLOUD_SPEEDS[1]);
+  } else cloud(30, 7, 11, CLOUD_SPEEDS[1]);
 };
 
 const hills: Layer = (c) => {
@@ -163,10 +187,14 @@ const trees: Layer = (c, view) => {
   }
 };
 
-/** Snow will fall with t once animated. */
-const snow: Layer = (c, view) => {
+/** Snow falls through the glass, swaying by one pixel. */
+const snow: Layer = (c, view, t) => {
   if (view !== 'winter') return;
-  for (const [x, y] of SNOWFLAKES) c.fill(gx + x!, gy + y!, 1, 1, 'snow');
+  for (const [x, y] of SNOWFLAKES) {
+    const fallen = y! + Math.floor(t * SNOW_SPEED);
+    const sway = Math.floor(fallen / 6) % 2;
+    fillGlass(c, gx + wrap(x! + sway, gw), gy + wrap(fallen, gh), 1, 1, 'snow');
+  }
 };
 
 const glare: Layer = (c, view) => {
@@ -211,7 +239,7 @@ const sill: Layer = (c) => {
   c.blend(8, 44, 80, 1, { kind: 'tone', tone: 'shadow' }, 0.12);
 };
 
-/** Bottom to top. Only clouds, celestial and snow will depend on t. */
+/** Bottom to top. Only clouds, celestial and snow depend on t. */
 const LAYERS: readonly Layer[] = [
   frame,
   sky,

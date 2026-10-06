@@ -52,3 +52,59 @@ describe('drawWindow', () => {
     expect(GLASS.y + GLASS.height).toBeLessThanOrEqual(WINDOW_SIZE.height);
   });
 });
+
+describe('drawWindow, animated', () => {
+  const insideGlass = (i: number) => {
+    const x = i % WINDOW_SIZE.width;
+    const y = Math.floor(i / WINDOW_SIZE.width);
+    return x >= GLASS.x && x < GLASS.x + GLASS.width && y >= GLASS.y && y < GLASS.y + GLASS.height;
+  };
+  const changed = (a: SceneImage, b: SceneImage) =>
+    a.pixels
+      .map((p, i) => (JSON.stringify(p) === JSON.stringify(b.pixels[i]) ? -1 : i))
+      .filter((i) => i >= 0);
+
+  it.each(WINDOW_VIEWS)('%s: t = 0 is the still window', (view) => {
+    expect(drawWindow(view, 0)).toEqual(drawWindow(view));
+  });
+
+  it.each(WINDOW_VIEWS)('%s: only the view through the glass moves', (view) => {
+    for (const t of [1, 7.5, 60, 3600]) {
+      for (const i of changed(drawWindow(view, 0), drawWindow(view, t)))
+        expect(insideGlass(i)).toBe(true);
+    }
+  });
+
+  it('lets the clouds drift slowly', () => {
+    const cloudsAt = (t: number) =>
+      drawWindow('day', t).pixels.flatMap((p, i) =>
+        p?.tone === 'cloud' ? [i % WINDOW_SIZE.width] : [],
+      );
+    expect(cloudsAt(0)).toEqual(cloudsAt(0.5));
+    expect(cloudsAt(20)).not.toEqual(cloudsAt(0));
+    // Slowly: a few pixels in ten seconds, never a jump across the glass.
+    const shift = Math.min(...cloudsAt(10)) - Math.min(...cloudsAt(0));
+    expect(Math.abs(shift)).toBeLessThanOrEqual(8);
+  });
+
+  it('makes the stars twinkle at night', () => {
+    const stars = (t: number) =>
+      drawWindow('night', t).pixels.filter((p) => p?.tone === 'star').length;
+    const counts = new Set([0, 0.5, 1, 1.5, 2, 2.5, 3].map(stars));
+    expect(counts.size).toBeGreaterThan(1);
+    for (const count of counts) expect(count).toBeGreaterThan(5);
+  });
+
+  it('lets the snow fall in winter, and only then', () => {
+    const flakes = (view: 'winter' | 'day', t: number) =>
+      drawWindow(view, t).pixels.flatMap((p, i) =>
+        p?.tone === 'snow' && insideGlass(i) ? [i] : [],
+      );
+    expect(flakes('winter', 2)).not.toEqual(flakes('winter', 0));
+    expect(flakes('day', 2)).toEqual([]);
+  });
+
+  it('is deterministic for a given t', () => {
+    expect(drawWindow('night', 12.25)).toEqual(drawWindow('night', 12.25));
+  });
+});
