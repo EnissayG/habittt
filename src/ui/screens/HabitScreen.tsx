@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PixelRatio, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { usedRows } from '../../domain';
@@ -23,6 +23,9 @@ const COUNTER_HEIGHT = 74;
 
 type OpenSheet = 'menu' | 'water' | 'relapse' | null;
 
+/** How long a confirmation stays under the buttons. */
+const NOTICE_MS = 3000;
+
 /** Screen 5: one habit. The plant is the main element. */
 export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
   const { id } = route.params;
@@ -31,6 +34,13 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
   const load = useCallback(() => tracker.getHabit(id), [tracker, id]);
   const { data: detail, reload } = useScreenData(load);
   const [sheet, setSheet] = useState<OpenSheet>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   if (!detail) return <Screen>{null}</Screen>;
 
@@ -58,6 +68,49 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
         <>
           <Button label="Arroser et écrire une note" onPress={() => setSheet('water')} />
           <Button label="J'ai rechuté" variant="quiet" onPress={() => setSheet('relapse')} />
+          {notice && (
+            <Text style={styles.notice} accessibilityLiveRegion="polite">
+              {notice}
+            </Text>
+          )}
+        </>
+      }
+      overlay={
+        <>
+          <Sheet visible={sheet === 'menu'} onClose={() => setSheet(null)}>
+            <Button
+              label="Historique"
+              variant="alt"
+              onPress={() => {
+                setSheet(null);
+                navigation.navigate('History', { id });
+              }}
+            />
+            <Button label="Fermer" variant="quiet" onPress={() => setSheet(null)} />
+          </Sheet>
+
+          <Sheet visible={sheet === 'water'} onClose={() => setSheet(null)}>
+            <View style={styles.sheetTitle}>
+              <PixelIcon name="drop" size={19} />
+              <Text style={styles.sheetTitleText}>Arroser et écrire une note</Text>
+            </View>
+            <Text style={styles.body}>
+              Bientôt : tu pourras arroser ta plante et écrire une note pour ce jour. Écrire restera
+              toujours facultatif.
+            </Text>
+            <Button label="D'accord" variant="alt" onPress={() => setSheet(null)} />
+          </Sheet>
+
+          <RelapseSheet
+            habitId={id}
+            startDate={habit.startDate}
+            visible={sheet === 'relapse'}
+            onClose={() => setSheet(null)}
+            onChanged={(change) => {
+              setNotice(change === 'recorded' ? "C'est noté." : 'Rechute annulée.');
+              void reload();
+            }}
+          />
         </>
       }
     >
@@ -90,38 +143,6 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
         <Chip label={`record ${stats.longestStreak} j`} />
         <Chip label={`depuis le ${dayMonth(habit.startDate)}`} />
       </View>
-
-      <Sheet visible={sheet === 'menu'} onClose={() => setSheet(null)}>
-        <Button
-          label="Historique"
-          variant="alt"
-          onPress={() => {
-            setSheet(null);
-            navigation.navigate('History', { id });
-          }}
-        />
-        <Button label="Fermer" variant="quiet" onPress={() => setSheet(null)} />
-      </Sheet>
-
-      <Sheet visible={sheet === 'water'} onClose={() => setSheet(null)}>
-        <View style={styles.sheetTitle}>
-          <PixelIcon name="drop" size={19} />
-          <Text style={styles.sheetTitleText}>Arroser et écrire une note</Text>
-        </View>
-        <Text style={styles.body}>
-          Bientôt : tu pourras arroser ta plante et écrire une note pour ce jour. Écrire restera
-          toujours facultatif.
-        </Text>
-        <Button label="D'accord" variant="alt" onPress={() => setSheet(null)} />
-      </Sheet>
-
-      <RelapseSheet
-        habitId={id}
-        startDate={habit.startDate}
-        visible={sheet === 'relapse'}
-        onClose={() => setSheet(null)}
-        onRecorded={() => void reload()}
-      />
     </Screen>
   );
 }
@@ -137,4 +158,5 @@ const styles = StyleSheet.create({
   sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sheetTitleText: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
   body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+  notice: { fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'center' },
 });

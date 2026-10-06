@@ -16,7 +16,8 @@ interface RelapseSheetProps {
   startDate: LocalDate;
   visible: boolean;
   onClose: () => void;
-  onRecorded: () => void;
+  /** After a change: the relapse was noted, or the existing one cancelled. */
+  onChanged: (change: 'recorded' | 'cancelled') => void;
 }
 
 type When = 'today' | 'yesterday' | 'other';
@@ -27,7 +28,7 @@ export function RelapseSheet({
   startDate,
   visible,
   onClose,
-  onRecorded,
+  onChanged,
 }: RelapseSheetProps) {
   const tracker = useTracker();
   const today = tracker.today();
@@ -36,6 +37,8 @@ export function RelapseSheet({
   const [otherDate, setOtherDate] = useState<LocalDate | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The chosen day already has a relapse: offer to cancel it. */
+  const [exists, setExists] = useState(false);
 
   const canYesterday = daysBetween(startDate, yesterday) >= 0;
   const date = when === 'today' ? today : when === 'yesterday' ? yesterday : (otherDate ?? today);
@@ -45,6 +48,7 @@ export function RelapseSheet({
     setOtherDate(null);
     setPickerOpen(false);
     setError(null);
+    setExists(false);
     onClose();
   }
 
@@ -54,8 +58,37 @@ export function RelapseSheet({
       setError(toggleRelapseErrorMessage[result.error]);
       return;
     }
+    if (result.value === 'unchanged') {
+      setExists(true);
+      return;
+    }
     close();
-    onRecorded();
+    onChanged('recorded');
+  }
+
+  async function cancelExisting() {
+    const result = await tracker.toggleRelapse(habitId, date);
+    if (!result.ok) {
+      setError(toggleRelapseErrorMessage[result.error]);
+      return;
+    }
+    close();
+    onChanged('cancelled');
+  }
+
+  if (exists) {
+    return (
+      <Sheet visible={visible} onClose={close}>
+        <Text style={styles.title}>Une rechute est déjà notée ce jour-là.</Text>
+        <Text style={styles.body}>
+          {date === today ? "C'est aujourd'hui." : `C'est le ${dayMonth(date)}.`} Une seule rechute
+          compte par jour.
+        </Text>
+        {error && <Text style={styles.body}>{error}</Text>}
+        <Button label="L'annuler" variant="alt" onPress={cancelExisting} />
+        <Button label="Fermer" variant="quiet" onPress={close} />
+      </Sheet>
+    );
   }
 
   return (

@@ -10,25 +10,30 @@ interface ScreenProps {
   scroll?: boolean;
   /** Content pinned under the scrolling area (main buttons). */
   footer?: ReactNode;
+  /** Drawn over the whole screen, safe areas included (panels). */
+  overlay?: ReactNode;
 }
 
 /** The phone frame of the mockup: cream background, 14 pt sides, safe areas. */
-export function Screen({ children, scroll = false, footer }: ScreenProps) {
+export function Screen({ children, scroll = false, footer, overlay }: ScreenProps) {
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      {scroll ? (
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          style={styles.flex}
-        >
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={[styles.content, styles.flex]}>{children}</View>
-      )}
-      {footer && <View style={styles.footer}>{footer}</View>}
-    </SafeAreaView>
+    <View style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        {scroll ? (
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            style={styles.flex}
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={[styles.content, styles.flex]}>{children}</View>
+        )}
+        {footer && <View style={styles.footer}>{footer}</View>}
+      </SafeAreaView>
+      {overlay}
+    </View>
   );
 }
 
