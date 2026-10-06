@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-import { HABIT_NAME_MAX_LENGTH, type HabitId } from '../../domain';
+import { addDays, HABIT_NAME_MAX_LENGTH, type HabitId } from '../../domain';
 import { Button } from '../components/Button';
 import { createHabitErrorMessage, days } from '../messages';
 import { colors, fonts, spacing } from '../theme/tokens';
@@ -32,7 +32,7 @@ export function NewHabitScreen({ onCreated, onCancel }: NewHabitScreenProps) {
 
   async function submit() {
     setSaving(true);
-    const result = await tracker.addHabit({ name, startedDaysAgo: daysAgo });
+    const result = await tracker.addHabit({ name, startDate: addDays(tracker.today(), -daysAgo) });
     setSaving(false);
     if (result.ok) onCreated(result.value.id);
     else setError(createHabitErrorMessage[result.error]);

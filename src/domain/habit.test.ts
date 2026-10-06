@@ -1,4 +1,4 @@
-import { createHabit, HABIT_NAME_MAX_LENGTH, type CreateHabitDeps } from './habit';
+import { checkHabitName, createHabit, HABIT_NAME_MAX_LENGTH, type CreateHabitDeps } from './habit';
 import { NOW, TODAY, day, fixedClock } from './testSupport';
 
 const HABIT_ID = '22222222-2222-4222-8222-222222222222';
@@ -110,4 +110,12 @@ describe('createHabit', () => {
       ).toThrow(/seed/i);
     },
   );
+});
+
+describe('checkHabitName', () => {
+  it('accepts a normal name and reports the same errors as createHabit', () => {
+    expect(checkHabitName('  Fumer ')).toBeNull();
+    expect(checkHabitName('   ')).toBe('NAME_EMPTY');
+    expect(checkHabitName('a'.repeat(HABIT_NAME_MAX_LENGTH + 1))).toBe('NAME_TOO_LONG');
+  });
 });

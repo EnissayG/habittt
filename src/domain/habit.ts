@@ -41,6 +41,18 @@ export interface CreateHabitDeps {
   clock: Clock;
 }
 
+/**
+ * Checks a habit name on its own (the creation screen validates it before
+ * the plant is chosen). Null when the name is valid.
+ */
+export function checkHabitName(raw: string): 'NAME_EMPTY' | 'NAME_TOO_LONG' | null {
+  const name = normalizeHabitName(raw);
+  if (name === '') return 'NAME_EMPTY';
+  // Spread to count code points: '🌱'.length is 2 (UTF-16 code units).
+  if ([...name].length > HABIT_NAME_MAX_LENGTH) return 'NAME_TOO_LONG';
+  return null;
+}
+
 export function createHabit(
   input: CreateHabitInput,
   deps: CreateHabitDeps,
@@ -50,9 +62,8 @@ export function createHabit(
   }
 
   const name = normalizeHabitName(input.name);
-  if (name === '') return err('NAME_EMPTY');
-  // Spread to count code points: '🌱'.length is 2 (UTF-16 code units).
-  if ([...name].length > HABIT_NAME_MAX_LENGTH) return err('NAME_TOO_LONG');
+  const nameError = checkHabitName(name);
+  if (nameError) return err(nameError);
 
   if (daysBetween(deps.clock.today(), input.startDate) > 0) return err('START_DATE_IN_FUTURE');
 

@@ -1,4 +1,5 @@
 export {
+  checkHabitName,
   createHabit,
   HABIT_NAME_MAX_LENGTH,
   type CreateHabitDeps,
@@ -15,6 +16,7 @@ export {
   type HabitSummary,
   type HabitTracker,
   type HabitTrackerDeps,
+  type Shelf,
   type ToggleRelapseError,
 } from './habitTracker';
 export {
