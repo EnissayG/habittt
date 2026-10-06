@@ -1,4 +1,4 @@
-import { Canvas, Group, Picture } from '@shopify/react-native-skia';
+import { Canvas, Group, Picture, type SkPicture } from '@shopify/react-native-skia';
 import { useCallback, useMemo, useState } from 'react';
 import {
   PixelRatio,
@@ -19,20 +19,14 @@ import {
   planRoom,
   PLANT_GRID,
   type PlacedItem,
-  type ScenePixel,
   type Shelf,
   type WallPlan,
-  type WindowView,
 } from '../../domain';
 import { PixelIcon } from '../components/PixelIcon';
 import { days } from '../format';
 import type { ScreenProps } from '../navigation/types';
-import type { RowWindow } from '../plant/colorRuns';
-import { PixelCanvas } from '../plant/PixelCanvas';
-import { PlantPixels } from '../plant/PlantCanvas';
 import { fitRoom, type RoomFit } from '../shelf/fitRoom';
-import { scenePicture } from '../shelf/scenePicture';
-import { sceneColor } from '../theme/scenePalette';
+import { scenePicture, wallPicture } from '../shelf/scenePicture';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
@@ -181,35 +175,96 @@ interface WallPageProps {
   shelf: Shelf;
   width: number;
   height: number;
-  floor: ReturnType<typeof scenePicture>;
+  floor: SkPicture;
   onOpen: (id: string) => void;
   onNew: () => void;
 }
 
-/** One wall, one screen wide: its items and labels, and its part of the floor. */
+/**
+ * One wall, one screen wide, in a single canvas: its part of the floor, the
+ * whole wall as one picture, and the window. Transparent touch zones and the
+ * labels lie on top.
+ */
 function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: WallPageProps) {
   const { cell } = fit;
-  const origin = wall.wall.index * width;
-  const left = (placed: PlacedItem) => placed.x * cell - origin;
-  const top = (placed: PlacedItem) => fit.roomTop + placed.y * cell;
+  const pixelRatio = PixelRatio.get();
+  const pageLeft = wall.wall.index * width;
+  const toX = (x: number) => (x * fit.devicePixelsPerCell) / pixelRatio - pageLeft;
+  const toY = (y: number) => fit.roomTop + (y * fit.devicePixelsPerCell) / pixelRatio;
   const bandHeight = (placed: PlacedItem) => placed.rows.to - placed.rows.from;
+
+  const picture = useMemo(
+    () =>
+      wallPicture(
+        wall.items,
+        shelf.view,
+        {
+          pageLeft,
+          roomTop: fit.roomTop,
+          cell,
+          devicePixelsPerCell: fit.devicePixelsPerCell,
+          pixelRatio,
+        },
+        { width, height },
+      ),
+    [wall, shelf.view, pageLeft, fit, cell, pixelRatio, width, height],
+  );
+  const windowItem = wall.items.find((placed) => placed.content.kind === 'window');
+  const windowPicture = useMemo(
+    () =>
+      windowItem && windowItem.content.kind === 'window'
+        ? scenePicture(windowItem.content.image, shelf.view, cell)
+        : null,
+    [windowItem, shelf.view, cell],
+  );
 
   return (
     <View style={{ width, height }}>
-      <Canvas
-        style={[styles.floor, { top: fit.floorTop, width, height: height - fit.floorTop }]}
-        pointerEvents="none"
-      >
-        <Group transform={[{ translateX: -origin }]}>
+      <Canvas style={{ width, height }} pointerEvents="none">
+        <Group transform={[{ translateX: -pageLeft }, { translateY: fit.floorTop }]}>
           <Picture picture={floor} />
         </Group>
+        <Picture picture={picture} />
+        {windowItem && windowPicture && (
+          <Group transform={[{ translateX: toX(windowItem.x) }, { translateY: toY(windowItem.y) }]}>
+            <Picture picture={windowPicture} />
+          </Group>
+        )}
       </Canvas>
 
-      {wall.items.map((placed, i) => (
-        <View key={`item-${i}`} style={[styles.placed, { left: left(placed), top: top(placed) }]}>
-          <Item placed={placed} shelf={shelf} cell={cell} onOpen={onOpen} onNew={onNew} />
-        </View>
-      ))}
+      {wall.items.map((placed, i) => {
+        const zone = {
+          left: toX(placed.x),
+          top: toY(placed.y),
+          width: placed.content.image.width * cell,
+          height: bandHeight(placed) * cell,
+        };
+        if (placed.content.kind === 'plant') {
+          const summary = shelf.habits[placed.content.id]!;
+          const id = placed.content.id;
+          return (
+            <Pressable
+              key={`zone-${i}`}
+              style={[styles.zone, zone]}
+              accessibilityRole="button"
+              accessibilityLabel={`${summary.habit.name}, ${days(summary.stats.currentStreak)}`}
+              onPress={() => onOpen(id)}
+            />
+          );
+        }
+        if (placed.content.kind === 'slot' && placed.content.slot === 'new') {
+          return (
+            <Pressable
+              key={`zone-${i}`}
+              style={[styles.zone, zone]}
+              accessibilityRole="button"
+              accessibilityLabel="Nouvelle habitude"
+              onPress={onNew}
+            />
+          );
+        }
+        return null;
+      })}
 
       {wall.items
         .filter((placed) => placed.labelled)
@@ -219,8 +274,8 @@ function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: Wal
             style={[
               styles.label,
               {
-                left: left(placed),
-                top: top(placed) + bandHeight(placed) * cell,
+                left: toX(placed.x),
+                top: toY(placed.y + bandHeight(placed)),
                 width: PLANT_GRID.width * cell,
               },
             ]}
@@ -231,47 +286,6 @@ function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: Wal
         ))}
     </View>
   );
-}
-
-interface ItemProps {
-  placed: PlacedItem;
-  shelf: Shelf;
-  cell: number;
-  onOpen: (id: string) => void;
-  onNew: () => void;
-}
-
-function Item({ placed, shelf, cell, onOpen, onNew }: ItemProps) {
-  const { content, rows } = placed;
-  switch (content.kind) {
-    case 'plant': {
-      const summary = shelf.habits[content.id]!;
-      return (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${summary.habit.name}, ${days(summary.stats.currentStreak)}`}
-          onPress={() => onOpen(content.id)}
-        >
-          <PlantPixels image={content.image} cellSize={cell} rows={rows} />
-        </Pressable>
-      );
-    }
-    case 'window':
-      return <SceneCanvas image={content.image} view={shelf.view} cell={cell} rows={rows} />;
-    case 'slot': {
-      const art = <SceneCanvas image={content.image} view={shelf.view} cell={cell} rows={rows} />;
-      if (content.slot !== 'new') return art;
-      return (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Nouvelle habitude"
-          onPress={onNew}
-        >
-          {art}
-        </Pressable>
-      );
-    }
-  }
 }
 
 function Label({ placed, shelf }: { placed: PlacedItem; shelf: Shelf }) {
@@ -290,21 +304,6 @@ function Label({ placed, shelf }: { placed: PlacedItem; shelf: Shelf }) {
       </Text>
     </>
   );
-}
-
-function SceneCanvas({
-  image,
-  view,
-  cell,
-  rows,
-}: {
-  image: Shelf['window'];
-  view: WindowView;
-  cell: number;
-  rows?: RowWindow;
-}) {
-  const colorOf = useCallback((pixel: ScenePixel) => sceneColor(pixel, view), [view]);
-  return <PixelCanvas grid={image} colorOf={colorOf} cellSize={cell} rows={rows} />;
 }
 
 const styles = StyleSheet.create({
@@ -327,8 +326,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
     lineHeight: SUBTITLE_LINE,
   },
-  floor: { position: 'absolute', left: 0 },
-  placed: { position: 'absolute' },
+  zone: { position: 'absolute' },
   label: {
     position: 'absolute',
     alignItems: 'center',
