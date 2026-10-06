@@ -8,10 +8,11 @@ les [principes du produit](architecture.md#principes-du-produit) le moment venu.
 - **Les notes et l'arrosage** (écran 6) : une note par jour, facultative, avec
   une humeur choisie dans une liste fixe ; toucher la plante affiche le jour et
   sa note.
-- **Retirer une habitude** (écran 9) par glissement, appui long ou menu, avec
-  confirmation et suppression logique ; « Tout effacer définitivement » garde
-  une trace minimale pour la synchronisation.
+- **Retirer une habitude** (écran 9) : fait (ADR 0011).
 - **Le jardin** (écran 10) : les plantes retirées, qui cessent de pousser.
+- **Remettre une plante du jardin sur l'étagère** : pas pour l'instant. À
+  décider : repart-elle du jour du retrait (les jours passés au jardin
+  comptent-ils ?), et retrouve-t-elle sa place ?
 - **Les réglages** (écran 11).
 - **Renommer une habitude** (menu de l'écran 5).
 

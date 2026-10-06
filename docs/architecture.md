@@ -413,11 +413,14 @@ Décisions détaillées dans [l'ADR 0004](decisions/0004-rendu-des-plantes.md).
   seulement sur les fonds listés dans `TEXT_PAIRS`. `contrast.test.ts`
   vérifie que chaque paire atteint 4,5:1 et que les écrans n'utilisent pas
   d'autre couleur de texte.
-- **Polices** : trois rôles, `fonts.display` (Pixelify Sans Medium : titres,
-  noms), `fonts.displayBold` (Pixelify Sans SemiBold : nom de l'app, grands
-  compteurs) et `fonts.body` (police système lisible pour le texte courant).
-  Un écran utilise le rôle, jamais un nom de police. La police est chargée au
-  démarrage (`useAppFonts`).
+- **Polices** : quatre rôles, `fonts.display` (Pixelify Sans Medium : titres,
+  noms), `fonts.displayBold` (Pixelify Sans SemiBold : nom de l'app),
+  `fonts.numeric` (Jersey 10 : **tous les nombres**, où les 5, 8, 6 et 1 se
+  distinguent) et `fonts.body` (police système lisible pour le texte
+  courant). Un écran utilise le rôle, jamais un nom de police. Les polices
+  sont chargées au démarrage (`useAppFonts`). `NumberText` dessine les
+  nombres d'une ligne en Jersey 10, agrandis de `NUMERIC_SCALE` (1,3) pour
+  avoir la hauteur des mots voisins (capitales à 0,536 em contre 0,70 em).
 - **`plantPalette.ts`** : `plantColor(pixel, genome, vitality)` traduit un
   pixel symbolique en couleur, selon le génome (teinte du feuillage, couleur
   du trait rare, couleur du pot). Un jour de rechute a une teinte jaunie (même
@@ -478,6 +481,7 @@ Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
 | 6. Arroser, une note     | `habit/NoteSheet`    | `waterToday()`, `saveNote()`    |
 | 7. Historique            | `HistoryScreen`      | `getHabit()`, `toggleRelapse()` |
 | 8. Une rechute           | `habit/RelapseSheet` | `recordRelapse()`               |
+| 9. Retirer               | `RetireScreen`       | `retireHabit()`, `eraseHabit()` |
 | 11. Réglages             | `SettingsScreen`     | (phase 3)                       |
 
 ### L'étagère
@@ -566,21 +570,23 @@ Décisions détaillées dans [l'ADR 0009](decisions/0009-notes-et-arrosage.md).
   donne le jour, dont on affiche la note.
 - **Migration SQLite n°3** : tables `notes` et `waterings`.
 
-## Prévu en phase 3 (décidé, pas encore construit)
+## Retirer et effacer (phase 3, fait)
 
-Choix validés pendant la conception ; le détail se fera au moment de les
-construire. Voir aussi [etat.md](etat.md).
+Décisions détaillées dans [l'ADR 0011](decisions/0011-retirer-et-effacer.md).
 
-- **Retirer une habitude** : par un appui long sur la plante ou par le menu
-  de l'habitude, jamais par un glissement (réservé au passage d'un mur à
-  l'autre). Un statut (sur l'étagère, au jardin, donnée),
-  toujours par suppression logique. **Une plante retirée cesse de pousser** :
-  ses statistiques et sa plante sont calculées jusqu'à la date de retrait.
-  « Tout effacer définitivement » supprime le contenu (vie privée) mais garde
-  une **trace minimale** (identifiant et date de suppression) pour que la
-  future synchronisation ne fasse pas réapparaître l'habitude.
-- **Migration SQLite n°4** : colonnes de statut, de date de retrait,
-  `updatedAt` et `deletedAt` sur `habits`.
+- **Statut** (`Habit.status`) : sur l'étagère, au jardin ou donnée, par un
+  appui long sur la plante ou par le menu de l'habitude (écran 9), jamais
+  par un glissement. **Une plante retirée cesse de pousser** (`growthEnd`)
+  et plus rien ne s'écrit sur elle.
+- **« Tout effacer définitivement »** garde une **trace** (identifiant, date
+  d'effacement, nom vidé) et supprime vraiment ce qui appartenait à
+  l'habitude (`HabitRepository.erase`), pour que la future synchronisation
+  ne la fasse pas réapparaître.
+- **Migration SQLite n° 4** : `status`, `retired_on`, `updated_at` et
+  `deleted_at` sur `habits`.
+
+## Prévu (décidé, pas encore construit)
+
 - **Comptes et synchronisation (Supabase)**, plus tard : une seconde
   implémentation des repositories dans `data/`. Fusion ligne à ligne par
   identifiant, la version au `updatedAt` le plus récent gagne.

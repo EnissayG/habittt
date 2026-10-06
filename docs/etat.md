@@ -20,9 +20,11 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 2 ter      | Retours du test : panneaux, dates, mise en page, reflet, animation, Labo             | fait (ADR 0008), **à tester sur téléphone** |
 | Phase 3a         | Total de l'en-tête, notes et arrosage (écrans 5 à 8)                                 | fait (ADR 0009), **à tester sur téléphone** |
 | Phase 3b         | La pièce en entier : trois murs au moins, décor, glissement continu                  | fait (ADR 0010), **à tester sur téléphone** |
-| Phase 3c         | Chiffres (Jersey 10), journal mensuel, retrait, jardin, réglages, renommer           | à faire, après le test                      |
+| Phase 3c         | Chiffres en Jersey 10, étiquettes et faits plus lisibles                             | fait, **à tester sur téléphone**            |
+| Phase 3d         | Retirer et effacer une habitude (écran 9)                                            | fait (ADR 0011), **à tester sur téléphone** |
+| Phase 3e         | Journal mensuel, jardin, réglages, renommer                                          | à faire, après le test                      |
 
-Chiffres au dernier commit : 520 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 537 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -50,6 +52,24 @@ Décisions déjà prises : voir
 
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
 marques après 120 jours, meubles et décors.
+
+### À vérifier sur téléphone (phases 3c et 3d)
+
+- Les chiffres en Jersey 10 partout : étagère, en-tête, compteur, record,
+  date de début, panneaux (« Jour 87 · 4 octobre »), puces. Ils doivent
+  avoir la hauteur des mots voisins ; « 951 » ne doit plus se lire « 981 ».
+- L'étagère : le nombre de jours en premier, plus grand ; le nom dessous,
+  plus discret ; l'en-tête « N plantes · N jours de séries en cours ».
+- L'écran d'une habitude : le record et la date de début plus grands.
+- **La migration n° 4 sur ta vraie base** : tes habitudes restent sur
+  l'étagère.
+- Retirer par appui long sur une plante de l'étagère, et par le menu
+  (« Retirer ») ; les deux cartes ; « Confirmer » ramène à l'étagère sans
+  la plante.
+- « Tout effacer définitivement » : la seconde confirmation, puis la
+  plante disparaît.
+- Une plante mise au jardin n'est visible nulle part tant que l'écran du
+  jardin n'existe pas : c'est normal à ce stade.
 
 ### À vérifier sur téléphone (phase 3b, la pièce)
 
