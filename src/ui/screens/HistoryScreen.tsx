@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
 
 import type { DayEntry, LocalDate } from '../../domain';
 import { DayGrid } from '../components/DayGrid';
+import { NumberText } from '../components/NumberText';
 import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
 import { dayMonth, days } from '../format';
@@ -76,9 +77,9 @@ export function HistoryScreen({ navigation, route }: ScreenProps<'History'>) {
           onPress={() => setEditing(day)}
           style={[styles.note, day.relapsed && styles.relapseNote]}
         >
-          <Text style={styles.noteTitle}>
-            Jour {day.index + 1} · {day.relapsed ? 'rechute' : dayMonth(day.date, today)}
-          </Text>
+          <NumberText style={styles.noteTitle}>
+            {`Jour ${day.index + 1} · ${day.relapsed ? 'rechute' : dayMonth(day.date, today)}`}
+          </NumberText>
           {day.note?.mood && <Text style={styles.noteMood}>{MOOD_LABELS[day.note.mood]}</Text>}
           {day.note?.text ? <Text style={styles.noteText}>{day.note.text}</Text> : null}
         </Pressable>

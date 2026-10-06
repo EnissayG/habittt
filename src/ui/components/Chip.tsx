@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { colors, fonts, spacing } from '../theme/tokens';
+import { NumberText } from './NumberText';
 
 interface ChipProps {
   label: string;
@@ -25,9 +26,9 @@ export function Chip({ label, selected = false, big = false, onPress, disabled }
         disabled && styles.disabled,
       ]}
     >
-      <Text style={[styles.label, big && styles.bigLabel, selected && styles.selectedLabel]}>
+      <NumberText style={[styles.label, big && styles.bigLabel, selected && styles.selectedLabel]}>
         {label}
-      </Text>
+      </NumberText>
     </Pressable>
   );
 }

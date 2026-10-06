@@ -5,6 +5,7 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { addDays, daysBetween, type HabitId, type LocalDate } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
+import { NumberText } from '../components/NumberText';
 import { Sheet } from '../components/Sheet';
 import { dayMonth, fromPickerDate, toPickerDate } from '../format';
 import { toggleRelapseErrorMessage } from '../messages';
@@ -80,10 +81,9 @@ export function RelapseSheet({
     return (
       <Sheet visible={visible} onClose={close}>
         <Text style={styles.title}>Une rechute est déjà notée ce jour-là.</Text>
-        <Text style={styles.body}>
-          {date === today ? "C'est aujourd'hui." : `C'est le ${dayMonth(date, today)}.`} Une seule
-          rechute compte par jour.
-        </Text>
+        <NumberText style={styles.body}>
+          {`${date === today ? "C'est aujourd'hui." : `C'est le ${dayMonth(date, today)}.`} Une seule rechute compte par jour.`}
+        </NumberText>
         {error && <Text style={styles.body}>{error}</Text>}
         <Button label="L'annuler" variant="alt" onPress={cancelExisting} />
         <Button label="Fermer" variant="quiet" onPress={close} />

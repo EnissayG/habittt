@@ -11,6 +11,7 @@ import {
 } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
+import { NumberText } from '../components/NumberText';
 import { PixelIcon } from '../components/PixelIcon';
 import { Sheet } from '../components/Sheet';
 import { dayMonth } from '../format';
@@ -82,9 +83,9 @@ export function NoteSheet({
     <Sheet visible onClose={onClose}>
       <View style={styles.title}>
         <PixelIcon name="drop" size={19} />
-        <Text style={styles.titleText}>
-          Jour {dayNumber} · {dayMonth(date, tracker.today())}
-        </Text>
+        <NumberText style={styles.titleText}>
+          {`Jour ${dayNumber} · ${dayMonth(date, tracker.today())}`}
+        </NumberText>
       </View>
       <TextInput
         value={text}

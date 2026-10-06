@@ -1,5 +1,5 @@
 import type { LocalDate } from '../domain';
-import { dayMonth, days, fromPickerDate, lowerFirst, toPickerDate } from './format';
+import { splitNumbers, dayMonth, days, fromPickerDate, lowerFirst, toPickerDate } from './format';
 
 describe('format', () => {
   const today = '2026-10-06' as LocalDate;
@@ -29,5 +29,24 @@ describe('format', () => {
 
   it('round-trips a date through the picker', () => {
     expect(fromPickerDate(toPickerDate('2026-12-31' as LocalDate))).toBe('2026-12-31');
+  });
+});
+
+describe('splitNumbers', () => {
+  it('cuts a text into runs of digits and runs of words', () => {
+    expect(splitNumbers('Jour 87 · 1er octobre 2025')).toEqual([
+      { text: 'Jour ', number: false },
+      { text: '87', number: true },
+      { text: ' · ', number: false },
+      { text: '1', number: true },
+      { text: 'er octobre ', number: false },
+      { text: '2025', number: true },
+    ]);
+  });
+
+  it('keeps a text without digits whole, and a bare number whole', () => {
+    expect(splitNumbers('étagère')).toEqual([{ text: 'étagère', number: false }]);
+    expect(splitNumbers('951')).toEqual([{ text: '951', number: true }]);
+    expect(splitNumbers('')).toEqual([]);
   });
 });

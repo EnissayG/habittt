@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { colors, fonts, spacing } from '../theme/tokens';
+import { NumberText } from './NumberText';
 import { PixelIcon } from './PixelIcon';
 
 interface TopBarProps {
@@ -24,12 +25,12 @@ export function TopBar({ backLabel, onBack, right }: TopBarProps) {
           style={styles.back}
         >
           <PixelIcon name="back" />
-          <Text style={styles.label}>{backLabel}</Text>
+          <NumberText style={styles.label}>{backLabel ?? ''}</NumberText>
         </Pressable>
       ) : (
         <View />
       )}
-      {typeof right === 'string' ? <Text style={styles.label}>{right}</Text> : right}
+      {typeof right === 'string' ? <NumberText style={styles.label}>{right}</NumberText> : right}
     </View>
   );
 }

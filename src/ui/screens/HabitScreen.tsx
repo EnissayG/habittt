@@ -22,7 +22,7 @@ import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
 
 /** Height the counter needs (big number and its label), in points. */
-const COUNTER_HEIGHT = 74;
+const COUNTER_HEIGHT = 84;
 
 /** A day is a plant day number: 1 on the start day. */
 type OpenSheet =
@@ -236,7 +236,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
 const styles = StyleSheet.create({
   scene: { alignItems: 'center' },
   counterOverlay: { position: 'absolute', left: 0, top: 0 },
-  count: { fontFamily: fonts.displayBold, fontSize: 52, color: colors.text, lineHeight: 52 },
+  count: { fontFamily: fonts.numeric, fontSize: 64, color: colors.text, lineHeight: 64 },
   countLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
   name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
   traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },

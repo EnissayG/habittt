@@ -2,6 +2,7 @@ import { StyleSheet, Text } from 'react-native';
 
 import type { DayEntry, LocalDate } from '../../domain';
 import { Button } from '../components/Button';
+import { NumberText } from '../components/NumberText';
 import { Sheet } from '../components/Sheet';
 import { dayMonth } from '../format';
 import { MOOD_LABELS } from '../messages';
@@ -24,9 +25,9 @@ export function DaySheet({ day, today, onWrite, onClose }: DaySheetProps) {
 
   return (
     <Sheet visible onClose={onClose}>
-      <Text style={styles.title}>
-        Jour {day.index + 1} · {dayMonth(day.date, today)}
-      </Text>
+      <NumberText style={styles.title}>
+        {`Jour ${day.index + 1} · ${dayMonth(day.date, today)}`}
+      </NumberText>
       {facts.length > 0 && <Text style={styles.muted}>{facts.join(' ')}</Text>}
       {note ? (
         <>

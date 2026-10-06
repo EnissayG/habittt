@@ -44,3 +44,17 @@ export function fromPickerDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+export interface TextRun {
+  text: string;
+  /** A run of digits, drawn in the numeric font. */
+  number: boolean;
+}
+
+/** "Jour 87 · 4 octobre" -> "Jour ", "87", " · ", "4", " octobre". */
+export function splitNumbers(text: string): TextRun[] {
+  return text
+    .split(/(\d+)/)
+    .filter((part) => part !== '')
+    .map((part) => ({ text: part, number: /^\d/.test(part) }));
+}
