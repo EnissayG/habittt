@@ -1,4 +1,4 @@
-export { usedRows, type RowRange } from './bounds';
+export { dayAt, usedRows, type RowRange } from './bounds';
 export {
   computeGenome,
   FOLIAGES,
