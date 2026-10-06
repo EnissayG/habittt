@@ -482,16 +482,22 @@ Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
 
 ### L'étagère
 
-Décisions détaillées dans [l'ADR 0007](decisions/0007-etagere-en-murs.md).
+Décisions détaillées dans [l'ADR 0007](decisions/0007-etagere-en-murs.md)
+et [l'ADR 0010](decisions/0010-la-piece-en-entier.md).
 
-- **Une pièce, mur par mur** : on glisse à l'horizontale d'un mur à l'autre,
-  des points indiquent le mur affiché. Plein écran, sans défilement
-  vertical.
+- **Une pièce, mur par mur** : on fait défiler librement à l'horizontale,
+  et la pièce se cale sur le mur le plus proche quand on lâche ; des points
+  indiquent le mur affiché. Plein écran, sans défilement vertical.
 - **Murs** (`arrangeShelf`, domaine) : une bande du haut pour les plantes
   retombantes (la fenêtre et une place sur le mur 1, trois places ensuite)
   et deux tablettes de trois pour les plantes debout. Les deux familles se
   rangent indépendamment, par date de création ; le pot en pointillé occupe
   la première place debout libre.
+- **La pièce existe toujours en entier** : au moins deux murs de tablettes
+  (tablettes vides dessinées), puis le mur de décor, toujours le dernier
+  (fauteuil, lampe sur pied, tableau, tapis au sol, `drawDecor`). Un
+  tableau occupe la bande du haut des autres murs de tablettes tant
+  qu'aucune plante n'y pend.
 - **Plan** (`planRoom`, domaine) : chaque élément placé en cellules, tous
   murs côte à côte ; chaque bande a la hauteur de sa plante la plus haute,
   rien n'est coupé ; tous les murs reposent sur la même ligne de sol.
@@ -499,7 +505,8 @@ Décisions détaillées dans [l'ADR 0007](decisions/0007-etagere-en-murs.md).
   pièce composée, retourné à partir de sa plus basse ligne dessinée, une
   ligne sur deux, estompé en 12 paliers, sous les joints des planches. Ce
   qui ne tient pas n'est pas reflété. Une seule règle pour tout ce qui est
-  au mur (ADR 0008).
+  au mur, décor compris (ADR 0008). Le tapis est posé sur le plancher, par
+  dessus, sans reflet.
 - **Échelle et hauteur** (`ui/shelf/fitRoom.ts`) : une échelle entière pour
   toute la pièce, trois plantes sur la largeur au plus ; la fenêtre juste
   sous l'en-tête ; rangées alignées d'un mur à l'autre ; on raccourcit le

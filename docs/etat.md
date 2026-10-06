@@ -19,13 +19,11 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 2 bis      | Étagère en murs, plein écran, plancher miroir                                        | fait (ADR 0007), testé                      |
 | Phase 2 ter      | Retours du test : panneaux, dates, mise en page, reflet, animation, Labo             | fait (ADR 0008), **à tester sur téléphone** |
 | Phase 3a         | Total de l'en-tête, notes et arrosage (écrans 5 à 8)                                 | fait (ADR 0009), **à tester sur téléphone** |
-| Phase 3b         | Retrait, jardin, réglages, renommer                                                  | à faire, après le test                      |
+| Phase 3b         | La pièce en entier : trois murs au moins, décor, glissement continu                  | fait (ADR 0010), **à tester sur téléphone** |
+| Phase 3c         | Chiffres (Jersey 10), journal mensuel, retrait, jardin, réglages, renommer           | à faire, après le test                      |
 
-Chiffres au dernier commit : 495 tests, typecheck et lint au vert, bundles
-iOS et Android compilés. `expo-doctor` : 20/21, trois mises à jour de
-correctif publiées depuis (`expo` 57.0.27, `expo-asset` 57.0.19,
-`expo-sqlite` 57.0.4) ; à appliquer avec `npx expo install --check` quand
-tu le décides.
+Chiffres au dernier commit : 520 tests, typecheck et lint au vert, bundles
+iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
 
@@ -52,6 +50,21 @@ Décisions déjà prises : voir
 
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
 marques après 120 jours, meubles et décors.
+
+### À vérifier sur téléphone (phase 3b, la pièce)
+
+- Avec peu de plantes : trois murs au moins, des points, le glissement.
+- Le glissement : libre, avec l'élan, puis calé en douceur sur le mur le
+  plus proche ; jamais arrêté entre deux murs ; un geste fort peut
+  traverser plusieurs murs (dis si tu préfères un mur à la fois).
+- La fluidité pendant le glissement, surtout sur la démo (4 murs).
+- Les points qui suivent le doigt.
+- Le mur 2 : tablettes vides dessinées, tableau du coucher de soleil en
+  haut tant qu'aucune plante retombante n'y pend.
+- Le mur de décor : fauteuil et lampe posés sur la ligne du sol, tableau,
+  tapis devant le fauteuil ; leurs proportions par rapport aux pots.
+- Le reflet du fauteuil et de la lampe dans le plancher.
+- Le Labo : le plancher limité au premier mur.
 
 ### À vérifier sur téléphone (phase 3a)
 
