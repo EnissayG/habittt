@@ -202,7 +202,7 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
         <PixelCanvas grid={room} colorOf={sceneColorOf} cellSize={sceneCell} />
       </View>
 
-      <Text style={styles.label}>Polices des chiffres</Text>
+      <Text style={styles.label}>Police des chiffres</Text>
       <DigitBoard />
     </Screen>
   );
