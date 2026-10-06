@@ -1,5 +1,3 @@
-import { renderPlant } from '../plant/renderPlant';
-import { drawRoom, ROOM_SIZE } from './drawRoom';
 import { drawWindow, GLASS, WINDOW_SIZE } from './drawWindow';
 import type { SceneImage, SceneTone } from './sceneImage';
 import { WINDOW_VIEWS } from './windowView';
@@ -52,46 +50,5 @@ describe('drawWindow', () => {
   it('keeps the glass inside the window', () => {
     expect(GLASS.x + GLASS.width).toBeLessThanOrEqual(WINDOW_SIZE.width);
     expect(GLASS.y + GLASS.height).toBeLessThanOrEqual(WINDOW_SIZE.height);
-  });
-});
-
-describe('drawRoom', () => {
-  const plant = renderPlant({ species: 'cactus', seed: 12, elapsedDays: 60, relapseDays: [] });
-
-  it('is three plants wide with planks and the window light', () => {
-    const image = drawRoom({ view: 'day', reflected: [] });
-    expect(image.width).toBe(ROOM_SIZE.width);
-    expect(image.pixels).toHaveLength(ROOM_SIZE.width * ROOM_SIZE.height);
-    expect(tones(image).has('plank0')).toBe(true);
-    expect(layerCount(image, 'tone', 'floorLight')).toBeGreaterThan(0);
-    expect(layerCount(image, 'plant')).toBe(0);
-  });
-
-  it('reflects the bottom shelf plants, fading with depth', () => {
-    const image = drawRoom({ view: 'day', reflected: [plant, null, null] });
-    expect(layerCount(image, 'plant')).toBeGreaterThan(0);
-
-    // Reflections stay under the first slot and get fainter row by row.
-    let previous = Infinity;
-    for (let y = 0; y < image.height; y++) {
-      const alphas = image.pixels
-        .slice(y * image.width, (y + 1) * image.width)
-        .flatMap((pixel, x) =>
-          (pixel?.layers ?? [])
-            .filter((layer) => layer.source.kind === 'plant')
-            .map((layer) => ({ x, alpha: layer.alpha })),
-        );
-      for (const { x } of alphas) expect(x).toBeLessThanOrEqual(plant.width);
-      if (alphas.length === 0) continue;
-      const max = Math.max(...alphas.map((a) => a.alpha));
-      expect(max).toBeLessThanOrEqual(previous);
-      previous = max;
-    }
-  });
-
-  it('is deterministic', () => {
-    expect(drawRoom({ view: 'night', reflected: [plant] })).toEqual(
-      drawRoom({ view: 'night', reflected: [plant] }),
-    );
   });
 });

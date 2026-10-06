@@ -1,4 +1,13 @@
-import { drawRoom, drawWindow, renderPlant, WINDOW_VIEWS, type ScenePixel } from '../../domain';
+import {
+  arrangeShelf,
+  composeRoom,
+  drawFloor,
+  drawWindow,
+  planRoom,
+  renderPlant,
+  WINDOW_VIEWS,
+  type ScenePixel,
+} from '../../domain';
 import { plantColor } from './plantPalette';
 import { sceneColor } from './scenePalette';
 import { colors } from './tokens';
@@ -8,7 +17,15 @@ const HEX = /^#[0-9A-F]{6}$/;
 describe('sceneColor', () => {
   it.each(WINDOW_VIEWS)('%s: gives a color to every window and floor pixel', (view) => {
     const plant = renderPlant({ species: 'fern', seed: 3, elapsedDays: 90, relapseDays: [] });
-    for (const image of [drawWindow(view), drawRoom({ view, reflected: [plant, plant, plant] })]) {
+    const plan = planRoom({
+      layout: arrangeShelf([{ id: 'f', species: 'fern', createdAt: '' }]),
+      plants: { f: plant },
+      window: drawWindow(view),
+      pageWidth: 160,
+      labelRows: 8,
+    });
+    const floor = drawFloor({ room: composeRoom(plan), rows: 52 });
+    for (const image of [drawWindow(view), floor]) {
       for (const pixel of image.pixels) {
         if (pixel) expect(sceneColor(pixel, view)).toMatch(HEX);
       }
@@ -39,7 +56,7 @@ describe('sceneColor', () => {
     expect(sceneColor(pixel, 'night')).toBe(plantColor(leaf, plant.genome).toUpperCase());
   });
 
-  it('changes the sky and the floor light with the view', () => {
+  it('changes the sky with the view', () => {
     const sky: ScenePixel = { tone: 'sky0', layers: [] };
     expect(sceneColor(sky, 'day')).not.toBe(sceneColor(sky, 'night'));
   });

@@ -48,7 +48,7 @@ export type RoomTone =
   | 'outline';
 
 /** Tones only ever used as translucent layers. */
-export type LightTone = 'glare' | 'shine' | 'floorLight' | 'shadow';
+export type LightTone = 'glare' | 'shine' | 'shadow';
 
 export type SceneTone = WindowTone | RoomTone | LightTone;
 

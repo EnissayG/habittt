@@ -174,24 +174,12 @@ describe('habit tracker use cases', () => {
       expect(shelf.layout.walls).toHaveLength(1);
     });
 
-    it('chooses the window view from the clock and draws the window and the floor', async () => {
+    it('chooses the window view from the clock and draws the window', async () => {
       const day10 = await setup(10).tracker.getShelf();
       const night = await setup(23).tracker.getShelf();
       expect(day10.view).toBe('day');
       expect(night.view).toBe('night');
       expect(night.window.pixels.length).toBeGreaterThan(0);
-      expect(night.room.pixels.length).toBeGreaterThan(0);
-    });
-
-    it('reflects the bottom shelf plants on the floor', async () => {
-      const { tracker } = setup();
-      await tracker.addHabit({ name: 'A', startDate: day(-30), species: 'cactus' });
-      await tracker.addHabit({ name: 'B', startDate: day(-30), species: 'cactus' });
-      const shelf = await tracker.getShelf();
-      const reflections = shelf.room.pixels.filter((pixel) =>
-        pixel?.layers.some((layer) => layer.source.kind === 'plant'),
-      );
-      expect(reflections.length).toBeGreaterThan(0);
     });
   });
 

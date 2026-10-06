@@ -7,7 +7,6 @@ import type { Clock, IdGenerator, SeedGenerator } from './ports';
 import { cancelRelapse, isActive, recordRelapse, type RecordRelapseError } from './relapse';
 import type { HabitRepository, RelapseRepository } from './repositories';
 import { err, ok, type Result } from './result';
-import { drawRoom } from './scene/drawRoom';
 import { drawWindow } from './scene/drawWindow';
 import type { SceneImage } from './scene/sceneImage';
 import { windowView, type WindowView } from './scene/windowView';
@@ -32,8 +31,6 @@ export interface Shelf {
   totals: { plants: number; cleanDays: number };
   view: WindowView;
   window: SceneImage;
-  /** The floor, reflecting the window and the bottom shelf. */
-  room: SceneImage;
 }
 
 export interface AddHabitInput {
@@ -109,14 +106,6 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
 
       const layout = arrangeShelf(summaries.map(({ habit }) => habit));
       const view = windowView(clock.hour(), today);
-      const bottomShelf =
-        [...(layout.walls[0]?.shelves ?? [])]
-          .reverse()
-          .find((shelf) => shelf.some((slot) => slot.kind === 'plant')) ?? [];
-      const reflected = bottomShelf.map((slot) =>
-        slot.kind === 'plant' ? (byId[slot.id]?.plant ?? null) : null,
-      );
-
       return {
         layout,
         habits: byId,
@@ -126,7 +115,6 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
         },
         view,
         window: drawWindow(view),
-        room: drawRoom({ view, reflected }),
       };
     },
 

@@ -2,11 +2,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { PixelRatio, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 
 import {
-  drawRoom,
+  arrangeShelf,
+  composeRoom,
+  drawFloor,
   drawWindow,
+  FLOOR_ROWS,
+  planRoom,
+  PLANT_GRID,
   MAX_GROWTH_DAYS,
   renderPlant,
-  ROOM_SIZE,
   SPECIES_IDS,
   WINDOW_VIEWS,
   type ScenePixel,
@@ -56,11 +60,23 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
     [species, seed, days, relapseA, relapseB],
   );
   const windowImage = useMemo(() => drawWindow(view), [view]);
-  const room = useMemo(() => drawRoom({ view, reflected: [image, null, image] }), [view, image]);
+  // The floor under a wall holding this plant beside the window or on its shelf.
+  const room = useMemo(() => {
+    const layout = arrangeShelf([{ id: 'lab', species, createdAt: '' }]);
+    const plan = planRoom({
+      layout,
+      plants: { lab: image },
+      window: windowImage,
+      pageWidth: PLANT_GRID.width * 3,
+      labelRows: 0,
+    });
+    return drawFloor({ room: composeRoom(plan), rows: FLOOR_ROWS.max });
+  }, [species, image, windowImage]);
   const sceneColorOf = useCallback((pixel: ScenePixel) => sceneColor(pixel, view), [view]);
 
   const ratio = PixelRatio.get();
-  const sceneCell = Math.max(1, Math.floor(((width - 28) * ratio) / ROOM_SIZE.width)) / ratio;
+  const sceneCell =
+    Math.max(1, Math.floor(((width - 28) * ratio) / (PLANT_GRID.width * 3))) / ratio;
 
   return (
     <Screen scroll>

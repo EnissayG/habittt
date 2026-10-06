@@ -47,7 +47,6 @@ export {
   type WallPlan,
 } from './scene/roomPlan';
 export { drawFloor, FLOOR_ROWS, FLOOR_TOP, type DrawFloorParams } from './scene/drawFloor';
-export { drawRoom, ROOM_SIZE, type DrawRoomParams } from './scene/drawRoom';
 export type {
   LightTone,
   RoomTone,

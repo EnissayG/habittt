@@ -6,6 +6,7 @@ import {
   PLANT_GRID,
   renderPlant,
   SPECIES_IDS,
+  usedRows,
   type SpeciesId,
 } from '../../domain';
 import { Button } from '../components/Button';
@@ -17,7 +18,6 @@ import { SPECIES_LABELS } from '../plant/labels';
 import { PixelCanvas } from '../plant/PixelCanvas';
 import { PlantPixels } from '../plant/PlantCanvas';
 import { diceArt } from '../plant/slotArt';
-import { filledRows } from '../shelf/shelfRows';
 import { colors, fonts } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 
@@ -85,7 +85,7 @@ export function PlantChoiceScreen({ navigation, route }: ScreenProps<'PlantChoic
 
   // Same band of rows for every tile: from the tallest plant down to the pot.
   const band = useMemo(
-    () => ({ from: Math.min(...tiles.map((t) => filledRows(t.image).top)), to: PLANT_GRID.height }),
+    () => ({ from: Math.min(...tiles.map((t) => usedRows(t.image).top)), to: PLANT_GRID.height }),
     [tiles],
   );
   const tileWidth = (width - 28 - GAP * (COLUMNS - 1)) / COLUMNS;

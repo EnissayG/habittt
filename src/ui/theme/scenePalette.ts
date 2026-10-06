@@ -19,8 +19,7 @@ type ViewTone =
   | 'cloudShade'
   | 'houseWall'
   | 'roof'
-  | 'windowLit'
-  | 'floorLight';
+  | 'windowLit';
 
 const BY_VIEW: Record<WindowView, Record<ViewTone, string>> = {
   day: {
@@ -37,7 +36,6 @@ const BY_VIEW: Record<WindowView, Record<ViewTone, string>> = {
     houseWall: solarized.base2,
     roof: solarized.orange,
     windowLit: solarized.base1,
-    floorLight: '#CDEAF0',
   },
   evening: {
     sky0: '#5B4B8A',
@@ -53,7 +51,6 @@ const BY_VIEW: Record<WindowView, Record<ViewTone, string>> = {
     houseWall: '#C9A58E',
     roof: '#8A3210',
     windowLit: '#F2C94C',
-    floorLight: '#F6B26B',
   },
   night: {
     sky0: '#04222B',
@@ -69,7 +66,6 @@ const BY_VIEW: Record<WindowView, Record<ViewTone, string>> = {
     houseWall: '#124B59',
     roof: '#0A3440',
     windowLit: '#F2C94C',
-    floorLight: '#3A6F7D',
   },
   winter: {
     sky0: '#AEBFC6',
@@ -85,7 +81,6 @@ const BY_VIEW: Record<WindowView, Record<ViewTone, string>> = {
     houseWall: solarized.base2,
     roof: '#FFFFFF',
     windowLit: '#F2C94C',
-    floorLight: '#EDF1F2',
   },
 };
 
