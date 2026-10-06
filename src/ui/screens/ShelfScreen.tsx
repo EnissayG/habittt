@@ -94,6 +94,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   // Stable, so that the walls (memoized) do not redraw when the dots move.
   const onOpen = useCallback((id: string) => navigation.navigate('Habit', { id }), [navigation]);
   const onNew = useCallback(() => navigation.navigate('NewHabitName'), [navigation]);
+  const onRetire = useCallback((id: string) => navigation.navigate('Retire', { id }), [navigation]);
 
   if (!shelf || !fit || !picture) return <View style={styles.screen} />;
 
@@ -127,6 +128,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
             floor={picture}
             onOpen={onOpen}
             onNew={onNew}
+            onRetire={onRetire}
           />
         ))}
       </ScrollView>
@@ -194,6 +196,8 @@ interface WallPageProps {
   floor: SkPicture;
   onOpen: (id: string) => void;
   onNew: () => void;
+  /** A long press on a plant: take it off the shelf (never a swipe, kept for moving). */
+  onRetire: (id: string) => void;
 }
 
 /**
@@ -210,6 +214,7 @@ const WallPage = memo(function WallPage({
   floor,
   onOpen,
   onNew,
+  onRetire,
 }: WallPageProps) {
   const { cell } = fit;
   const pixelRatio = PixelRatio.get();
@@ -270,6 +275,11 @@ const WallPage = memo(function WallPage({
               accessibilityRole="button"
               accessibilityLabel={`${summary.habit.name}, ${days(summary.stats.currentStreak)}`}
               onPress={() => onOpen(id)}
+              onLongPress={() => onRetire(id)}
+              accessibilityActions={[{ name: 'longpress', label: 'Retirer' }]}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === 'longpress') onRetire(id);
+              }}
             />
           );
         }
