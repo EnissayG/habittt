@@ -13,7 +13,7 @@ const OPENING_MS = 1500;
 /** Never wait longer than this, even if the plant is slow to come. */
 const OPENING_MAX_MS = 3000;
 
-/** Screen 1: the oldest habit's plant (or a grown bonsai) and the name. */
+/** Screen 1: the grown bonsai, the app's emblem, and the name. */
 export function OpeningScreen({ navigation }: ScreenProps<'Opening'>) {
   const tracker = useTracker();
   const load = useCallback(() => tracker.openingPlant(), [tracker]);
