@@ -97,7 +97,8 @@ const POTS: Record<PotColorId, readonly [string, string]> = {
   grey: [solarized.base1, '#768181'],
 };
 
-const SCENERY = {
+/** Shelf and soil colors, also used for the shelf's empty slots. */
+export const SCENERY = {
   soil: '#5B4636',
   potPattern: solarized.base2,
   potPatternShade: '#C9C2AC',

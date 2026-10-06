@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { AppState } from 'react-native';
 
 /**
@@ -48,4 +49,19 @@ export function useLoader<T>(load: () => Promise<T>) {
   }, [load]);
 
   return { data, error, reload };
+}
+
+/**
+ * useLoader for a navigation screen: also reloads whenever the screen comes
+ * back into focus (e.g. after editing the history).
+ */
+export function useScreenData<T>(load: () => Promise<T>) {
+  const loader = useLoader(load);
+  const { reload } = loader;
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
+  return loader;
 }

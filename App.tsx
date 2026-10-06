@@ -6,7 +6,7 @@ import { openHabitDatabase } from './src/data/database';
 import { SqliteHabitRepository, SqliteRelapseRepository } from './src/data/sqliteRepositories';
 import { generateId, generateSeed, systemClock } from './src/data/system';
 import { createHabitTracker, type HabitTracker } from './src/domain';
-import { Root } from './src/ui/Root';
+import { AppNavigator } from './src/ui/navigation/AppNavigator';
 import { colors, fonts } from './src/ui/theme/tokens';
 import { TrackerProvider } from './src/ui/TrackerContext';
 import { useAppFonts } from './src/ui/theme/useAppFonts';
@@ -50,7 +50,7 @@ export default function App() {
 
   return (
     <TrackerProvider tracker={tracker}>
-      <Root />
+      <AppNavigator />
     </TrackerProvider>
   );
 }

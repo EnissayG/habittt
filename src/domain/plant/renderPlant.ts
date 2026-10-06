@@ -16,6 +16,17 @@ import { settle } from './settle';
 /** Row of the pot rim for hanging plants: high on the canvas so they drape down. */
 const HANGING_RIM_Y = 8;
 
+/** Row of the pot rim (soil line) for a standing or a hanging plant. */
+export function rimRow(hanging: boolean): number {
+  return hanging ? HANGING_RIM_Y : PLANT_GRID.height - SCENERY_DEPTH;
+}
+
+/** First and last rows of the shelf board under a plant's pot. */
+export function shelfRowsUnderPot(hanging: boolean): readonly [number, number] {
+  const rim = rimRow(hanging);
+  return [rim + SHELF_ROWS[0], rim + SHELF_ROWS[1]];
+}
+
 /** Tones that the rare trait may recolor. */
 const TRAIT_TONES: ReadonlySet<PlantTone> = new Set([
   'leafLight',
@@ -88,7 +99,7 @@ function computePlan(speciesId: string, seed: number): PlanForSeed {
   const halfWidths = potHalfWidths(genome.potShape);
 
   const anchorX = Math.floor(width / 2);
-  const rimY = species.hanging ? HANGING_RIM_Y : height - SCENERY_DEPTH;
+  const rimY = rimRow(species.hanging);
   const built = species.build({ random, width, height, anchorX, rimY });
 
   let raw = built.plan;

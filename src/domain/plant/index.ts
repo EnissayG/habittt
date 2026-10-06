@@ -32,5 +32,11 @@ export {
   SPECIES_REGISTRY,
   type SpeciesId,
 } from './registry';
-export { planPlant, renderPlant, type RenderPlantParams } from './renderPlant';
+export {
+  planPlant,
+  renderPlant,
+  rimRow,
+  shelfRowsUnderPot,
+  type RenderPlantParams,
+} from './renderPlant';
 export type { Species, SpeciesContext, SpeciesPlan } from './species';
