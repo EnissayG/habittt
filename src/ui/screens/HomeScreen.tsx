@@ -48,7 +48,7 @@ export function HomeScreen({ onOpenHabit, onNewHabit, onOpenLab }: HomeScreenPro
       />
 
       <Button label="+ Nouvelle habitude" onPress={onNewHabit} />
-      {onOpenLab && <Button label="Labo (dev)" variant="secondary" onPress={onOpenLab} />}
+      {onOpenLab && <Button label="Labo (dev)" variant="quiet" onPress={onOpenLab} />}
     </View>
   );
 }

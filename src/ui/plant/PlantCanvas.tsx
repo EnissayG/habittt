@@ -1,10 +1,10 @@
-import { Canvas, Group, Path } from '@shopify/react-native-skia';
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 import { PixelRatio, View } from 'react-native';
 
-import type { PlantImage } from '../../domain';
+import type { PlantImage, PlantPixel } from '../../domain';
 import { NEUTRAL_VITALITY, plantColor, type Vitality } from '../theme/plantPalette';
-import { buildColorRuns } from './colorRuns';
+import type { RowWindow } from './colorRuns';
+import { PixelCanvas } from './PixelCanvas';
 import { pixelScale } from './pixelScale';
 
 interface PlantCanvasProps {
@@ -15,13 +15,7 @@ interface PlantCanvasProps {
   vitality?: Vitality;
 }
 
-/**
- * Draws a PlantImage with sharp pixels at any screen size:
- * - a whole number of device pixels per plant pixel (see pixelScale);
- * - rectangles, never a scaled bitmap, so nothing is resampled;
- * - antialiasing off: every edge falls on a device pixel anyway.
- * It computes nothing about the plant itself: the domain did.
- */
+/** A plant scaled to fit a space, at a whole number of device pixels per cell. */
 export function PlantCanvas({
   image,
   maxWidth,
@@ -29,20 +23,30 @@ export function PlantCanvas({
   vitality = NEUTRAL_VITALITY,
 }: PlantCanvasProps) {
   const scale = pixelScale(image, { width: maxWidth, height: maxHeight }, PixelRatio.get());
-  const runs = useMemo(
-    () => buildColorRuns(image, (pixel) => plantColor(pixel, image.genome, vitality)),
-    [image, vitality],
-  );
-
   return (
     <View style={{ width: maxWidth, alignItems: 'center' }}>
-      <Canvas style={{ width: scale.width, height: scale.height }}>
-        <Group transform={[{ scale: scale.cellSize }]}>
-          {runs.map(({ color, path }) => (
-            <Path key={color} path={path} color={color} antiAlias={false} />
-          ))}
-        </Group>
-      </Canvas>
+      <PlantPixels image={image} cellSize={scale.cellSize} vitality={vitality} />
     </View>
   );
+}
+
+interface PlantPixelsProps {
+  image: PlantImage;
+  cellSize: number;
+  rows?: RowWindow;
+  vitality?: Vitality;
+}
+
+/** A plant at a given cell size, optionally cropped to a band of rows (shelf). */
+export function PlantPixels({
+  image,
+  cellSize,
+  rows,
+  vitality = NEUTRAL_VITALITY,
+}: PlantPixelsProps) {
+  const colorOf = useCallback(
+    (pixel: PlantPixel) => plantColor(pixel, image.genome, vitality),
+    [image.genome, vitality],
+  );
+  return <PixelCanvas grid={image} colorOf={colorOf} cellSize={cellSize} rows={rows} />;
 }

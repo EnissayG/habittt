@@ -69,7 +69,7 @@ export function HabitScreen({ habitId, onBack }: HabitScreenProps) {
               label={
                 today.relapsed ? "Annuler la rechute d'aujourd'hui" : "J'ai rechuté aujourd'hui"
               }
-              variant={today.relapsed ? 'secondary' : 'quiet'}
+              variant="alt"
               onPress={() => toggle(today.date)}
             />
           )}

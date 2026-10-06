@@ -21,9 +21,10 @@ export const solarized = {
 } as const;
 
 /**
- * Semantic colors used by screens. Only `text`, `muted` and `onAccent` may
- * color text, and only on the backgrounds listed in TEXT_PAIRS (checked by
- * contrast.test.ts: every pair is at least 4.5:1).
+ * Semantic colors used by screens (the mockup's "Règles communes"). Only
+ * `text`, `muted`, `onAccent` and `onStrong` may color text, and only on the
+ * backgrounds listed in TEXT_PAIRS (checked by contrast.test.ts: every pair
+ * is at least 4.5:1).
  */
 export const colors = {
   background: solarized.base3,
@@ -31,13 +32,25 @@ export const colors = {
   surface: solarized.base2,
   /** Text inputs (from the mockup). */
   field: '#FFF9E9',
+  /** Thin rules, tile borders, neutral button edge (from the mockup). */
+  line: '#D3CBB7',
   border: solarized.base1,
   text: solarized.base02,
   muted: solarized.base01,
   accent: solarized.green,
+  /** The darker bottom edge of the action button. */
+  accentEdge: '#5F7000',
   onAccent: solarized.base03,
+  /** Selected chips and tiles. */
+  strong: solarized.base02,
+  onStrong: solarized.base3,
+  /** Notes (pink) and water (blue) marks. */
+  note: solarized.magenta,
+  water: solarized.blue,
   clean: solarized.green,
   relapse: solarized.orange,
+  /** Dimmed screen behind a sheet. */
+  dim: 'rgba(7, 54, 66, 0.38)',
 } as const;
 
 type ColorRole = keyof typeof colors;
@@ -50,6 +63,7 @@ export const TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
   ['text', 'field'],
   ['muted', 'field'],
   ['onAccent', 'accent'],
+  ['onStrong', 'strong'],
 ];
 
 /** Minimum contrast for running text (WCAG AA). */

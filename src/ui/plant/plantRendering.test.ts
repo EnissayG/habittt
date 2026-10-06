@@ -77,6 +77,18 @@ describe('buildColorRuns', () => {
     ]);
   });
 
+  it('draws only a band of rows, moved to the top', () => {
+    expect(buildColorRuns(image, (p) => p.tone, { from: 1, to: 2 })).toEqual([
+      { color: 'bark', path: 'M1 0h3v1h-3Z' },
+    ]);
+  });
+
+  it('leaves out pixels whose color is null', () => {
+    expect(buildColorRuns(image, (p) => (p.tone === 'leaf' ? null : p.tone))).toEqual([
+      { color: 'bark', path: 'M3 0h1v1h-1ZM1 1h3v1h-3Z' },
+    ]);
+  });
+
   it('draws nothing for an empty image', () => {
     expect(buildColorRuns({ ...image, pixels: Array(8).fill(null) }, () => 'x')).toEqual([]);
   });
