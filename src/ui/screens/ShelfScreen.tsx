@@ -11,6 +11,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -18,9 +19,11 @@ import {
   drawFloor,
   planRoom,
   PLANT_GRID,
+  drawWindow,
   type PlacedItem,
   type Shelf,
   type WallPlan,
+  type WindowView,
 } from '../../domain';
 import { PixelIcon } from '../components/PixelIcon';
 import { days } from '../format';
@@ -30,6 +33,7 @@ import { scenePicture, wallPicture } from '../shelf/scenePicture';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
+import { useWindowClock } from '../useWindowClock';
 
 // Text sizes are fixed so the room can be planned in whole cells; large
 // accessibility sizes are allowed up to this factor.
@@ -210,13 +214,6 @@ function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: Wal
     [wall, shelf.view, pageLeft, fit, cell, pixelRatio, width, height],
   );
   const windowItem = wall.items.find((placed) => placed.content.kind === 'window');
-  const windowPicture = useMemo(
-    () =>
-      windowItem && windowItem.content.kind === 'window'
-        ? scenePicture(windowItem.content.image, shelf.view, cell)
-        : null,
-    [windowItem, shelf.view, cell],
-  );
 
   return (
     <View style={{ width, height }}>
@@ -225,12 +222,15 @@ function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: Wal
           <Picture picture={floor} />
         </Group>
         <Picture picture={picture} />
-        {windowItem && windowPicture && (
-          <Group transform={[{ translateX: toX(windowItem.x) }, { translateY: toY(windowItem.y) }]}>
-            <Picture picture={windowPicture} />
-          </Group>
-        )}
       </Canvas>
+      {windowItem && (
+        <View
+          style={[styles.zone, { left: toX(windowItem.x), top: toY(windowItem.y) }]}
+          pointerEvents="none"
+        >
+          <AnimatedWindow view={shelf.view} cell={cell} />
+        </View>
+      )}
 
       {wall.items.map((placed, i) => {
         const zone = {
@@ -285,6 +285,21 @@ function WallPage({ wall, fit, shelf, width, height, floor, onOpen, onNew }: Wal
           </View>
         ))}
     </View>
+  );
+}
+
+/**
+ * The window in its own small canvas, so that only it redraws a few times
+ * per second; it stops when the shelf is not shown.
+ */
+function AnimatedWindow({ view, cell }: { view: WindowView; cell: number }) {
+  const t = useWindowClock(useIsFocused());
+  const image = useMemo(() => drawWindow(view, t), [view, t]);
+  const picture = useMemo(() => scenePicture(image, view, cell), [image, view, cell]);
+  return (
+    <Canvas style={{ width: image.width * cell, height: image.height * cell }}>
+      <Picture picture={picture} />
+    </Canvas>
   );
 }
 

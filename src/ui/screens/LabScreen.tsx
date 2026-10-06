@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { PixelRatio, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 
 import {
@@ -29,6 +30,7 @@ import { PixelCanvas } from '../plant/PixelCanvas';
 import { PlantCanvas } from '../plant/PlantCanvas';
 import { sceneColor } from '../theme/scenePalette';
 import { colors, fonts, spacing } from '../theme/tokens';
+import { useWindowClock } from '../useWindowClock';
 
 const clampDays = (value: number) => Math.min(MAX_GROWTH_DAYS, Math.max(1, value));
 const parseNumber = (text: string) => Number.parseInt(text, 10) || 0;
@@ -74,19 +76,22 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [species, seed, days, relapseA, relapseB],
   );
-  const windowImage = useMemo(() => drawWindow(view), [view]);
+  const t = useWindowClock(useIsFocused());
+  const windowImage = useMemo(() => drawWindow(view, t), [view, t]);
+  // The floor mirrors the still window: it does not need to redraw with t.
+  const stillWindow = useMemo(() => drawWindow(view), [view]);
   // The floor under a wall holding this plant beside the window or on its shelf.
   const room = useMemo(() => {
     const layout = arrangeShelf([{ id: 'lab', species, createdAt: '' }]);
     const plan = planRoom({
       layout,
       plants: { lab: image },
-      window: windowImage,
+      window: stillWindow,
       pageWidth: PLANT_GRID.width * 3,
       labelRows: 0,
     });
     return drawFloor({ room: composeRoom(plan), rows: FLOOR_ROWS.max });
-  }, [species, image, windowImage]);
+  }, [species, image, stillWindow]);
   const sceneColorOf = useCallback((pixel: ScenePixel) => sceneColor(pixel, view), [view]);
 
   const ratio = PixelRatio.get();
