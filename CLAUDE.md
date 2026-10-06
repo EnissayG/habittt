@@ -24,7 +24,7 @@ Avant de déclarer une tâche terminée : `typecheck`, `lint` et `test` passent.
 
 ## Architecture
 
-Voir `docs/architecture.md` et `docs/decisions/`.
+Voir `docs/architecture.md`, `docs/decisions/` et **`docs/etat.md`** (où on en est).
 
 - `src/domain/` : TypeScript pur. Entités, règles, générateur de plante,
   interfaces de repository. Aucun import de React, Expo, SQLite, Skia, Zustand.

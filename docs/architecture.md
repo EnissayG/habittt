@@ -517,14 +517,30 @@ forme.
 - Les principes sont respectés : la plante ne meurt jamais, la soif et la
   fatigue sont toujours récupérables.
 
-## Prévu plus tard (documenté, non conçu)
+## Prévu en phase 3 (décidé, pas encore construit)
 
-- **Notes datées** : `Note { id, habitId, date: LocalDate, text }`. Une pensée
-  ou une difficulté écrite un jour donné apparaît comme une feuille ou une fleur
-  à la position de ce jour ; on la relit en touchant cet endroit. Facultative,
-  sans pénalité. C'est la position stable par jour qui rend cela possible.
-- **Arrosage facultatif**, sans pénalité si on ne le fait pas. À concevoir.
-- **Comptes et synchronisation (Supabase)** : une seconde implémentation des
-  repositories dans `data/`. La suppression logique (`deletedAt`) est déjà
-  prévue, ainsi que `updatedAt` sur les rechutes. Il faudra appliquer la même
-  chose à `Habit` (renommage, suppression d'une habitude).
+Choix validés pendant la conception ; le détail se fera au début de la
+phase 3. Voir aussi [etat.md](etat.md).
+
+- **Notes datées** : `Note { id, habitId, date, text, mood, updatedAt, deletedAt }`.
+  Une note par jour et par habitude, facultative, modifiable ; identifiant
+  déterministe calculé à partir de `(habitId, date)`, comme les rechutes.
+  **Une seule humeur par note**, choisie dans une liste fixe (celle de la
+  maquette : fier, envie forte, stress, facile).
+- **Arrosage** : un geste facultatif et sans pénalité, enregistré par jour ; on
+  peut arroser sans écrire. Après l'arrosage, une petite fleur marque le jour
+  sur la plante (changement d'apparence, jamais de forme). La date du dernier
+  arrosage servira à la vitalité (soif), plus tard.
+- **Toucher la plante** : chaque pixel connaît son jour ; on prend le pixel
+  le plus proche du doigt et on affiche le jour et sa note.
+- **Retirer une habitude** : un statut (sur l'étagère, au jardin, donnée),
+  toujours par suppression logique. **Une plante retirée cesse de pousser** :
+  ses statistiques et sa plante sont calculées jusqu'à la date de retrait.
+  « Tout effacer définitivement » supprime le contenu (vie privée) mais garde
+  une **trace minimale** (identifiant et date de suppression) pour que la
+  future synchronisation ne fasse pas réapparaître l'habitude.
+- **Migration SQLite n°3** : tables des notes et des arrosages, colonnes de
+  statut, de date de retrait, `updatedAt` et `deletedAt` sur `habits`.
+- **Comptes et synchronisation (Supabase)**, plus tard : une seconde
+  implémentation des repositories dans `data/`. Fusion ligne à ligne par
+  identifiant, la version au `updatedAt` le plus récent gagne.
