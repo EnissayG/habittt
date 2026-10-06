@@ -101,11 +101,11 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
         <>
           <Sheet visible={sheet === 'menu'} onClose={() => setSheet(null)}>
             <Button
-              label="Historique"
+              label="Journal"
               variant="alt"
               onPress={() => {
                 setSheet(null);
-                navigation.navigate('History', { id });
+                navigation.navigate('Journal', { id });
               }}
             />
             <Button

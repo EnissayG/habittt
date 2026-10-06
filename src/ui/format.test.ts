@@ -1,5 +1,13 @@
 import type { LocalDate } from '../domain';
-import { splitNumbers, dayMonth, days, fromPickerDate, lowerFirst, toPickerDate } from './format';
+import {
+  dayMonth,
+  days,
+  fromPickerDate,
+  lowerFirst,
+  monthTitle,
+  splitNumbers,
+  toPickerDate,
+} from './format';
 
 describe('format', () => {
   const today = '2026-10-06' as LocalDate;
@@ -48,5 +56,12 @@ describe('splitNumbers', () => {
     expect(splitNumbers('étagère')).toEqual([{ text: 'étagère', number: false }]);
     expect(splitNumbers('951')).toEqual([{ text: '951', number: true }]);
     expect(splitNumbers('')).toEqual([]);
+  });
+});
+
+describe('monthTitle', () => {
+  it('names a month with its year', () => {
+    expect(monthTitle('2026-10')).toBe('Octobre 2026');
+    expect(monthTitle('2027-02')).toBe('Février 2027');
   });
 });

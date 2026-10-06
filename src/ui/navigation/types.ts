@@ -1,12 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import type { HabitId, LocalDate } from '../../domain';
+import type { HabitId, LocalDate, MonthId } from '../../domain';
 
 export type RootStackParamList = {
   Opening: undefined;
   Shelf: undefined;
   Habit: { id: HabitId };
-  History: { id: HabitId };
+  /** month: the month shown first (the current one by default). */
+  Journal: { id: HabitId; month?: MonthId };
   Retire: { id: HabitId };
   NewHabitName: undefined;
   PlantChoice: { name: string; startDate: LocalDate };

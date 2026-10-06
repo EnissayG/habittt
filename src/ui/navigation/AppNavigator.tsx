@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { HabitScreen } from '../screens/HabitScreen';
-import { HistoryScreen } from '../screens/HistoryScreen';
+import { JournalScreen } from '../screens/JournalScreen';
 import { LabScreen } from '../screens/LabScreen';
 import { NewHabitNameScreen } from '../screens/NewHabitNameScreen';
 import { OpeningScreen } from '../screens/OpeningScreen';
@@ -40,7 +40,7 @@ export function AppNavigator() {
           <Stack.Screen name="Opening" component={OpeningScreen} options={{ animation: 'fade' }} />
           <Stack.Screen name="Shelf" component={ShelfScreen} options={{ animation: 'fade' }} />
           <Stack.Screen name="Habit" component={HabitScreen} />
-          <Stack.Screen name="History" component={HistoryScreen} />
+          <Stack.Screen name="Journal" component={JournalScreen} />
           <Stack.Screen name="Retire" component={RetireScreen} />
           <Stack.Screen name="NewHabitName" component={NewHabitNameScreen} />
           <Stack.Screen name="PlantChoice" component={PlantChoiceScreen} />

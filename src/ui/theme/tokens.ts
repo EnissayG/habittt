@@ -22,7 +22,7 @@ export const solarized = {
 
 /**
  * Semantic colors used by screens (the mockup's "Règles communes"). Only
- * `text`, `muted`, `onAccent` and `onStrong` may color text, and only on the
+ * `text`, `muted`, `onAccent`, `onStrong` and `onRelapse` may color text, and only on the
  * backgrounds listed in TEXT_PAIRS (checked by contrast.test.ts: every pair
  * is at least 4.5:1).
  */
@@ -49,6 +49,8 @@ export const colors = {
   water: solarized.blue,
   clean: solarized.green,
   relapse: solarized.orange,
+  /** Day numbers on a relapse day of the journal (white: the dark text is too faint on orange). */
+  onRelapse: '#FFFFFF',
   /** Marks standing on the dark floor (the wall indicator): current, other. */
   onFloor: solarized.base3,
   onFloorMuted: '#D3CBB7',
@@ -67,6 +69,8 @@ export const TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
   ['muted', 'field'],
   ['onAccent', 'accent'],
   ['onStrong', 'strong'],
+  ['onAccent', 'clean'],
+  ['onRelapse', 'relapse'],
 ];
 
 /** Marks drawn on the floor planks; checked against every plank tone (at least 3:1). */

@@ -23,6 +23,12 @@ export function dayMonth(date: LocalDate, today: LocalDate): string {
   return `${day === 1 ? '1er' : day} ${month}${year}`;
 }
 
+/** "2026-10" -> "Octobre 2026", the title of a month of the journal. */
+export function monthTitle(month: string): string {
+  const name = MONTHS[Number(month.slice(5, 7)) - 1] ?? '';
+  return `${name.charAt(0).toLocaleUpperCase('fr')}${name.slice(1)} ${month.slice(0, 4)}`;
+}
+
 /** "3 jours", "1 jour". */
 export function days(count: number): string {
   return `${count} ${count > 1 ? 'jours' : 'jour'}`;
