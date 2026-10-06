@@ -8,8 +8,10 @@ import { colors, fonts } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useLoader } from '../useLoader';
 
-/** How long the opening screen stays (mockup: one to two seconds). */
+/** How long the plant stays once shown (mockup: one to two seconds). */
 const OPENING_MS = 1500;
+/** Never wait longer than this, even if the plant is slow to come. */
+const OPENING_MAX_MS = 3000;
 
 /** Screen 1: the oldest habit's plant (or a grown bonsai) and the name. */
 export function OpeningScreen({ navigation }: ScreenProps<'Opening'>) {
@@ -18,10 +20,16 @@ export function OpeningScreen({ navigation }: ScreenProps<'Opening'>) {
   const { data: plant } = useLoader<PlantImage>(load);
   const [elapsed, setElapsed] = useState(false);
 
+  // The 1.5 s start when the plant is on screen; the cap starts at once.
   useEffect(() => {
-    const timer = setTimeout(() => setElapsed(true), OPENING_MS);
+    const timer = setTimeout(() => setElapsed(true), OPENING_MAX_MS);
     return () => clearTimeout(timer);
   }, []);
+  useEffect(() => {
+    if (!plant) return;
+    const timer = setTimeout(() => setElapsed(true), OPENING_MS);
+    return () => clearTimeout(timer);
+  }, [plant]);
 
   useEffect(() => {
     if (elapsed) navigation.replace('Shelf');
