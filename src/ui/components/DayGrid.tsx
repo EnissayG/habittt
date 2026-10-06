@@ -16,7 +16,8 @@ interface DayGridProps {
 
 /**
  * One square per day since the start, oldest first, 15 per row: green for a
- * day held, orange for a relapse, today framed. Touching a day corrects it.
+ * day held, orange for a relapse, today framed, a day with a note framed in
+ * pink. Touching a day corrects it.
  */
 export function DayGrid({ days, width, onPressDay }: DayGridProps) {
   const size = Math.floor((width - GAP * (DAY_GRID_COLUMNS - 1)) / DAY_GRID_COLUMNS);
@@ -27,13 +28,14 @@ export function DayGrid({ days, width, onPressDay }: DayGridProps) {
         <Pressable
           key={day.date}
           accessibilityRole="button"
-          accessibilityLabel={`Jour ${day.index + 1}, ${dayMonth(day.date, days[lastIndex]!.date)}${day.relapsed ? ', rechute' : ''}`}
+          accessibilityLabel={`Jour ${day.index + 1}, ${dayMonth(day.date, days[lastIndex]!.date)}${day.relapsed ? ', rechute' : ''}${day.note ? ', note' : ''}`}
           onPress={() => onPressDay(day.date)}
           hitSlop={1}
           style={[
             { width: size, height: size },
             { backgroundColor: day.relapsed ? colors.relapse : colors.clean },
             day.index === lastIndex && styles.today,
+            day.note && styles.note,
           ]}
         />
       ))}
@@ -44,4 +46,6 @@ export function DayGrid({ days, width, onPressDay }: DayGridProps) {
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
   today: { borderWidth: 2, borderColor: colors.strong },
+  /** A day with a note is framed in the notes color (it wins over today). */
+  note: { borderWidth: 2, borderColor: colors.note },
 });
