@@ -3,12 +3,12 @@ import { fitRoom, type FitRoomParams } from './fitRoom';
 
 type Geometry = { pageWidth: number; labelRows: number; rowGap: number };
 
-/** A fake room: `rows` of content, three label bands and three gaps. */
+/** A fake room: `rows` of content, three label bands and two gaps. */
 const planOf =
   (rows: number) =>
   ({ pageWidth, labelRows, rowGap }: Geometry): RoomPlan => ({
     width: Math.ceil(pageWidth),
-    height: rows + 3 * labelRows + 3 * rowGap,
+    height: rows + 3 * labelRows + 2 * rowGap,
     walls: [],
   });
 
@@ -51,7 +51,7 @@ describe('fitRoom', () => {
     expect(fit.rowGap).toBeGreaterThan(0);
     const toFloor = Math.min(FLOOR_ROWS.max - FLOOR_ROWS.min, Math.floor(spare / 2));
     expect(fit.floorRows - FLOOR_ROWS.min).toBeGreaterThanOrEqual(toFloor);
-    expect(fit.rowGap).toBe(Math.floor((spare - toFloor) / 3));
+    expect(fit.rowGap).toBe(Math.floor((spare - toFloor) / 2));
   });
 
   it('never gives the floor much more than its maximum, the rest goes to the gaps', () => {

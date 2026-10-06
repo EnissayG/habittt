@@ -125,10 +125,10 @@ describe('planRoom', () => {
     expect(pot.rows).toEqual(byId(room, 's0').rows);
   });
 
-  it('adds the same gap after every row', () => {
+  it('adds the same gap between rows, none under the last one', () => {
     const tight = plan([], {});
     const spread = plan([], {}, { ...GEOMETRY, rowGap: 5 });
-    expect(spread.height).toBe(tight.height + 3 * 5);
+    expect(spread.height).toBe(tight.height + 2 * 5);
     const ys = (room: RoomPlan) => [...new Set(room.walls[0]!.items.map((p) => p.y))];
     expect(ys(spread)).toEqual(ys(tight).map((y, i) => y + i * 5));
   });

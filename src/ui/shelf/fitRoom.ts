@@ -9,8 +9,8 @@ import { FLOOR_ROWS, PLANT_GRID, type RoomPlan } from '../../domain';
 // maximum) and the rest spreads the rows evenly.
 
 const WALL_WIDTH = PLANT_GRID.width * 3;
-/** Gaps spread the free height: after the top band and after each shelf. */
-const GAPS = 3;
+/** Gaps spread the free height between the rows (none under the last one). */
+const GAPS = 2;
 
 export interface FitRoomParams {
   screen: { width: number; height: number };

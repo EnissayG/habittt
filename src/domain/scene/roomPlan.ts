@@ -62,7 +62,7 @@ export interface PlanRoomParams {
   pageWidth: number;
   /** Rows reserved under each row of plants for names and counters. */
   labelRows: number;
-  /** Empty rows after each row's labels, spreading the free height. */
+  /** Empty rows between two rows (after the labels), spreading the free height. */
   rowGap?: number;
 }
 
@@ -129,10 +129,11 @@ export function planRoom({
   ];
   const rowTops: number[] = [];
   let y = 0;
-  for (const band of bands) {
+  bands.forEach((band, row) => {
+    if (row > 0) y += rowGap;
     rowTops.push(y);
-    y += height(band) + labelRows + rowGap;
-  }
+    y += height(band) + labelRows;
+  });
   const roomHeight = y;
 
   const walls = layout.walls.map((wall, w): WallPlan => {
