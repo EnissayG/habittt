@@ -73,7 +73,9 @@ export function NewHabitNameScreen({ navigation }: ScreenProps<'NewHabitName'>) 
         />
         <Chip
           big
-          label={when === 'other' && otherDate ? `Le ${dayMonth(otherDate)}` : 'Une autre date'}
+          label={
+            when === 'other' && otherDate ? `Le ${dayMonth(otherDate, today)}` : 'Une autre date'
+          }
           selected={when === 'other'}
           onPress={() => setPickerOpen(true)}
         />

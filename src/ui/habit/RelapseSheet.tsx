@@ -81,8 +81,8 @@ export function RelapseSheet({
       <Sheet visible={visible} onClose={close}>
         <Text style={styles.title}>Une rechute est déjà notée ce jour-là.</Text>
         <Text style={styles.body}>
-          {date === today ? "C'est aujourd'hui." : `C'est le ${dayMonth(date)}.`} Une seule rechute
-          compte par jour.
+          {date === today ? "C'est aujourd'hui." : `C'est le ${dayMonth(date, today)}.`} Une seule
+          rechute compte par jour.
         </Text>
         {error && <Text style={styles.body}>{error}</Text>}
         <Button label="L'annuler" variant="alt" onPress={cancelExisting} />
@@ -114,7 +114,9 @@ export function RelapseSheet({
         />
         <Chip
           big
-          label={when === 'other' && otherDate ? `Le ${dayMonth(otherDate)}` : 'Un autre jour'}
+          label={
+            when === 'other' && otherDate ? `Le ${dayMonth(otherDate, today)}` : 'Un autre jour'
+          }
           selected={when === 'other'}
           onPress={() => setPickerOpen(true)}
         />

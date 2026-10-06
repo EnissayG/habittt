@@ -27,7 +27,7 @@ export function DayGrid({ days, width, onPressDay }: DayGridProps) {
         <Pressable
           key={day.date}
           accessibilityRole="button"
-          accessibilityLabel={`Jour ${day.index + 1}, ${dayMonth(day.date)}${day.relapsed ? ', rechute' : ''}`}
+          accessibilityLabel={`Jour ${day.index + 1}, ${dayMonth(day.date, days[lastIndex]!.date)}${day.relapsed ? ', rechute' : ''}`}
           onPress={() => onPressDay(day.date)}
           hitSlop={1}
           style={[

@@ -74,6 +74,19 @@ describe('computeStats', () => {
     expect(computeStats({ startDate, relapses, today })).toEqual(expect.objectContaining(expected));
   });
 
+  it('counts across leap years and year ends', () => {
+    // The habit read on the phone: started on 28 February 2024.
+    expect(
+      computeStats({ startDate: d('2024-02-28'), relapses: [], today: d('2026-10-06') }).totalDays,
+    ).toBe(952);
+    expect(
+      computeStats({ startDate: d('2024-02-28'), relapses: [], today: d('2024-03-01') }).totalDays,
+    ).toBe(3);
+    expect(
+      computeStats({ startDate: d('2025-12-31'), relapses: [], today: d('2026-01-01') }).totalDays,
+    ).toBe(2);
+  });
+
   it('counts clean days: total days minus active relapse days in range', () => {
     const relapses = [
       makeRelapse(day(-2)),

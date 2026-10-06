@@ -141,7 +141,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
       </View>
       <View style={styles.chips}>
         <Chip label={`record ${stats.longestStreak} j`} />
-        <Chip label={`depuis le ${dayMonth(habit.startDate)}`} />
+        <Chip label={`depuis le ${dayMonth(habit.startDate, tracker.today())}`} />
       </View>
     </Screen>
   );

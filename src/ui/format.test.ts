@@ -2,10 +2,18 @@ import type { LocalDate } from '../domain';
 import { dayMonth, days, fromPickerDate, lowerFirst, toPickerDate } from './format';
 
 describe('format', () => {
+  const today = '2026-10-06' as LocalDate;
+
   it('writes French dates', () => {
-    expect(dayMonth('2026-06-09' as LocalDate)).toBe('9 juin');
-    expect(dayMonth('2026-10-01' as LocalDate)).toBe('1er octobre');
-    expect(dayMonth('2026-08-15' as LocalDate)).toBe('15 août');
+    expect(dayMonth('2026-06-09' as LocalDate, today)).toBe('9 juin');
+    expect(dayMonth('2026-10-01' as LocalDate, today)).toBe('1er octobre');
+    expect(dayMonth('2026-08-15' as LocalDate, today)).toBe('15 août');
+  });
+
+  it('adds the year when it is not the current one', () => {
+    expect(dayMonth('2024-02-28' as LocalDate, today)).toBe('28 février 2024');
+    expect(dayMonth('2025-12-31' as LocalDate, '2026-01-01' as LocalDate)).toBe('31 décembre 2025');
+    expect(dayMonth('2026-01-01' as LocalDate, '2026-01-01' as LocalDate)).toBe('1er janvier');
   });
 
   it('pluralizes days', () => {

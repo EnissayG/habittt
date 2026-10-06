@@ -15,11 +15,12 @@ const MONTHS = [
   'décembre',
 ];
 
-/** "9 juin", "1er octobre". */
-export function dayMonth(date: LocalDate): string {
+/** "9 juin", "1er octobre"; with the year when it is not today's: "28 février 2024". */
+export function dayMonth(date: LocalDate, today: LocalDate): string {
   const day = Number(date.slice(8, 10));
   const month = MONTHS[Number(date.slice(5, 7)) - 1] ?? '';
-  return `${day === 1 ? '1er' : day} ${month}`;
+  const year = date.slice(0, 4) === today.slice(0, 4) ? '' : ` ${date.slice(0, 4)}`;
+  return `${day === 1 ? '1er' : day} ${month}${year}`;
 }
 
 /** "3 jours", "1 jour". */
