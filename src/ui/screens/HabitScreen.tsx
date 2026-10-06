@@ -33,7 +33,8 @@ type OpenSheet =
   | { kind: 'askNote'; day: number }
   | null;
 
-const notesLabel = (count: number) => `${count} ${count > 1 ? 'notes' : 'note'}`;
+/** The chevron says the chip opens something (the journal). */
+const notesLabel = (count: number) => `${count} ${count > 1 ? 'notes' : 'note'} ›`;
 
 /** How long a confirmation stays under the buttons. */
 const NOTICE_MS = 3000;
