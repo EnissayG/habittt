@@ -43,11 +43,7 @@ export function AppNavigator() {
           <Stack.Screen name="NewHabitName" component={NewHabitNameScreen} />
           <Stack.Screen name="PlantChoice" component={PlantChoiceScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
-          {__DEV__ && (
-            <Stack.Screen name="Lab">
-              {({ navigation }) => <LabScreen onBack={navigation.goBack} />}
-            </Stack.Screen>
-          )}
+          {__DEV__ && <Stack.Screen name="Lab" component={LabScreen} />}
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="dark" />
