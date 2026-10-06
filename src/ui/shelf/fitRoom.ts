@@ -1,11 +1,16 @@
 import { FLOOR_ROWS, PLANT_GRID, type RoomPlan } from '../../domain';
 
-// The scale of the shelf room. One whole number of device pixels per cell
-// for every wall, plant, window and floor pixel. The room fills the screen
-// edge to edge: three plants across at most; when the walls are too tall,
-// the floor gets shorter first (down to its minimum), then the scale drops.
+// The scale and the vertical layout of the shelf room. One whole number of
+// device pixels per cell for every wall, plant, window and floor pixel. The
+// room fills the screen edge to edge: three plants across at most; the
+// window sits right under the header. When the walls are too tall, the
+// floor gets shorter first (down to its minimum), then the scale drops.
+// When there is room to spare, half of it goes to the floor (up to its
+// maximum) and the rest spreads the rows evenly.
 
 const WALL_WIDTH = PLANT_GRID.width * 3;
+/** Gaps spread the free height: after the top band and after each shelf. */
+const GAPS = 3;
 
 export interface FitRoomParams {
   screen: { width: number; height: number };
@@ -14,12 +19,12 @@ export interface FitRoomParams {
   insets: { top: number; bottom: number };
   /** Logo and totals, under the status bar. */
   headerHeight: number;
-  /** Name and counter under a plant, gap included, in points. */
+  /** Name and counter under a plant, in points. */
   labelHeight: number;
   /** Wall indicator, standing on the floor above the home indicator. */
   dotsHeight: number;
-  /** Plans the room for a page width and label height, both in cells. */
-  plan: (geometry: { pageWidth: number; labelRows: number }) => RoomPlan;
+  /** Plans the room for a page width, label height and row gap, in cells. */
+  plan: (geometry: { pageWidth: number; labelRows: number; rowGap: number }) => RoomPlan;
 }
 
 export interface RoomFit {
@@ -29,54 +34,57 @@ export interface RoomFit {
   /** One page (the screen's width) in cells; may be fractional. */
   pageWidth: number;
   labelRows: number;
+  rowGap: number;
   plan: RoomPlan;
+  /** Floor rows down to the bottom edge (the last one may be cut by it). */
   floorRows: number;
   /** Top of the floor, in points from the top of the screen. */
   floorTop: number;
-  /** Top of the tallest wall, in points from the top of the screen. */
+  /** Top of the walls (right under the header), in points from the top of the screen. */
   roomTop: number;
 }
 
 export function fitRoom(params: FitRoomParams): RoomFit {
-  const { screen, pixelRatio, insets } = params;
+  const { screen, pixelRatio } = params;
   const widest = Math.max(1, Math.floor((screen.width * pixelRatio) / WALL_WIDTH));
-
-  // Largest scale whose floor keeps its minimum height and room for the dots.
   let fit = attempt(params, widest);
-  for (let k = widest - 1; k >= 1 && !fits(fit, insets.bottom + params.dotsHeight); k--) {
-    fit = attempt(params, k);
-  }
-  return settle(fit, screen.height);
+  for (let k = widest - 1; k >= 1 && !fits(fit, params); k--) fit = attempt(params, k);
+  return fit;
 }
 
-function fits(fit: RoomFit, floorMinimum: number): boolean {
-  return fit.floorRows >= FLOOR_ROWS.min && fit.floorRows * fit.cell >= floorMinimum;
+function fits(fit: RoomFit, params: FitRoomParams): boolean {
+  return (
+    fit.floorRows >= FLOOR_ROWS.min &&
+    fit.floorRows * fit.cell >= params.insets.bottom + params.dotsHeight
+  );
 }
 
-/** The room at k device pixels per cell, the floor taking the free rows. */
+/** The room at k device pixels per cell. */
 function attempt(params: FitRoomParams, k: number): RoomFit {
   const { screen, pixelRatio, insets } = params;
   const cell = k / pixelRatio;
   const pageWidth = screen.width / cell;
   const labelRows = Math.ceil(params.labelHeight / cell);
-  const plan = params.plan({ pageWidth, labelRows });
-  const free = screen.height - insets.top - params.headerHeight - plan.height * cell;
-  const floorRows = Math.min(FLOOR_ROWS.max, Math.floor(free / cell));
+  const roomTop = insets.top + params.headerHeight;
+  const available = Math.floor((screen.height - roomTop) / cell);
+
+  const tight = params.plan({ pageWidth, labelRows, rowGap: 0 });
+  const spare = available - tight.height - FLOOR_ROWS.min;
+  const toFloor = Math.min(FLOOR_ROWS.max - FLOOR_ROWS.min, Math.floor(Math.max(0, spare) / 2));
+  const rowGap = Math.max(0, Math.floor((spare - toFloor) / GAPS));
+  const plan = rowGap > 0 ? params.plan({ pageWidth, labelRows, rowGap }) : tight;
+
+  const floorTop = roomTop + plan.height * cell;
+  const floorRows = Math.ceil((screen.height - floorTop) / cell - 1e-9);
   return {
     devicePixelsPerCell: k,
     cell,
     pageWidth,
     labelRows,
+    rowGap,
     plan,
     floorRows,
-    floorTop: 0,
-    roomTop: 0,
+    floorTop,
+    roomTop,
   };
-}
-
-/** Puts the floor at the bottom of the screen and the walls on it. */
-function settle(fit: RoomFit, screenHeight: number): RoomFit {
-  const floorRows = Math.max(FLOOR_ROWS.min, fit.floorRows);
-  const floorTop = screenHeight - floorRows * fit.cell;
-  return { ...fit, floorRows, floorTop, roomTop: floorTop - fit.plan.height * fit.cell };
 }

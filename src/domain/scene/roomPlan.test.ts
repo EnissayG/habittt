@@ -17,7 +17,11 @@ const grown = (species: string, seed = 7) =>
 const window = drawWindow('day');
 const GEOMETRY = { pageWidth: 160, labelRows: 10 };
 
-function plan(items: ShelfItem[], images: Record<string, PlantImage>, geometry = GEOMETRY) {
+function plan(
+  items: ShelfItem[],
+  images: Record<string, PlantImage>,
+  geometry: { pageWidth: number; labelRows: number; rowGap?: number } = GEOMETRY,
+) {
   return planRoom({ layout: arrangeShelf(items), plants: images, window, ...geometry });
 }
 
@@ -100,7 +104,7 @@ describe('planRoom', () => {
     expect(slots.map((p) => p.labelled)).toEqual([true, false, false, false, false, false]);
   });
 
-  it('sits every wall on the same floor line, the tallest one setting it', () => {
+  it('lines rows up from one wall to the next, the tallest content setting each row', () => {
     const items = [
       ...Array.from({ length: 6 }, (_, i) => item(`s${i}`, 'bamboo', i + 1)),
       item('h1', 'pothos', 20),
@@ -112,7 +116,21 @@ describe('planRoom', () => {
       const bottom = Math.max(...wall.items.map((p) => p.y + p.rows.to - p.rows.from));
       expect(bottom + GEOMETRY.labelRows).toBe(room.height);
     }
-    expect(room.walls[1]!.height).toBeLessThan(room.walls[0]!.height);
+    expect(room.walls[1]!.height).toBe(room.walls[0]!.height);
+    // The short dotted pot of wall 2 stands on the same shelf line as the bamboos.
+    const pot = room.walls[1]!.items.find(
+      (p) => p.content.kind === 'slot' && p.content.slot === 'new',
+    )!;
+    expect(pot.y).toBe(byId(room, 's0').y);
+    expect(pot.rows).toEqual(byId(room, 's0').rows);
+  });
+
+  it('adds the same gap after every row', () => {
+    const tight = plan([], {});
+    const spread = plan([], {}, { ...GEOMETRY, rowGap: 5 });
+    expect(spread.height).toBe(tight.height + 3 * 5);
+    const ys = (room: RoomPlan) => [...new Set(room.walls[0]!.items.map((p) => p.y))];
+    expect(ys(spread)).toEqual(ys(tight).map((y, i) => y + i * 5));
   });
 
   it('shows a bare wall instead of an empty top band', () => {

@@ -1,15 +1,15 @@
 import type { HabitId } from '../habit';
 import { usedRows } from '../plant/bounds';
 import { PLANT_GRID, type PlantImage } from '../plant/grid';
-import type { ShelfLayout, StandingSlot, Wall } from '../shelf';
+import { SHELVES_PER_WALL, type ShelfLayout, type StandingSlot, type Wall } from '../shelf';
 import { drawSlot, type SlotKind } from './drawSlot';
 import { WINDOW_SIZE } from './drawWindow';
 import type { SceneImage, SceneLayer } from './sceneImage';
 
 // Where everything stands in the room, in cells: walls side by side, each
 // centered in its page (one screen wide) and snapped to the room's cell
-// grid, so the floor and the walls line up from one page to the next. Every
-// wall sits on the same floor line. Names and counters are text (drawn by
+// grid, so the floor and the walls line up from one page to the next. Rows
+// line up too, from one wall to the next. Names and counters are text (drawn by
 // the UI); the plan only reserves rows for them.
 
 /** Rows [from, to) of an image that are shown. */
@@ -62,6 +62,8 @@ export interface PlanRoomParams {
   pageWidth: number;
   /** Rows reserved under each row of plants for names and counters. */
   labelRows: number;
+  /** Empty rows after each row's labels, spreading the free height. */
+  rowGap?: number;
 }
 
 const COLUMN = PLANT_GRID.width;
@@ -95,6 +97,7 @@ export function planRoom({
   window,
   pageWidth,
   labelRows,
+  rowGap = 0,
 }: PlanRoomParams): RoomPlan {
   const plantCell = (id: HabitId): Cell => ({ kind: 'plant', id, image: plants[id]! });
   const slotCell = (slot: SlotKind, hanging: boolean): Cell => ({
@@ -105,62 +108,71 @@ export function planRoom({
   const standingCell = (slot: StandingSlot): Cell =>
     slot.kind === 'plant' ? plantCell(slot.id) : slotCell(slot.kind, false);
 
-  // Each wall is first laid out from its own top (y = 0), then moved down
-  // onto the floor line.
-  const walls = layout.walls.map((wall): WallPlan => {
+  // The cells of every wall, row by row: the top band (null = bare wall),
+  // then the shelves.
+  const tops = layout.walls.map((wall): (Cell | null)[] => {
+    const hangs = wall.top.some((id) => id !== null);
+    return wall.top.map((id) =>
+      id !== null ? plantCell(id) : hangs ? slotCell('empty', true) : null,
+    );
+  });
+  const shelves = layout.walls.map((wall) => wall.shelves.map((shelf) => shelf.map(standingCell)));
+
+  // Rows line up from one wall to the next: each row takes the band of its
+  // tallest content on any wall, so shelves continue across the swipe.
+  const topCells = tops.flat().filter((cell): cell is Cell => cell !== null);
+  const bands: RowBand[] = [
+    topBand(topCells, layout.walls.some((wall) => wall.window) ? WINDOW_SIZE.height : 0),
+    ...Array.from({ length: SHELVES_PER_WALL }, (_, row) =>
+      bottomBand(shelves.flatMap((wall) => wall[row] ?? [])),
+    ),
+  ];
+  const rowTops: number[] = [];
+  let y = 0;
+  for (const band of bands) {
+    rowTops.push(y);
+    y += height(band) + labelRows + rowGap;
+  }
+  const roomHeight = y;
+
+  const walls = layout.walls.map((wall, w): WallPlan => {
     const left = Math.round(wall.index * pageWidth + (pageWidth - WALL_WIDTH) / 2);
     const items: PlacedItem[] = [];
-    let y = 0;
-
-    const hangs = wall.top.some((id) => id !== null);
-    if (wall.window || hangs) {
-      const cells: (Cell | null)[] = wall.top.map((id) =>
-        id !== null ? plantCell(id) : wall.window ? null : slotCell('empty', true),
-      );
-      const band = topBand(
-        cells.filter((cell): cell is Cell => cell !== null),
-        wall.window ? WINDOW_SIZE.height : 0,
-      );
-      if (wall.window) {
-        items.push({
-          x: left + COLUMN,
-          y,
-          rows: { from: 0, to: WINDOW_SIZE.height },
-          content: { kind: 'window', image: window },
-          labelled: false,
-        });
-      }
-      cells.forEach((cell, i) => {
-        if (cell)
-          items.push({
-            x: left + i * COLUMN,
-            y,
-            rows: band,
-            content: cell,
-            labelled: cell.kind === 'plant',
-          });
+    if (wall.window) {
+      items.push({
+        x: left + COLUMN,
+        y: rowTops[0]!,
+        rows: { from: 0, to: WINDOW_SIZE.height },
+        content: { kind: 'window', image: window },
+        labelled: false,
       });
-      y += height(band) + labelRows;
     }
-
-    for (const shelf of wall.shelves) {
-      const cells = shelf.map(standingCell);
-      const band = bottomBand(cells);
+    tops[w]!.forEach((cell, i) => {
+      if (!cell) return;
+      const labelled = cell.kind === 'plant';
+      items.push({
+        x: left + i * COLUMN,
+        y: rowTops[0]!,
+        rows: bands[0]!,
+        content: cell,
+        labelled,
+      });
+    });
+    shelves[w]!.forEach((cells, row) => {
       cells.forEach((cell, i) => {
         const labelled = cell.kind === 'plant' || cell.slot === 'new';
-        items.push({ x: left + i * COLUMN, y, rows: band, content: cell, labelled });
+        const band = bands[row + 1]!;
+        items.push({
+          x: left + i * COLUMN,
+          y: rowTops[row + 1]!,
+          rows: band,
+          content: cell,
+          labelled,
+        });
       });
-      y += height(band) + labelRows;
-    }
-
-    return { wall, left, height: y, items };
+    });
+    return { wall, left, height: roomHeight, items };
   });
-
-  const roomHeight = Math.max(0, ...walls.map((wall) => wall.height));
-  for (const wall of walls) {
-    const drop = roomHeight - wall.height;
-    for (const placed of wall.items) placed.y += drop;
-  }
 
   return { width: Math.ceil(layout.walls.length * pageWidth), height: roomHeight, walls };
 }

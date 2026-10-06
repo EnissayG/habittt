@@ -9,7 +9,7 @@ import { SceneCanvas, type SceneImage } from './sceneImage';
 // is reserved for animation, like the window's.
 
 /** Floor height in rows: as tall as the screen allows, within these bounds. */
-export const FLOOR_ROWS = { max: 52, min: 28 } as const;
+export const FLOOR_ROWS = { max: 72, min: 28 } as const;
 
 /** Rows above the first plank (wall line and baseboard). */
 export const FLOOR_TOP = 3;
