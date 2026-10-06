@@ -9,8 +9,8 @@ export const TODAY = '2026-10-03' as LocalDate;
 export const NOW = '2026-10-03T10:00:00.000Z';
 export const LATER = '2026-10-03T18:30:00.000Z';
 
-export function fixedClock(now: string = NOW, today: LocalDate = TODAY): Clock {
-  return { now: () => now, today: () => today };
+export function fixedClock(now: string = NOW, today: LocalDate = TODAY, hour = 10): Clock {
+  return { now: () => now, today: () => today, hour: () => hour };
 }
 
 /**

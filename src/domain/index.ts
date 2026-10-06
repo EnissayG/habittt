@@ -25,6 +25,7 @@ export {
   type ShelfSlot,
 } from './shelf';
 export { buildTimeline, type DayEntry } from './timeline';
+export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';
 export { addDays, daysBetween, isLocalDate, parseLocalDate, type LocalDate } from './localDate';
 export * from './plant';
 export type { Clock, IdGenerator, SeedGenerator } from './ports';

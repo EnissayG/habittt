@@ -10,6 +10,8 @@ export interface Clock {
   now(): string;
   /** Current calendar day in the user's time zone. */
   today(): LocalDate;
+  /** Current hour (0-23) in the user's time zone. */
+  hour(): number;
 }
 
 /** Returns a new random UUID. */

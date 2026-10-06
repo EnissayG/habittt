@@ -13,6 +13,7 @@ export function toLocalDate(instant: Date): LocalDate {
 export const systemClock: Clock = {
   now: () => new Date().toISOString(),
   today: () => toLocalDate(new Date()),
+  hour: () => new Date().getHours(),
 };
 
 export function generateId(): string {
