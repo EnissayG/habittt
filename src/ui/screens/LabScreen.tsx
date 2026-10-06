@@ -82,7 +82,9 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
   const stillWindow = useMemo(() => drawWindow(view), [view]);
   // The floor under a wall holding this plant beside the window or on its shelf.
   const room = useMemo(() => {
-    const layout = arrangeShelf([{ id: 'lab', species, createdAt: '' }]);
+    // Only the first wall: the room always has more, but the Lab shows one.
+    const { walls } = arrangeShelf([{ id: 'lab', species, createdAt: '' }]);
+    const layout = { walls: walls.slice(0, 1) };
     const plan = planRoom({
       layout,
       plants: { lab: image },
