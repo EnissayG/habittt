@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PixelRatio, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { dayAt, usedRows } from '../../domain';
+import { dayAt, daysBetween, usedRows } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { PixelIcon } from '../components/PixelIcon';
@@ -31,6 +31,7 @@ type OpenSheet =
   | 'relapse'
   | { kind: 'day'; day: number }
   | { kind: 'note'; day: number }
+  | { kind: 'askNote'; day: number }
   | null;
 
 const notesLabel = (count: number) => `${count} ${count > 1 ? 'notes' : 'note'}`;
@@ -138,6 +139,21 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
             />
           )}
 
+          {dayOpen?.kind === 'askNote' && (
+            <Sheet visible onClose={() => setSheet(null)}>
+              <Text style={styles.sheetTitle}>{"C'est noté."}</Text>
+              <Text style={styles.body}>
+                {"Veux-tu écrire quelques mots sur ce jour ? C'est facultatif."}
+              </Text>
+              <Button
+                label="Écrire un mot"
+                variant="alt"
+                onPress={() => setSheet({ kind: 'note', day: dayOpen.day })}
+              />
+              <Button label="Plus tard" variant="quiet" onPress={() => setSheet(null)} />
+            </Sheet>
+          )}
+
           {dayOpen?.kind === 'note' && openEntry && (
             <NoteSheet
               habitId={id}
@@ -159,9 +175,14 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
             startDate={habit.startDate}
             visible={sheet === 'relapse'}
             onClose={() => setSheet(null)}
-            onChanged={(change) => {
-              setNotice(change === 'recorded' ? "C'est noté." : 'Rechute annulée.');
+            onChanged={(change, date) => {
               void reload();
+              if (change === 'cancelled') {
+                setNotice('Rechute annulée.');
+                return;
+              }
+              // Screen 8: once noted, offer to write a few words about that day.
+              setSheet({ kind: 'askNote', day: daysBetween(habit.startDate, date) + 1 });
             }}
           />
         </>
@@ -221,4 +242,6 @@ const styles = StyleSheet.create({
   traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   notice: { fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'center' },
+  sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
 });

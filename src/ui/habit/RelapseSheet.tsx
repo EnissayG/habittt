@@ -17,7 +17,7 @@ interface RelapseSheetProps {
   visible: boolean;
   onClose: () => void;
   /** After a change: the relapse was noted, or the existing one cancelled. */
-  onChanged: (change: 'recorded' | 'cancelled') => void;
+  onChanged: (change: 'recorded' | 'cancelled', date: LocalDate) => void;
 }
 
 type When = 'today' | 'yesterday' | 'other';
@@ -63,7 +63,7 @@ export function RelapseSheet({
       return;
     }
     close();
-    onChanged('recorded');
+    onChanged('recorded', date);
   }
 
   async function cancelExisting() {
@@ -73,7 +73,7 @@ export function RelapseSheet({
       return;
     }
     close();
-    onChanged('cancelled');
+    onChanged('cancelled', date);
   }
 
   if (exists) {
