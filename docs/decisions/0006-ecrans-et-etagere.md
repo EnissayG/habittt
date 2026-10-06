@@ -1,6 +1,8 @@
 # 0006. Écrans, navigation et étagère
 
-- **Statut :** accepté
+- **Statut :** accepté ; la partie « L'étagère comme scène » est en partie
+  remplacée par [0007](0007-etagere-en-murs.md) (murs, plein écran, plancher
+  miroir)
 - **Date :** 2026-10-05
 - **Complète :** [0004](0004-rendu-des-plantes.md)
 

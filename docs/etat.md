@@ -1,7 +1,7 @@
 # État du projet
 
-Point de reprise entre deux sessions. À jour au **5 octobre 2026**, après la
-phase 2. À lire en premier avec `CLAUDE.md`, puis
+Point de reprise entre deux sessions. À jour au **6 octobre 2026**, après la
+phase 2 et la refonte de l'étagère en murs. À lire en premier avec `CLAUDE.md`, puis
 [architecture.md](architecture.md) et les [ADR](decisions/).
 
 ## Où on en est
@@ -16,10 +16,10 @@ phase 2. À lire en premier avec `CLAUDE.md`, puis
 | Phase 0          | Police Pixelify Sans, contraste ≥ 4,5:1 testé                                        | fait                                        |
 | Phase 1          | Port exact du prototype : 13 espèces, `settle()`, génome, variétés, libellés, parité | fait (ADR 0005)                             |
 | Phase 2          | Navigation, écrans 1, 2, 3, 4, 5, 7, 8, fenêtre et plancher                          | fait (ADR 0006), **à tester sur téléphone** |
+| Phase 2 bis      | Étagère en murs, plein écran, plancher miroir                                        | fait (ADR 0007), **à tester sur téléphone** |
 | Phase 3          | Notes et arrosage, retrait, jardin, réglages, renommer                               | à faire                                     |
 
-Chiffres au dernier commit : 375 tests (environ 45 s), typecheck, lint et
-`expo-doctor` (21/21) au vert, bundles iOS et Android compilés.
+Chiffres au dernier commit : 403 tests, typecheck et lint au vert, bundles iOS et Android compilés.
 
 ## Ce qui reste
 
@@ -33,12 +33,13 @@ Décisions déjà prises : voir
    encadrées dans la grille et listées sous l'historique (écran 7) ; petite
    fleur sur le jour arrosé ; toucher la plante affiche le jour et sa note.
    Après une rechute (écran 8), proposer d'écrire une note.
-2. **Écran 9, retirer** : par glissement vers la gauche ou appui long sur
-   l'étagère, et par le menu de l'écran 5 ; « Elle rejoint le jardin » ou « Je
+2. **Écran 9, retirer** : par appui long sur l'étagère ou par le menu de
+   l'écran 5, jamais par glissement (il sert à changer de mur) ; « Elle rejoint le jardin » ou « Je
    la donne » ; « Tout effacer définitivement » avec une seconde
    confirmation.
 3. **Écran 10, le jardin** : même présentation que l'étagère, en lecture
-   seule ; accessible en bas de l'étagère et depuis les réglages.
+   seule ; accessible depuis l'étagère et depuis les réglages (l'étagère
+   n'a plus de « bas » : où placer l'accès est à décider).
 4. **Écran 11, réglages** : musique et barre de musique affichées
    « bientôt » ; rappel doux le soir (notification locale, désactivé par
    défaut) ; le jardin ; compte et synchronisation « bientôt » ; exporter mes
@@ -51,13 +52,19 @@ Décisions déjà prises : voir
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
 marques après 120 jours, animation de la fenêtre, meubles et décors.
 
-### À vérifier sur téléphone (phase 2)
+### À vérifier sur téléphone (phases 2 et 2 bis)
 
-- L'ouverture (1,5 s), l'étagère, la fenêtre selon l'heure, le plancher.
+- L'ouverture (1,5 s), la fenêtre selon l'heure.
+- L'étagère en plein écran : mur sous la barre d'état, plancher jusqu'au
+  bord, points au-dessus de la barre d'accueil, aucun rebond ni défilement
+  vertical.
+- Le passage d'un mur à l'autre (créer 7 plantes debout ou 2 retombantes
+  pour avoir un mur 2), et le raccord du plancher entre deux murs.
+- Le reflet du plancher : lisible, assez discret, joints par-dessus.
+- Le temps d'affichage de l'étagère (calcul du plancher, environ 27 ms sous
+  Node pour trois murs, plus sous Hermes) et la fluidité du glissement.
 - La netteté des pixels partout, à la même échelle.
 - Le sélecteur de date en mode calendrier sur iOS, dans les panneaux.
-- La fluidité du défilement de l'étagère : les reflets du plancher font
-  quelques centaines de chemins Skia.
 - Le glisser-retour sur iOS.
 
 ## Décisions de la session non écrites ailleurs

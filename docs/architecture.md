@@ -476,18 +476,29 @@ Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
 
 ### L'étagère
 
-- **Disposition** (`arrangeShelf`, domaine) : à côté de la fenêtre, la plus
-  ancienne plante retombante (sinon la plus ancienne plante) ; les autres
-  plantes retombantes dans leurs propres rangées sous la fenêtre ; puis les
-  tablettes de trois, terminées par le pot en pointillé.
-- **Rangées** (`ui/shelf/shelfRows.ts`) : chaque rangée montre la bande de
-  lignes réellement occupée par sa plante la plus haute ; rien n'est coupé.
-- **Une seule échelle entière** pour la scène : trois plantes sur la largeur
-  de l'écran.
-- **Fenêtre et plancher** (`drawWindow`, `drawRoom`, domaine) : tons
-  symboliques et calques translucides ; `scenePalette.ts` donne les couleurs
-  de chaque vue et mélange les calques. La fenêtre est une pile de couches
-  `(vue, t)`, prête à être animée.
+Décisions détaillées dans [l'ADR 0007](decisions/0007-etagere-en-murs.md).
+
+- **Une pièce, mur par mur** : on glisse à l'horizontale d'un mur à l'autre,
+  des points indiquent le mur affiché. Plein écran, sans défilement
+  vertical.
+- **Murs** (`arrangeShelf`, domaine) : une bande du haut pour les plantes
+  retombantes (la fenêtre et une place sur le mur 1, trois places ensuite)
+  et deux tablettes de trois pour les plantes debout. Les deux familles se
+  rangent indépendamment, par date de création ; le pot en pointillé occupe
+  la première place debout libre.
+- **Plan** (`planRoom`, domaine) : chaque élément placé en cellules, tous
+  murs côte à côte ; chaque bande a la hauteur de sa plante la plus haute,
+  rien n'est coupé ; tous les murs reposent sur la même ligne de sol.
+- **Plancher miroir** (`composeRoom`, `drawFloor`, domaine) : la pièce
+  composée, retournée, compressée en gardant une ligne sur n, estompée en 4
+  paliers, sous les joints des planches. Une seule règle pour tout ce qui
+  est au mur.
+- **Échelle** (`ui/shelf/fitRoom.ts`) : une échelle entière pour toute la
+  pièce, trois plantes sur la largeur au plus ; on raccourcit le plancher
+  (52 à 28 lignes) avant de baisser l'échelle.
+- **Fenêtre** (`drawWindow`, domaine) : tons symboliques et calques
+  translucides ; `scenePalette.ts` donne les couleurs de chaque vue et
+  mélange les calques. Une pile de couches `(vue, t)`, prête à être animée.
 - **La vue** (`windowView`, domaine) : nuit de 21 h à 6 h, soir de 18 h à
   21 h, sinon jour, enneigé de décembre à février.
 
@@ -533,7 +544,9 @@ phase 3. Voir aussi [etat.md](etat.md).
   arrosage servira à la vitalité (soif), plus tard.
 - **Toucher la plante** : chaque pixel connaît son jour ; on prend le pixel
   le plus proche du doigt et on affiche le jour et sa note.
-- **Retirer une habitude** : un statut (sur l'étagère, au jardin, donnée),
+- **Retirer une habitude** : par un appui long sur la plante ou par le menu
+  de l'habitude, jamais par un glissement (réservé au passage d'un mur à
+  l'autre). Un statut (sur l'étagère, au jardin, donnée),
   toujours par suppression logique. **Une plante retirée cesse de pousser** :
   ses statistiques et sa plante sont calculées jusqu'à la date de retrait.
   « Tout effacer définitivement » supprime le contenu (vie privée) mais garde
