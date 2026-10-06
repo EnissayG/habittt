@@ -15,6 +15,7 @@ import { Button } from '../components/Button';
 import { PixelIcon } from '../components/PixelIcon';
 import { days } from '../format';
 import type { ScreenProps } from '../navigation/types';
+import type { RowWindow } from '../plant/colorRuns';
 import { PixelCanvas } from '../plant/PixelCanvas';
 import { PlantPixels } from '../plant/PlantCanvas';
 import { buildShelfRows, type ShelfRowView, type SlotView } from '../shelf/shelfRows';
@@ -100,7 +101,15 @@ function ShelfRow({ row, cell, shelf, onOpen, onNew }: ShelfRowProps) {
     <View>
       <View style={styles.row}>
         {row.slots.map((slot, i) => (
-          <SlotPixels key={i} slot={slot} row={row} cell={cell} onOpen={onOpen} onNew={onNew} />
+          <SlotPixels
+            key={i}
+            slot={slot}
+            row={row}
+            view={shelf.view}
+            cell={cell}
+            onOpen={onOpen}
+            onNew={onNew}
+          />
         ))}
         {row.kind === 'window' && (
           <View style={{ marginLeft: row.slots.length === 0 ? slotWidth : 0 }}>
@@ -120,13 +129,13 @@ function ShelfRow({ row, cell, shelf, onOpen, onNew }: ShelfRowProps) {
 interface SlotPixelsProps {
   slot: SlotView;
   row: ShelfRowView;
+  view: WindowView;
   cell: number;
   onOpen: (id: string) => void;
   onNew: () => void;
 }
 
-function SlotPixels({ slot, row, cell, onOpen, onNew }: SlotPixelsProps) {
-  const artColor = useCallback((color: string) => color, []);
+function SlotPixels({ slot, row, view, cell, onOpen, onNew }: SlotPixelsProps) {
   if (slot.kind === 'plant') {
     return (
       <Pressable
@@ -138,7 +147,7 @@ function SlotPixels({ slot, row, cell, onOpen, onNew }: SlotPixelsProps) {
       </Pressable>
     );
   }
-  const art = <PixelCanvas grid={slot.art} colorOf={artColor} cellSize={cell} rows={row.rows} />;
+  const art = <SceneCanvas image={slot.art} view={view} cell={cell} rows={row.rows} />;
   if (slot.kind === 'new') {
     return (
       <Pressable accessibilityRole="button" accessibilityLabel="Nouvelle habitude" onPress={onNew}>
@@ -166,13 +175,15 @@ function SceneCanvas({
   image,
   view,
   cell,
+  rows,
 }: {
   image: Shelf['window'];
   view: WindowView;
   cell: number;
+  rows?: RowWindow;
 }) {
   const colorOf = useCallback((pixel: ScenePixel) => sceneColor(pixel, view), [view]);
-  return <PixelCanvas grid={image} colorOf={colorOf} cellSize={cell} />;
+  return <PixelCanvas grid={image} colorOf={colorOf} cellSize={cell} rows={rows} />;
 }
 
 const styles = StyleSheet.create({

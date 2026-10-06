@@ -16,7 +16,7 @@ import type { ScreenProps } from '../navigation/types';
 import { SPECIES_LABELS } from '../plant/labels';
 import { PixelCanvas } from '../plant/PixelCanvas';
 import { PlantPixels } from '../plant/PlantCanvas';
-import { slotArt } from '../plant/slotArt';
+import { diceArt } from '../plant/slotArt';
 import { filledRows } from '../shelf/shelfRows';
 import { colors, fonts } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
@@ -80,7 +80,7 @@ export function PlantChoiceScreen({ navigation, route }: ScreenProps<'PlantChoic
       })),
     [species],
   );
-  const dice = useMemo(() => slotArt('dice'), []);
+  const dice = useMemo(() => diceArt(), []);
   const artColor = useCallback((color: string) => color, []);
 
   // Same band of rows for every tile: from the tallest plant down to the pot.

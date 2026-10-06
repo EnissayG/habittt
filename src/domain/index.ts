@@ -33,6 +33,7 @@ export {
 export { buildTimeline, type DayEntry } from './timeline';
 export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';
 export { drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
+export { drawSlot, type SlotKind } from './scene/drawSlot';
 export { drawRoom, ROOM_SIZE, type DrawRoomParams } from './scene/drawRoom';
 export type {
   LightTone,

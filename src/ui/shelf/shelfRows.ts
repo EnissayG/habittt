@@ -3,11 +3,12 @@ import {
   SLOTS_PER_SHELF,
   WINDOW_SIZE,
   type HabitId,
+  drawSlot,
   type PlantImage,
+  type SceneImage,
   type Shelf,
 } from '../../domain';
 import type { PixelGrid, RowWindow } from '../plant/colorRuns';
-import { slotArt } from '../plant/slotArt';
 
 // Turns the domain's shelf layout into rows of slots, each with the band of
 // image rows to show. A row is as tall as its tallest content, so young
@@ -15,8 +16,8 @@ import { slotArt } from '../plant/slotArt';
 
 export type SlotView =
   | { kind: 'plant'; id: HabitId; image: PlantImage; name: string; streak: number }
-  | { kind: 'new'; art: PixelGrid<string> }
-  | { kind: 'empty'; art: PixelGrid<string> };
+  | { kind: 'new'; art: SceneImage }
+  | { kind: 'empty'; art: SceneImage };
 
 export interface ShelfRowView {
   kind: 'window' | 'hanging' | 'shelf';
@@ -72,7 +73,7 @@ export function buildShelfRows(shelf: Shelf): ShelfRowView[] {
   };
   const fill = (slots: SlotView[], hanging: boolean) => {
     while (slots.length < SLOTS_PER_SHELF)
-      slots.push({ kind: 'empty', art: slotArt('empty', hanging) });
+      slots.push({ kind: 'empty', art: drawSlot('empty', hanging) });
     return slots;
   };
 
@@ -94,7 +95,7 @@ export function buildShelfRows(shelf: Shelf): ShelfRowView[] {
     for (const shelfSlots of wall.shelves) {
       if (shelfSlots.every((slot) => slot.kind === 'empty')) continue;
       const slots = shelfSlots.map((slot): SlotView =>
-        slot.kind === 'plant' ? plantSlot(slot.id) : { kind: slot.kind, art: slotArt(slot.kind) },
+        slot.kind === 'plant' ? plantSlot(slot.id) : { kind: slot.kind, art: drawSlot(slot.kind) },
       );
       rows.push({ kind: 'shelf', slots, rows: bottomBand(slots) });
     }

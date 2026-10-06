@@ -1,5 +1,5 @@
 import type { ScenePixel, SceneTone, WindowView } from '../../domain';
-import { plantColor } from './plantPalette';
+import { plantColor, SCENERY } from './plantPalette';
 import { colors, solarized } from './tokens';
 
 // Real colors of the window and the floor, per view, from the mockup's
@@ -111,6 +111,9 @@ const FIXED: Record<Exclude<SceneTone, ViewTone>, string> = {
   plank1: '#74492A',
   plank2: '#633F20',
   seam: '#4A2E16',
+  shelf: SCENERY.shelf,
+  shelfShade: SCENERY.shelfShade,
+  outline: colors.border,
   glare: '#FFFFFF',
   shine: '#FFFFFF',
   shadow: solarized.base02,

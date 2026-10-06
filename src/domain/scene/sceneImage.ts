@@ -35,7 +35,17 @@ export type WindowTone =
   | 'curtainLight'
   | 'curtainShade';
 
-export type RoomTone = 'wallLine' | 'baseboard' | 'plank0' | 'plank1' | 'plank2' | 'seam';
+export type RoomTone =
+  | 'wallLine'
+  | 'baseboard'
+  | 'plank0'
+  | 'plank1'
+  | 'plank2'
+  | 'seam'
+  | 'shelf'
+  | 'shelfShade'
+  /** The dotted pot that creates a habit. */
+  | 'outline';
 
 /** Tones only ever used as translucent layers. */
 export type LightTone = 'glare' | 'shine' | 'floorLight' | 'shadow';
