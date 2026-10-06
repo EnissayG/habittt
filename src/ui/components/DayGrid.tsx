@@ -1,29 +1,37 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { DayEntry, LocalDate } from '../../domain';
+import { dayMonth } from '../format';
 import { colors } from '../theme/tokens';
+
+export const DAY_GRID_COLUMNS = 15;
+const GAP = 3;
 
 interface DayGridProps {
   days: readonly DayEntry[];
+  /** Width available, in points. */
+  width: number;
   onPressDay: (date: LocalDate) => void;
 }
 
 /**
- * One square per day since the start, oldest first. Temporary stand-in for
- * the pixel-art plant: each square is the future "cell" of its day.
+ * One square per day since the start, oldest first, 15 per row: green for a
+ * day held, orange for a relapse, today framed. Touching a day corrects it.
  */
-export function DayGrid({ days, onPressDay }: DayGridProps) {
+export function DayGrid({ days, width, onPressDay }: DayGridProps) {
+  const size = Math.floor((width - GAP * (DAY_GRID_COLUMNS - 1)) / DAY_GRID_COLUMNS);
   const lastIndex = days.length - 1;
   return (
     <View style={styles.grid}>
       {days.map((day) => (
         <Pressable
           key={day.date}
-          accessibilityLabel={`${day.date}${day.relapsed ? ', rechute' : ''}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Jour ${day.index + 1}, ${dayMonth(day.date)}${day.relapsed ? ', rechute' : ''}`}
           onPress={() => onPressDay(day.date)}
-          hitSlop={2}
+          hitSlop={1}
           style={[
-            styles.cell,
+            { width: size, height: size },
             { backgroundColor: day.relapsed ? colors.relapse : colors.clean },
             day.index === lastIndex && styles.today,
           ]}
@@ -33,10 +41,7 @@ export function DayGrid({ days, onPressDay }: DayGridProps) {
   );
 }
 
-const CELL = 28;
-
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  cell: { width: CELL, height: CELL, borderRadius: 2 },
-  today: { borderWidth: 3, borderColor: colors.text },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
+  today: { borderWidth: 2, borderColor: colors.strong },
 });

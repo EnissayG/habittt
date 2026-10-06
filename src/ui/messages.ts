@@ -12,7 +12,3 @@ export const toggleRelapseErrorMessage: Record<ToggleRelapseError, string> = {
   RELAPSE_BEFORE_START: 'Ce jour est avant le début du suivi.',
   HABIT_NOT_FOUND: "Cette habitude n'existe plus.",
 };
-
-export function days(count: number): string {
-  return `${count} ${count > 1 ? 'jours' : 'jour'}`;
-}

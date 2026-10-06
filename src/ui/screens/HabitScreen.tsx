@@ -1,110 +1,140 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { PixelRatio, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import type { HabitId, LocalDate } from '../../domain';
+import { usedRows } from '../../domain';
 import { Button } from '../components/Button';
-import { DayGrid } from '../components/DayGrid';
-import { days, toggleRelapseErrorMessage } from '../messages';
-import { PlantCanvas } from '../plant/PlantCanvas';
+import { Chip } from '../components/Chip';
+import { PixelIcon } from '../components/PixelIcon';
+import { Screen } from '../components/Screen';
+import { Sheet } from '../components/Sheet';
+import { TopBar } from '../components/TopBar';
+import { dayMonth, lowerFirst } from '../format';
+import { RelapseSheet } from '../habit/RelapseSheet';
+import type { ScreenProps } from '../navigation/types';
+import { describePlant } from '../plant/labels';
+import { PlantPixels } from '../plant/PlantCanvas';
+import { pixelScale } from '../plant/pixelScale';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
-import { useLoader } from '../useLoader';
+import { useScreenData } from '../useLoader';
 
-interface HabitScreenProps {
-  habitId: HabitId;
-  onBack: () => void;
-}
+/** Height the counter needs (big number and its label), in points. */
+const COUNTER_HEIGHT = 74;
 
-export function HabitScreen({ habitId, onBack }: HabitScreenProps) {
+type OpenSheet = 'menu' | 'water' | 'relapse' | null;
+
+/** Screen 5: one habit. The plant is the main element. */
+export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
+  const { id } = route.params;
   const tracker = useTracker();
-  const { width } = useWindowDimensions();
-  const load = useCallback(() => tracker.getHabit(habitId), [tracker, habitId]);
-  const { data: detail, reload } = useLoader(load);
-  const [error, setError] = useState<string | null>(null);
+  const { width, height } = useWindowDimensions();
+  const load = useCallback(() => tracker.getHabit(id), [tracker, id]);
+  const { data: detail, reload } = useScreenData(load);
+  const [sheet, setSheet] = useState<OpenSheet>(null);
 
-  async function toggle(date: LocalDate) {
-    const result = await tracker.toggleRelapse(habitId, date);
-    setError(result.ok ? null : toggleRelapseErrorMessage[result.error]);
-    await reload();
-  }
+  if (!detail) return <Screen>{null}</Screen>;
 
-  const today = detail?.days[detail.days.length - 1];
+  const { habit, stats, plant } = detail;
+  const sceneWidth = width - 28;
+  const scale = pixelScale(plant, { width: sceneWidth, height: height * 0.5 }, PixelRatio.get());
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Pressable onPress={onBack} accessibilityRole="button">
-        <Text style={styles.back}>‹ Mes habitudes</Text>
-      </Pressable>
-
-      {detail && (
-        <>
-          <Text style={styles.name}>{detail.habit.name}</Text>
-
-          <View>
-            <Text style={styles.streak}>{detail.stats.currentStreak}</Text>
-            <Text style={styles.streakLabel}>
-              {detail.stats.currentStreak > 1 ? 'jours sans rechute' : 'jour sans rechute'}
-            </Text>
-          </View>
-
-          <View style={styles.statsRow}>
-            <Stat label="record" value={days(detail.stats.longestStreak)} />
-            <Stat label="depuis le début" value={days(detail.stats.totalDays)} />
-          </View>
-
-          <PlantCanvas image={detail.plant} maxWidth={width - spacing.lg * 2} maxHeight={320} />
-
-          <View style={styles.section}>
-            <DayGrid days={detail.days} onPressDay={toggle} />
-            <Text style={styles.hint}>
-              Vert : jour tenu. Orange : rechute. Touche un jour pour déclarer ou annuler une
-              rechute.
-            </Text>
-          </View>
-
-          {error && <Text style={styles.error}>{error}</Text>}
-
-          {today && (
-            <Button
-              label={
-                today.relapsed ? "Annuler la rechute d'aujourd'hui" : "J'ai rechuté aujourd'hui"
-              }
-              variant="alt"
-              onPress={() => toggle(today.date)}
-            />
-          )}
-        </>
-      )}
-    </ScrollView>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+  // The counter sits in the empty space above the plant when there is room,
+  // otherwise above the image.
+  const freeAbove = usedRows(plant).top * scale.cellSize;
+  const counterInside = freeAbove >= COUNTER_HEIGHT;
+  const counter = (
+    <View style={counterInside ? styles.counterOverlay : undefined}>
+      <Text style={styles.count}>{stats.currentStreak}</Text>
+      <Text style={styles.countLabel}>
+        {stats.currentStreak > 1 ? 'jours' : 'jour'} sans {lowerFirst(habit.name)}
+      </Text>
     </View>
+  );
+
+  return (
+    <Screen
+      scroll
+      footer={
+        <>
+          <Button label="Arroser et écrire une note" onPress={() => setSheet('water')} />
+          <Button label="J'ai rechuté" variant="quiet" onPress={() => setSheet('relapse')} />
+        </>
+      }
+    >
+      <TopBar
+        backLabel="étagère"
+        onBack={navigation.goBack}
+        right={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Menu"
+            hitSlop={12}
+            onPress={() => setSheet('menu')}
+          >
+            <PixelIcon name="dots" size={21} />
+          </Pressable>
+        }
+      />
+
+      {!counterInside && counter}
+      <View style={styles.scene}>
+        <PlantPixels image={plant} cellSize={scale.cellSize} />
+        {counterInside && counter}
+      </View>
+
+      <View>
+        <Text style={styles.name}>{habit.name}</Text>
+        <Text style={styles.traits}>{describePlant(plant)}</Text>
+      </View>
+      <View style={styles.chips}>
+        <Chip label={`record ${stats.longestStreak} j`} />
+        <Chip label={`depuis le ${dayMonth(habit.startDate)}`} />
+      </View>
+
+      <Sheet visible={sheet === 'menu'} onClose={() => setSheet(null)}>
+        <Button
+          label="Historique"
+          variant="alt"
+          onPress={() => {
+            setSheet(null);
+            navigation.navigate('History', { id });
+          }}
+        />
+        <Button label="Fermer" variant="quiet" onPress={() => setSheet(null)} />
+      </Sheet>
+
+      <Sheet visible={sheet === 'water'} onClose={() => setSheet(null)}>
+        <View style={styles.sheetTitle}>
+          <PixelIcon name="drop" size={19} />
+          <Text style={styles.sheetTitleText}>Arroser et écrire une note</Text>
+        </View>
+        <Text style={styles.body}>
+          Bientôt : tu pourras arroser ta plante et écrire une note pour ce jour. Écrire restera
+          toujours facultatif.
+        </Text>
+        <Button label="D'accord" variant="alt" onPress={() => setSheet(null)} />
+      </Sheet>
+
+      <RelapseSheet
+        habitId={id}
+        startDate={habit.startDate}
+        visible={sheet === 'relapse'}
+        onClose={() => setSheet(null)}
+        onRecorded={() => void reload()}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.lg, gap: spacing.lg },
-  back: { fontFamily: fonts.body, fontSize: 16, color: colors.muted },
-  name: { fontFamily: fonts.display, fontSize: 26, color: colors.text },
-  streak: { fontFamily: fonts.displayBold, fontSize: 72, color: colors.text, lineHeight: 80 },
-  streakLabel: { fontFamily: fonts.body, fontSize: 16, color: colors.text },
-  statsRow: { flexDirection: 'row', gap: spacing.md },
-  stat: {
-    flex: 1,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 4,
-    padding: spacing.md,
-  },
-  statValue: { fontFamily: fonts.display, fontSize: 18, color: colors.text },
-  statLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  section: { gap: spacing.sm },
-  hint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 18 },
-  error: { fontFamily: fonts.body, fontSize: 14, color: colors.text },
+  scene: { alignItems: 'center' },
+  counterOverlay: { position: 'absolute', left: 0, top: 0 },
+  count: { fontFamily: fonts.displayBold, fontSize: 52, color: colors.text, lineHeight: 52 },
+  countLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+  name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+  traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  sheetTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  sheetTitleText: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
 });
