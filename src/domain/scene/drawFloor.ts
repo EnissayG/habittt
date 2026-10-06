@@ -3,10 +3,11 @@ import { SceneCanvas, type SceneImage } from './sceneImage';
 
 // The polished floor, as wide as the whole room: dark planks that mirror
 // whatever stands above them. One general rule, with no special case per
-// element: the composed room is flipped at the floor line, squeezed into
-// the floor by keeping one row out of `step` (whole pixels, nothing
-// resampled), and fades away from the wall. The seams pass over it. Its t
-// is reserved for animation, like the window's.
+// element: the composed room is flipped at its lowest drawn row, one row out
+// of two is kept (whole pixels, nothing resampled, pots and plants stay
+// recognizable), and it fades away from the wall. What is too high to fit
+// is left out. The seams pass over it. Its t is reserved for animation,
+// like the window's.
 
 /** Floor height in rows: as tall as the screen allows, within these bounds. */
 export const FLOOR_ROWS = { max: 72, min: 28 } as const;
@@ -17,10 +18,12 @@ export const FLOOR_TOP = 3;
 const PLANK_HEIGHTS = [4, 5, 6, 7, 8, 9, 10];
 const PLANK_TONES = ['plank0', 'plank1', 'plank2'] as const;
 
-/** Opacity of the reflection at the floor line. */
-const REFLECTION_ALPHA = 0.34;
-/** Fading steps: few, so the floor keeps few distinct colors to draw. */
-const FADE_LEVELS = 4;
+/** Rows of the wall per row of floor: one out of two is kept. */
+const STEP = 2;
+/** Opacity of the reflection just under the baseboard. */
+const REFLECTION_ALPHA = 0.5;
+/** Fading steps: enough to look smooth, few enough to keep few colors. */
+const FADE_LEVELS = 12;
 
 export interface DrawFloorParams {
   /** Everything above the floor (see composeRoom). */
@@ -53,9 +56,9 @@ export function drawFloor({ room, rows }: DrawFloorParams): SceneImage {
 
   // The mirror.
   const depth = rows - FLOOR_TOP;
-  const step = Math.max(1, Math.ceil(room.height / depth));
+  const bottom = lowestDrawnRow(room);
   for (let r = 0; r < depth; r++) {
-    const sy = room.height - 1 - r * step;
+    const sy = bottom - r * STEP;
     if (sy < 0) break;
     const level = Math.floor((r * FADE_LEVELS) / depth);
     const alpha = REFLECTION_ALPHA * (1 - level / FADE_LEVELS);
@@ -72,4 +75,12 @@ export function drawFloor({ room, rows }: DrawFloorParams): SceneImage {
   }
 
   return c.toImage();
+}
+
+/** Last row of the room holding a pixel (-1 when it is empty). */
+function lowestDrawnRow(room: RoomImage): number {
+  for (let y = room.height - 1; y >= 0; y--) {
+    for (let x = 0; x < room.width; x++) if (room.pixels[y * room.width + x]) return y;
+  }
+  return -1;
 }

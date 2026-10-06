@@ -52,14 +52,11 @@ describe('drawFloor', () => {
     expect(reflectedAt(floor, 39, FLOOR_TOP)).toHaveLength(0);
   });
 
-  it('squeezes the whole wall into the floor by keeping one row out of n', () => {
-    const height = 180;
+  it('keeps one row out of two, from the bottom of the wall', () => {
+    const height = 100;
     const rows = FLOOR_ROWS.max;
-    const step = Math.ceil(height / (rows - FLOOR_TOP));
-    expect(step).toBeGreaterThan(1);
-    // Column 40 marked on every row except one sampled row: the floor row
-    // that mirrors it stays dark, the others show a mark.
-    const skipped = height - 1 - 10 * step;
+    // Column 40 marked on every row except one: the floor row mirroring it stays dark.
+    const skipped = height - 1 - 2 * 10;
     const marks = Array.from({ length: height }, (_, y) => [40, y] as [number, number]).filter(
       ([, y]) => y !== skipped,
     );
@@ -67,33 +64,44 @@ describe('drawFloor', () => {
     for (let r = 0; FLOOR_TOP + r < rows; r++) {
       const fy = FLOOR_TOP + r;
       if (isSeam(floor, 40, fy)) continue;
-      const source = height - 1 - r * step;
-      const expected = source >= 0 && source !== skipped ? 1 : 0;
-      expect(reflectedAt(floor, 40, fy)).toHaveLength(expected);
-    }
-    // The deepest sampled row is within the wall's top step: the wall fits.
-    const deepest = Math.floor((height - 1) / step);
-    expect(FLOOR_TOP + deepest).toBeLessThan(rows);
-  });
-
-  it('reflects every row of a short wall', () => {
-    const marks = Array.from({ length: 20 }, (_, y) => [10 + y, y] as [number, number]);
-    const floor = drawFloor({ room: room(170, 20, marks), rows: FLOOR_ROWS.max });
-    for (let y = 0; y < 20; y++) {
-      const fy = FLOOR_TOP + (19 - y);
-      if (!isSeam(floor, 10 + y, fy)) expect(reflectedAt(floor, 10 + y, fy)).toHaveLength(1);
+      const source = height - 1 - 2 * r;
+      expect(reflectedAt(floor, 40, fy)).toHaveLength(source >= 0 && source !== skipped ? 1 : 0);
     }
   });
 
-  it('fades away from the wall, in a few steps only', () => {
-    const height = 49;
-    const marks: [number, number][] = [];
-    for (let y = 0; y < height; y++) marks.push([7, y]);
+  it('leaves out what is too high to fit in the floor', () => {
+    const height = 200;
+    const floor = drawFloor({
+      room: room(170, height, [
+        [40, 0],
+        [40, height - 1],
+      ]),
+      rows: FLOOR_ROWS.min,
+    });
+    expect(rowsWithMark(floor)).toEqual([FLOOR_TOP]);
+  });
+
+  it('starts from the lowest row actually drawn on the wall', () => {
+    // The bottom rows of the wall hold only text (names), not pixels.
+    const floor = drawFloor({
+      room: room(170, 100, [
+        [40, 80],
+        [40, 78],
+      ]),
+      rows: FLOOR_ROWS.max,
+    });
+    expect(rowsWithMark(floor)).toEqual([FLOOR_TOP, FLOOR_TOP + 1]);
+  });
+
+  it('is clearly visible under the baseboard, then fades in many steps', () => {
+    const height = 140;
+    const marks = Array.from({ length: height }, (_, y) => [7, y] as [number, number]);
     const floor = drawFloor({ room: room(170, height, marks), rows: FLOOR_ROWS.max });
     const alphas = rowsWithMark(floor).map((y) => reflectedAt(floor, 7, y)[0]!.alpha);
+    expect(alphas[0]!).toBeGreaterThanOrEqual(0.45);
     for (let i = 1; i < alphas.length; i++) expect(alphas[i]!).toBeLessThanOrEqual(alphas[i - 1]!);
-    expect(alphas[alphas.length - 1]!).toBeLessThan(alphas[0]!);
-    expect(new Set(alphas).size).toBeLessThanOrEqual(4);
+    expect(alphas[alphas.length - 1]!).toBeLessThan(alphas[0]! / 4);
+    expect(new Set(alphas).size).toBeGreaterThan(4);
   });
 
   it('lets the seams of the planks pass over the reflection', () => {
