@@ -49,6 +49,9 @@ export const colors = {
   water: solarized.blue,
   clean: solarized.green,
   relapse: solarized.orange,
+  /** Marks standing on the dark floor (the wall indicator): current, other. */
+  onFloor: solarized.base3,
+  onFloorMuted: '#D3CBB7',
   /** Dimmed screen behind a sheet. */
   dim: 'rgba(7, 54, 66, 0.38)',
 } as const;
@@ -65,6 +68,9 @@ export const TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
   ['onAccent', 'accent'],
   ['onStrong', 'strong'],
 ];
+
+/** Marks drawn on the floor planks; checked against every plank tone (at least 3:1). */
+export const FLOOR_MARKS: readonly ColorRole[] = ['onFloor', 'onFloorMuted'];
 
 /** Minimum contrast for running text (WCAG AA). */
 export const MIN_TEXT_CONTRAST = 4.5;

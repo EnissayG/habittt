@@ -2,7 +2,8 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
 import { contrastRatio } from './contrast';
-import { colors, MIN_TEXT_CONTRAST, TEXT_PAIRS } from './tokens';
+import { sceneColor } from './scenePalette';
+import { colors, FLOOR_MARKS, MIN_TEXT_CONTRAST, TEXT_PAIRS } from './tokens';
 
 describe('contrastRatio', () => {
   it('matches the WCAG reference values', () => {
@@ -44,5 +45,15 @@ describe('theme text contrast', () => {
     visit(uiDir);
 
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('floor marks contrast', () => {
+  const planks = (['plank0', 'plank1', 'plank2'] as const).map((tone) =>
+    sceneColor({ tone, layers: [] }, 'day'),
+  );
+  it.each(FLOOR_MARKS)('%s stands out on every plank (at least 3:1)', (role) => {
+    for (const plank of planks)
+      expect(contrastRatio(colors[role], plank)).toBeGreaterThanOrEqual(3);
   });
 });
