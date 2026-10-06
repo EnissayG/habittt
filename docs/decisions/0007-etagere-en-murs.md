@@ -1,6 +1,7 @@
 # 0007. L'étagère en murs, en plein écran, et le plancher miroir
 
-- **Statut :** accepté
+- **Statut :** accepté ; le miroir, les écarts et le dessin par place sont
+  remplacés par [0008](0008-retours-du-premier-test.md)
 - **Date :** 2026-10-06
 - **Remplace en partie :** [0006](0006-ecrans-et-etagere.md) (disposition de
   l'étagère, défilement vertical, plancher fixe et ses reflets)

@@ -1,7 +1,7 @@
 # État du projet
 
 Point de reprise entre deux sessions. À jour au **6 octobre 2026**, après la
-phase 2 et la refonte de l'étagère en murs. À lire en premier avec `CLAUDE.md`, puis
+phase 2, la refonte de l'étagère en murs et les retours du premier test. À lire en premier avec `CLAUDE.md`, puis
 [architecture.md](architecture.md) et les [ADR](decisions/).
 
 ## Où on en est
@@ -16,10 +16,12 @@ phase 2 et la refonte de l'étagère en murs. À lire en premier avec `CLAUDE.md
 | Phase 0          | Police Pixelify Sans, contraste ≥ 4,5:1 testé                                        | fait                                        |
 | Phase 1          | Port exact du prototype : 13 espèces, `settle()`, génome, variétés, libellés, parité | fait (ADR 0005)                             |
 | Phase 2          | Navigation, écrans 1, 2, 3, 4, 5, 7, 8, fenêtre et plancher                          | fait (ADR 0006), **à tester sur téléphone** |
-| Phase 2 bis      | Étagère en murs, plein écran, plancher miroir                                        | fait (ADR 0007), **à tester sur téléphone** |
+| Phase 2 bis      | Étagère en murs, plein écran, plancher miroir                                        | fait (ADR 0007), testé                      |
+| Phase 2 ter      | Retours du test : panneaux, dates, mise en page, reflet, animation, Labo             | fait (ADR 0008), **à tester sur téléphone** |
 | Phase 3          | Notes et arrosage, retrait, jardin, réglages, renommer                               | à faire                                     |
 
-Chiffres au dernier commit : 403 tests, typecheck et lint au vert, bundles iOS et Android compilés.
+Chiffres au dernier commit : 426 tests, typecheck, lint et `expo-doctor`
+(21/21) au vert, bundles iOS et Android compilés.
 
 ## Ce qui reste
 
@@ -38,8 +40,7 @@ Décisions déjà prises : voir
    la donne » ; « Tout effacer définitivement » avec une seconde
    confirmation.
 3. **Écran 10, le jardin** : même présentation que l'étagère, en lecture
-   seule ; accessible depuis l'étagère et depuis les réglages (l'étagère
-   n'a plus de « bas » : où placer l'accès est à décider).
+   seule ; accessible par les réglages pour l'instant.
 4. **Écran 11, réglages** : musique et barre de musique affichées
    « bientôt » ; rappel doux le soir (notification locale, désactivé par
    défaut) ; le jardin ; compte et synchronisation « bientôt » ; exporter mes
@@ -52,18 +53,22 @@ Décisions déjà prises : voir
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
 marques après 120 jours, animation de la fenêtre, meubles et décors.
 
-### À vérifier sur téléphone (phases 2 et 2 bis)
+### À vérifier sur téléphone (phase 2 ter)
 
-- L'ouverture (1,5 s), la fenêtre selon l'heure.
-- L'étagère en plein écran : mur sous la barre d'état, plancher jusqu'au
-  bord, points au-dessus de la barre d'accueil, aucun rebond ni défilement
-  vertical.
-- Le passage d'un mur à l'autre (créer 7 plantes debout ou 2 retombantes
-  pour avoir un mur 2), et le raccord du plancher entre deux murs.
-- Le reflet du plancher : lisible, assez discret, joints par-dessus.
-- Le temps d'affichage de l'étagère (calcul du plancher, environ 27 ms sous
-  Node pour trois murs, plus sous Hermes) et la fluidité du glissement.
-- La netteté des pixels partout, à la même échelle.
+- L'ouverture : 1,5 s après l'apparition de la plante (après avoir fermé
+  complètement Expo Go).
+- Les panneaux : arrosage (« Bientôt »), menu, rechute ; « C'est noté. »
+  après une rechute ; une seconde rechute le même jour propose de l'annuler.
+- L'année dans « depuis le … » pour une date d'une autre année.
+- Plus de coupure entre deux places de la tablette.
+- La mise en page : fenêtre sous l'en-tête, rangées espacées, plancher plus
+  haut, tablettes alignées d'un mur à l'autre.
+- Le reflet : pots et plantes reconnaissables, net sous la plinthe.
+- L'animation de la fenêtre (Labo pour chaque vue), arrêtée hors de
+  l'étagère et avec « Réduire les animations ».
+- La démo (Labo) : trois murs, le glissement, puis le retour à tes données.
+- **Choisir la police des chiffres** dans la planche du Labo ; ensuite, en
+  faire un rôle du thème et désinstaller les autres.
 - Le sélecteur de date en mode calendrier sur iOS, dans les panneaux.
 - Le glisser-retour sur iOS.
 

@@ -451,8 +451,11 @@ montrer qu'une bande de lignes (recadrage sur l'étagère).
 Accessible depuis l'étagère, **seulement en mode développement** (`__DEV__`).
 Il appelle directement le domaine : choix de l'espèce, de la graine, du
 nombre de jours (1 à 120), de deux jours de rechute, et de la vue de la
-fenêtre (jour, soir, nuit, hiver), avec la plante, la fenêtre et le plancher
-mis à jour en direct. Il ne lit ni n'écrit la base.
+fenêtre (jour, soir, nuit, hiver, animée), avec la plante, la fenêtre et le
+plancher mis à jour en direct. Il propose aussi une planche des chiffres
+dans cinq polices candidates, et « Remplir la démo » / « Revenir à mes
+données » : une seconde base SQLite (`habittt-demo.db`), choisie par
+`App.tsx`, qui ne touche jamais la vraie (voir l'ADR 0008).
 
 ## Les écrans (`src/ui/screens/`)
 
@@ -489,16 +492,26 @@ Décisions détaillées dans [l'ADR 0007](decisions/0007-etagere-en-murs.md).
 - **Plan** (`planRoom`, domaine) : chaque élément placé en cellules, tous
   murs côte à côte ; chaque bande a la hauteur de sa plante la plus haute,
   rien n'est coupé ; tous les murs reposent sur la même ligne de sol.
-- **Plancher miroir** (`composeRoom`, `drawFloor`, domaine) : la pièce
-  composée, retournée, compressée en gardant une ligne sur n, estompée en 4
-  paliers, sous les joints des planches. Une seule règle pour tout ce qui
-  est au mur.
-- **Échelle** (`ui/shelf/fitRoom.ts`) : une échelle entière pour toute la
-  pièce, trois plantes sur la largeur au plus ; on raccourcit le plancher
-  (52 à 28 lignes) avant de baisser l'échelle.
+- **Plancher miroir** (`composeRoom`, `drawFloor`, domaine) : le bas de la
+  pièce composée, retourné à partir de sa plus basse ligne dessinée, une
+  ligne sur deux, estompé en 12 paliers, sous les joints des planches. Ce
+  qui ne tient pas n'est pas reflété. Une seule règle pour tout ce qui est
+  au mur (ADR 0008).
+- **Échelle et hauteur** (`ui/shelf/fitRoom.ts`) : une échelle entière pour
+  toute la pièce, trois plantes sur la largeur au plus ; la fenêtre juste
+  sous l'en-tête ; rangées alignées d'un mur à l'autre ; on raccourcit le
+  plancher (jusqu'à 28 lignes) avant de baisser l'échelle ; la hauteur
+  libre va pour moitié au plancher (jusqu'à 72 lignes), le reste en écarts
+  égaux entre les rangées.
+- **Dessin** : un seul canevas Skia par mur (une `Picture`), zones tactiles
+  transparentes et noms par-dessus ; la fenêtre a son petit canevas.
 - **Fenêtre** (`drawWindow`, domaine) : tons symboliques et calques
   translucides ; `scenePalette.ts` donne les couleurs de chaque vue et
-  mélange les calques. Une pile de couches `(vue, t)`, prête à être animée.
+  mélange les calques. Une pile de couches `(vue, t)` : nuages, étoiles et
+  neige bougent avec `t` ; `useWindowClock` l'avance 4 fois par seconde,
+  seulement écran affiché et si « Réduire les animations » est désactivé.
+- **Panneaux** (`components/Sheet.tsx`) : une couche de l'écran, passée en
+  `overlay` à `Screen`, jamais un `Modal` natif (ADR 0008).
 - **La vue** (`windowView`, domaine) : nuit de 21 h à 6 h, soir de 18 h à
   21 h, sinon jour, enneigé de décembre à février.
 
