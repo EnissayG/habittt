@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PixelRatio, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { daysBetween, usedRows } from '../../domain';
+import { daysBetween, noteMonth, usedRows } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { NumberText } from '../components/NumberText';
@@ -225,7 +225,12 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
       </View>
       {detail.notes.length > 0 && (
         <View style={styles.chips}>
-          <Chip label={notesLabel(detail.notes.length)} />
+          <Chip
+            label={notesLabel(detail.notes.length)}
+            onPress={() =>
+              navigation.navigate('Journal', { id, month: noteMonth(detail.days) ?? undefined })
+            }
+          />
         </View>
       )}
     </Screen>
