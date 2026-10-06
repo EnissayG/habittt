@@ -10,6 +10,18 @@ export {
 } from './habit';
 export { normalizeHabitName } from './habitName';
 export {
+  isActiveNote,
+  MOODS,
+  NOTE_MAX_LENGTH,
+  noteIdFor,
+  writeNote,
+  type Mood,
+  type Note,
+  type WriteNoteError,
+  type WriteNoteOutcome,
+  type WriteNoteParams,
+} from './note';
+export {
   createHabitTracker,
   type AddHabitInput,
   type HabitDetail,
