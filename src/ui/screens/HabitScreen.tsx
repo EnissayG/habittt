@@ -14,6 +14,7 @@ import { FallingDrop } from '../habit/FallingDrop';
 import { NoteSheet } from '../habit/NoteSheet';
 import { RelapseSheet } from '../habit/RelapseSheet';
 import type { ScreenProps } from '../navigation/types';
+import { MOOD_LABELS } from '../messages';
 import { describePlant } from '../plant/labels';
 import { PlantPixels } from '../plant/PlantCanvas';
 import { pixelScale } from '../plant/pixelScale';
@@ -215,6 +216,23 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
         <FallingDrop drop={drops} distance={freeAbove} />
       </View>
       <Text style={styles.hint}>Touche la plante pour ouvrir son journal.</Text>
+      {detail.todayNote && (
+        // Today's note stays in view under the plant; touching it edits it.
+        <Pressable
+          accessibilityRole="button"
+          accessibilityHint="Modifier la note du jour"
+          onPress={() => setSheet({ kind: 'note', day: detail.days.length })}
+          style={styles.note}
+        >
+          <Text style={styles.noteTitle}>Aujourd&apos;hui</Text>
+          {detail.todayNote.mood && (
+            <Text style={styles.noteMood}>{MOOD_LABELS[detail.todayNote.mood]}</Text>
+          )}
+          {detail.todayNote.text !== '' && (
+            <Text style={styles.noteText}>{detail.todayNote.text}</Text>
+          )}
+        </Pressable>
+      )}
 
       <View>
         <Text style={styles.name}>{habit.name}</Text>
@@ -260,6 +278,18 @@ const styles = StyleSheet.create({
   facts: { flexDirection: 'row', gap: 32 },
   factLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   factValue: { fontFamily: fonts.display, fontSize: 18, lineHeight: 26, color: colors.text },
+  note: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.note,
+    backgroundColor: colors.surface,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 2,
+  },
+  // Only text goes on the surface color (TEXT_PAIRS).
+  noteTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
+  noteMood: { fontFamily: fonts.display, fontSize: 12, color: colors.text },
+  noteText: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
   notice: { fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'center' },
   sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
   body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
