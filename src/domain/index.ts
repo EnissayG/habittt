@@ -21,10 +21,14 @@ export {
 } from './habitTracker';
 export {
   arrangeShelf,
+  SHELVES_PER_WALL,
   SLOTS_PER_SHELF,
+  TOP_SLOTS_FIRST_WALL,
+  TOP_SLOTS_PER_WALL,
   type ShelfItem,
   type ShelfLayout,
-  type ShelfSlot,
+  type StandingSlot,
+  type Wall,
 } from './shelf';
 export { buildTimeline, type DayEntry } from './timeline';
 export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';

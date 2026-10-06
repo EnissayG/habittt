@@ -109,7 +109,10 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
 
       const layout = arrangeShelf(summaries.map(({ habit }) => habit));
       const view = windowView(clock.hour(), today);
-      const bottomShelf = layout.shelves[layout.shelves.length - 1] ?? [];
+      const bottomShelf =
+        [...(layout.walls[0]?.shelves ?? [])]
+          .reverse()
+          .find((shelf) => shelf.some((slot) => slot.kind === 'plant')) ?? [];
       const reflected = bottomShelf.map((slot) =>
         slot.kind === 'plant' ? (byId[slot.id]?.plant ?? null) : null,
       );

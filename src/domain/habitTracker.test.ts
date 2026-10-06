@@ -171,7 +171,7 @@ describe('habit tracker use cases', () => {
       const shelf = await tracker.getShelf();
       expect(shelf.totals).toEqual({ plants: 2, cleanDays: 9 + 3 });
       expect(Object.keys(shelf.habits).sort()).toEqual([a.value.id, b.value.id].sort());
-      expect(shelf.layout.windowSlot).toBeDefined();
+      expect(shelf.layout.walls).toHaveLength(1);
     });
 
     it('chooses the window view from the clock and draws the window and the floor', async () => {

@@ -36,7 +36,7 @@ describe('buildShelfRows', () => {
     expect(rows[1]!.slots.map((slot) => slot.kind)).toEqual(['new', 'empty', 'empty']);
   });
 
-  it('puts hanging plants under the window row, then the shelves', async () => {
+  it('puts the second hanging plant on the next wall', async () => {
     const rows = buildShelfRows(
       await shelfWith([
         ['pothos', 30],
@@ -44,9 +44,9 @@ describe('buildShelfRows', () => {
         ['cactus', 30],
       ]),
     );
-    expect(rows.map((row) => row.kind)).toEqual(['window', 'hanging', 'shelf']);
-    expect(rows[1]!.slots.map((slot) => slot.kind)).toEqual(['plant', 'empty', 'empty']);
-    expect(rows[2]!.slots.map((slot) => slot.kind)).toEqual(['plant', 'new', 'empty']);
+    expect(rows.map((row) => row.kind)).toEqual(['window', 'shelf', 'hanging']);
+    expect(rows[1]!.slots.map((slot) => slot.kind)).toEqual(['plant', 'new', 'empty']);
+    expect(rows[2]!.slots.map((slot) => slot.kind)).toEqual(['plant', 'empty', 'empty']);
   });
 
   it('makes the window row at least as tall as the window', async () => {

@@ -1,6 +1,5 @@
 import {
   PLANT_GRID,
-  resolveSpecies,
   SLOTS_PER_SHELF,
   WINDOW_SIZE,
   type HabitId,
@@ -79,33 +78,26 @@ export function buildShelfRows(shelf: Shelf): ShelfRowView[] {
 
   const rows: ShelfRowView[] = [];
 
-  // Top row: one plant beside the window (as tall as the window at least).
-  const top = shelf.layout.windowSlot;
-  if (top !== null) {
-    const slot = plantSlot(top);
-    const hanging = resolveSpecies(shelf.habits[top]!.habit.species).species.hanging;
-    rows.push({
-      kind: 'window',
-      slots: [slot],
-      rows: hanging ? topBand([slot], WINDOW_SIZE.height) : bottomBand([slot], WINDOW_SIZE.height),
-    });
-  } else {
-    rows.push({ kind: 'window', slots: [], rows: { from: 0, to: WINDOW_SIZE.height } });
-  }
-
-  for (const ids of shelf.layout.hangingRows) {
-    const slots = fill(ids.map(plantSlot), true);
-    rows.push({ kind: 'hanging', slots, rows: topBand(slots) });
-  }
-
-  for (const shelfSlots of shelf.layout.shelves) {
-    const slots = fill(
-      shelfSlots.map((slot): SlotView =>
-        slot.kind === 'plant' ? plantSlot(slot.id) : { kind: 'new', art: slotArt('new') },
-      ),
-      false,
-    );
-    rows.push({ kind: 'shelf', slots, rows: bottomBand(slots) });
+  for (const wall of shelf.layout.walls) {
+    const top = wall.top.filter((id): id is HabitId => id !== null).map(plantSlot);
+    if (wall.window) {
+      const slot = top[0];
+      rows.push({
+        kind: 'window',
+        slots: slot ? [slot] : [],
+        rows: slot ? topBand([slot], WINDOW_SIZE.height) : { from: 0, to: WINDOW_SIZE.height },
+      });
+    } else if (top.length > 0) {
+      const slots = fill(top, true);
+      rows.push({ kind: 'hanging', slots, rows: topBand(slots) });
+    }
+    for (const shelfSlots of wall.shelves) {
+      if (shelfSlots.every((slot) => slot.kind === 'empty')) continue;
+      const slots = shelfSlots.map((slot): SlotView =>
+        slot.kind === 'plant' ? plantSlot(slot.id) : { kind: slot.kind, art: slotArt(slot.kind) },
+      );
+      rows.push({ kind: 'shelf', slots, rows: bottomBand(slots) });
+    }
   }
 
   return rows;
