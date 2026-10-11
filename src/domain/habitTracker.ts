@@ -1,5 +1,7 @@
+import { buildExport, type ExportData } from './exportData';
 import {
   createHabit,
+  renameHabit,
   type CreateHabitError,
   type Habit,
   type HabitId,
@@ -70,6 +72,7 @@ export type SaveNoteError = WriteNoteError | HabitAccessError;
 /** PLANT_DEAD: only a living plant is watered. */
 export type WaterTodayError = SaveNoteError | WaterError | 'PLANT_DEAD';
 export type ReplantHabitError = HabitAccessError | ReplantError;
+export type RenameHabitError = HabitAccessError | 'NAME_EMPTY' | 'NAME_TOO_LONG';
 
 /** A past life in the herbarium: ended by a relapse, or by leaving the shelf. */
 export interface HerbariumLife {
@@ -229,6 +232,31 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
     async getHabit(id: HabitId): Promise<HabitDetail | undefined> {
       const habit = await habits.getById(id);
       return habit && habit.deletedAt === null ? detail(habit, clock.today()) : undefined;
+    },
+
+    /** Renames a habit of the shelf. */
+    async renameHabit(id: HabitId, name: string): Promise<Result<void, RenameHabitError>> {
+      const found = await writable(id);
+      if (!found.ok) return found;
+      const renamed = renameHabit(found.value, name, clock);
+      if (!renamed.ok) return renamed;
+      if (renamed.value !== found.value) await habits.save(renamed.value);
+      return ok(undefined);
+    },
+
+    /** Everything the person entered, for "Exporter mes données". */
+    async exportData(): Promise<ExportData> {
+      const all = (await habits.list()).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      const rows = await Promise.all(
+        all.map(async (habit) => ({
+          habit,
+          relapses: await relapses.listByHabit(habit.id),
+          notes: await notes.listByHabit(habit.id),
+          waterings: await waterings.listByHabit(habit.id),
+          replantings: await replantings.listByHabit(habit.id),
+        })),
+      );
+      return buildExport({ exportedAt: clock.now(), today: clock.today(), habits: rows });
     },
 
     /** Replants a dead plant today: a new life, with its own seed (ADR 0013). */

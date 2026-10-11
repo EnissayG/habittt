@@ -2,6 +2,7 @@ export {
   checkHabitName,
   createHabit,
   HABIT_NAME_MAX_LENGTH,
+  renameHabit,
   HABIT_STATUSES,
   type CreateHabitDeps,
   type CreateHabitError,
@@ -20,6 +21,13 @@ export {
   type CalendarDay,
   type MonthId,
 } from './calendar';
+export {
+  buildExport,
+  EXPORT_FORMAT,
+  type ExportData,
+  type ExportedHabit,
+  type HabitRows,
+} from './exportData';
 export { normalizeHabitName } from './habitName';
 export { record, splitLives, type Life, type SplitLivesParams } from './lives';
 export {
@@ -48,6 +56,7 @@ export {
   type HabitAccessError,
   type HerbariumEntry,
   type HerbariumLife,
+  type RenameHabitError,
   type ReplantHabitError,
   type HabitDetail,
   type HabitSummary,

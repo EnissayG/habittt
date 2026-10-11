@@ -1,5 +1,11 @@
-import { checkHabitName, createHabit, HABIT_NAME_MAX_LENGTH, type CreateHabitDeps } from './habit';
-import { NOW, TODAY, day, fixedClock } from './testSupport';
+import {
+  checkHabitName,
+  createHabit,
+  HABIT_NAME_MAX_LENGTH,
+  renameHabit,
+  type CreateHabitDeps,
+} from './habit';
+import { LATER, NOW, TODAY, day, fixedClock, makeHabit } from './testSupport';
 
 const HABIT_ID = '22222222-2222-4222-8222-222222222222';
 
@@ -121,5 +127,29 @@ describe('checkHabitName', () => {
     expect(checkHabitName('  Fumer ')).toBeNull();
     expect(checkHabitName('   ')).toBe('NAME_EMPTY');
     expect(checkHabitName('a'.repeat(HABIT_NAME_MAX_LENGTH + 1))).toBe('NAME_TOO_LONG');
+  });
+});
+
+describe('renameHabit', () => {
+  const habit = makeHabit({ name: 'Fumer' });
+  const clock = fixedClock(LATER);
+
+  it('renames with the same rules as at creation, and dates the change', () => {
+    expect(renameHabit(habit, '  Ne  plus fumer ', clock)).toEqual({
+      ok: true,
+      value: { ...habit, name: 'Ne plus fumer', updatedAt: LATER },
+    });
+  });
+
+  it('changes nothing when the name is the same', () => {
+    expect(renameHabit(habit, 'Fumer ', clock)).toEqual({ ok: true, value: habit });
+  });
+
+  it('refuses an empty or too long name', () => {
+    expect(renameHabit(habit, '   ', clock)).toEqual({ ok: false, error: 'NAME_EMPTY' });
+    expect(renameHabit(habit, 'x'.repeat(HABIT_NAME_MAX_LENGTH + 1), clock)).toEqual({
+      ok: false,
+      error: 'NAME_TOO_LONG',
+    });
   });
 });

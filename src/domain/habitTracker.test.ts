@@ -10,6 +10,7 @@ import {
   InMemoryRelapseRepository,
   InMemoryReplantingRepository,
   InMemoryWateringRepository,
+  NOW,
   TODAY,
   day,
   fixedClock,
@@ -490,6 +491,47 @@ describe('habit tracker use cases', () => {
     it('leaves out habits without a past life', async () => {
       const { tracker } = await withHabit(-9);
       expect(await tracker.getHerbarium()).toEqual([]);
+    });
+  });
+
+  describe('renameHabit and exportData', () => {
+    it('renames a habit of the shelf, and refuses a bad name or a retired habit', async () => {
+      const { tracker, id } = await withHabit(-9);
+      expect(await tracker.renameHabit(id, '  Ne plus fumer ')).toEqual({
+        ok: true,
+        value: undefined,
+      });
+      expect((await tracker.getHabit(id))?.habit.name).toBe('Ne plus fumer');
+      expect(await tracker.renameHabit(id, ' ')).toEqual({ ok: false, error: 'NAME_EMPTY' });
+      await tracker.retireHabit(id, 'garden');
+      expect(await tracker.renameHabit(id, 'Autre')).toEqual({
+        ok: false,
+        error: 'HABIT_RETIRED',
+      });
+    });
+
+    it('exports every habit kept, with its rows and lives', async () => {
+      const { tracker, id } = await withHabit(-9);
+      await tracker.recordRelapse(id, day(-2));
+      await tracker.replantHabit(id);
+      await tracker.saveNote(id, day(-2), { text: 'Dur', mood: null });
+      const other = await tracker.addHabit({ name: 'Sucre', startDate: day(-1) });
+      if (!other.ok) throw new Error('setup failed');
+      await tracker.eraseHabit(other.value.id);
+
+      const data = await tracker.exportData();
+      expect(data.exportedAt).toBe(NOW);
+      expect(data.habits).toHaveLength(1);
+      expect(data.habits[0]).toMatchObject({
+        name: 'Fumer',
+        relapses: [day(-2)],
+        replantings: [TODAY],
+        notes: [{ date: day(-2), text: 'Dur', mood: null }],
+        lives: [
+          { start: day(-9), end: day(-2), days: 7 },
+          { start: TODAY, end: null, days: 0 },
+        ],
+      });
     });
   });
 });

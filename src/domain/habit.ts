@@ -101,3 +101,16 @@ export function createHabit(
     deletedAt: null,
   });
 }
+
+/** Renames a habit with the same rules as at creation; the same name changes nothing. */
+export function renameHabit(
+  habit: Habit,
+  raw: string,
+  clock: Clock,
+): Result<Habit, 'NAME_EMPTY' | 'NAME_TOO_LONG'> {
+  const name = normalizeHabitName(raw);
+  const error = checkHabitName(name);
+  if (error) return err(error);
+  if (name === habit.name) return ok(habit);
+  return ok({ ...habit, name, updatedAt: clock.now() });
+}
