@@ -23,6 +23,7 @@ const BABY: readonly (readonly [number, number, PlantTone])[] = [
 export const spider: Species = {
   id: 'spider',
   hanging: false,
+  rest: 4,
   build({ random: r, anchorX: CX, rimY: T }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -50,7 +51,10 @@ export const spider: Species = {
       }
       const leaf = path(samples);
       const base = k % 3 === 2 ? 'leafLight' : 'leaf';
+      // Gesture: the tip of one leaf dips; a runner swings with its baby plant.
+      const part = plan.part({ dx: 0, dy: 1, tail: runner ? 3 : 4 });
       leaf.forEach(([x, y], i) => {
+        plan.mark(part, i);
         const striped = edgeStripe ? k % 2 === 0 && i % 2 === 0 : k % 3 === 1 && i % 3 === 1;
         add(
           d0 + Math.floor((i * 4) / leaf.length),
@@ -62,10 +66,12 @@ export const spider: Species = {
 
       if (runner) {
         const [ex, ey] = leaf[leaf.length - 1]!;
+        plan.mark(part, leaf.length);
         for (const [dx, dy, tone] of BABY) add(d0 + 3, ex + dx, ey + dy, tone);
       }
+      plan.mark(null);
     }
 
-    return { plan: plan.build(), variety };
+    return { plan: plan.build(), variety, parts: plan.parts() };
   },
 };

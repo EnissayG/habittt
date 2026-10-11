@@ -33,6 +33,7 @@ interface WoodCell {
 export const jade: Species = {
   id: 'jade',
   hanging: false,
+  rest: 8,
   build({ random, anchorX, rimY }) {
     const plan = new GrowthPlanBuilder();
     // How wide the branches fork, drawn once per plant.
@@ -91,10 +92,13 @@ export const jade: Species = {
       const tip = tips[tips.length - 1 - Math.floor(random() * random() * tips.length)]!;
       const x = tip.x + Math.floor(random() * 5) - 2;
       const y = tip.y + Math.floor(random() * 4) - 3;
+      // Gesture: one small cluster of leaves trembles, away from the trunk.
+      plan.mark(plan.part({ dx: x < anchorX ? -1 : 1, dy: 0 }));
       plan.add(day, x, y, 'leafLight');
       plan.add(day, x + 1, y, 'leaf');
       plan.add(day, x, y + 1, 'leaf');
       plan.add(day, x + 1, y + 1, 'leafDark');
+      plan.mark(null);
     };
 
     for (let d = 0; d < MAX_GROWTH_DAYS; d++) {
@@ -108,6 +112,6 @@ export const jade: Species = {
       }
     }
 
-    return { plan: plan.build(), variety: null };
+    return { plan: plan.build(), variety: null, parts: plan.parts() };
   },
 };

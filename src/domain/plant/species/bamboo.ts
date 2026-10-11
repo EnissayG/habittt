@@ -10,6 +10,7 @@ import { lanes } from './shared';
 export const bamboo: Species = {
   id: 'bamboo',
   hanging: false,
+  rest: 8,
   build({ random: r, anchorX: CX, rimY: T }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -38,12 +39,15 @@ export const bamboo: Species = {
       if (node) {
         const sd = ((h + phase + 1) / 6) % 2 ? 1 : -1;
         const bx = sd > 0 ? x + 2 : x - 1;
+        // Gesture: one leafy twig dips, then comes back; the canes never move.
+        plan.mark(plan.part({ dx: 0, dy: 1 }));
         add(d, bx, y - 1, 'leaf');
         add(d, bx + sd, y - 2, 'leafLight');
         add(d, bx + 2 * sd, y - 2, 'leaf');
+        plan.mark(null);
       }
     }
 
-    return { plan: plan.build(), variety };
+    return { plan: plan.build(), variety, parts: plan.parts() };
   },
 };

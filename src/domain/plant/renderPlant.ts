@@ -7,7 +7,7 @@ import {
   type PlantTone,
   type Tone,
 } from './grid';
-import type { GrowthPlan } from './growthPlan';
+import { cellKey, type GrowthPlan, type PartSpec, type PartTag } from './growthPlan';
 import { fnv1a, mulberry32 } from './random';
 import { resolveSpecies } from './registry';
 import { paintScenery, SCENERY_DEPTH, SHELF_ROWS } from './scenery';
@@ -49,6 +49,11 @@ export interface RenderPlantParams {
   wateredDays?: Iterable<number>;
   /** The life of this plant is over (ADR 0013): it is drawn dried (see wither). */
   dead?: boolean;
+  /**
+   * The part in the middle of its gesture (see gesture.ts): drawn moved by
+   * its own offset. A dead plant never moves.
+   */
+  gesture?: number | null;
 }
 
 export interface PlanForSeed {
@@ -61,6 +66,12 @@ export interface PlanForSeed {
   onTray: boolean;
   anchorX: number;
   rimY: number;
+  /** Seconds between two gestures (see Species.rest). */
+  rest: number;
+  /** The parts that can make a gesture, as the plant is drawn (mirrored if it is). */
+  parts: readonly PartSpec[];
+  /** For each day, the part of each stroke of `plan` (null: none), in the same order. */
+  partOf: readonly (readonly (PartTag | null)[])[];
 }
 
 /** Number of plans kept in memory (a shelf full of plants, plus margin). */
@@ -108,8 +119,10 @@ function computePlan(speciesId: string, seed: number): PlanForSeed {
   const built = species.build({ random, width, height, anchorX, rimY });
 
   let raw = built.plan;
+  let parts = built.parts.specs;
   if (genome.mirrored) {
     raw = raw.map((strokes) => strokes.map((s) => ({ ...s, x: 2 * anchorX - s.x })));
+    parts = parts.map((part) => ({ ...part, dx: part.dx === 0 ? 0 : -part.dx }));
   }
   const percent = traitPercent(genome.trait);
   if (percent > 0) {
@@ -131,6 +144,15 @@ function computePlan(speciesId: string, seed: number): PlanForSeed {
     shelfRows: SHELF_ROWS,
   });
 
+  // Settling keeps the strokes where they were planned (it only drops or,
+  // rarely, adds some): each one finds its part again by its day and cell.
+  const partOf = plan.map((strokes, day) =>
+    strokes.map(({ x, y }) => {
+      const planned = genome.mirrored ? 2 * anchorX - x : x;
+      return built.parts.tags[day]?.get(cellKey(planned, y)) ?? null;
+    }),
+  );
+
   return {
     plan,
     variety: built.variety,
@@ -140,15 +162,33 @@ function computePlan(speciesId: string, seed: number): PlanForSeed {
     onTray,
     anchorX,
     rimY,
+    rest: species.rest,
+    parts,
+    partOf,
   };
 }
 
+/** How each image was made: what a gesture needs to draw it again (see gesture.ts). */
+const RECIPES = new WeakMap<PlantImage, RenderPlantParams>();
+
+/** The parameters an image was rendered with (undefined for an image built by hand). */
+export function recipeOf(image: PlantImage): RenderPlantParams | undefined {
+  return RECIPES.get(image);
+}
+
+/** Pot and soil: a moving part never draws over them. */
+const POT_TONES: ReadonlySet<Tone> = new Set<Tone>([
+  'soil',
+  'pot',
+  'potShade',
+  'potPattern',
+  'potPatternShade',
+]);
+
 export function renderPlant(params: RenderPlantParams): PlantImage {
   const { width, height } = PLANT_GRID;
-  const { plan, variety, genome, species, fallback, onTray, anchorX, rimY } = planPlant(
-    params.species,
-    params.seed,
-  );
+  const { plan, variety, genome, species, fallback, onTray, anchorX, rimY, parts, partOf } =
+    planPlant(params.species, params.seed);
   const relapseDays = new Set(params.relapseDays);
 
   const pixels: (PlantPixel | null)[] = new Array<PlantPixel | null>(width * height).fill(null);
@@ -166,8 +206,37 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
   // Days are painted in order: a later day may cover an earlier pixel, never
   // the other way round. The settled plan has no stroke behind the pot.
   const lastDay = Math.min(Math.max(0, Math.floor(params.elapsedDays)), MAX_GROWTH_DAYS);
+  const dead = params.dead ?? false;
+  const moving = dead ? null : (params.gesture ?? null);
+  const spec = moving === null ? undefined : parts[moving];
+  // With a tail, only the end of the part moves: its highest ranks so far.
+  let from = -Infinity;
+  if (spec?.tail !== undefined) {
+    let highest = -Infinity;
+    for (let day = 1; day <= lastDay; day++) {
+      for (const tag of partOf[day - 1] ?? []) {
+        if (tag?.part === moving && tag.rank > highest) highest = tag.rank;
+      }
+    }
+    from = highest - spec.tail;
+  }
   for (let day = 1; day <= lastDay; day++) {
-    for (const { x, y, tone } of plan[day - 1] ?? []) paint(x, y, tone, day);
+    const tags = partOf[day - 1] ?? [];
+    (plan[day - 1] ?? []).forEach(({ x, y, tone }, i) => {
+      const tag = tags[i];
+      if (!spec || !tag || tag.part !== moving || tag.rank <= from) {
+        paint(x, y, tone, day);
+        return;
+      }
+      if (spec.hide) return;
+      const mx = x + spec.dx;
+      const my = y + spec.dy;
+      const outside = mx < 0 || my < 0 || mx >= width || my >= height;
+      const below = outside ? null : pixels[my * width + mx];
+      // It stays in place rather than leaving the grid or covering the pot.
+      if (outside || (below && POT_TONES.has(below.tone))) paint(x, y, tone, day);
+      else paint(mx, my, tone, day);
+    });
   }
 
   // A watered day blooms on its highest visible pixel (leftmost on a tie):
@@ -183,9 +252,8 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
     }
   }
 
-  const dead = params.dead ?? false;
   const halfWidths = potHalfWidths(genome.potShape);
-  return {
+  const image: PlantImage = {
     width,
     height,
     pixels: dead
@@ -204,4 +272,12 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
     fallback,
     dead,
   };
+  // Lists are copied: the recipe can be followed again, whatever was passed.
+  RECIPES.set(image, {
+    ...params,
+    relapseDays: [...relapseDays],
+    wateredDays: [...watered],
+    gesture: null,
+  });
+  return image;
 }

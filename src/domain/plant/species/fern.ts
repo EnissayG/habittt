@@ -11,6 +11,7 @@ import { sin } from '../trig';
 export const fern: Species = {
   id: 'fern',
   hanging: false,
+  rest: 4,
   build({ random: r, anchorX: CX, rimY: T }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -31,9 +32,12 @@ export const fern: Species = {
         samples.push([CX + side * (1 + L * t), Math.max(2, T - 1 - hm * sin(t * droop))]);
       }
       const frond = path(samples);
+      // Gesture: the tip of one frond droops, then comes back.
+      const part = plan.part({ dx: 0, dy: 1, tail: 5 });
 
       frond.forEach(([x, y], i) => {
         const d = d0 + Math.floor((i * 8) / frond.length);
+        plan.mark(part, i);
         add(d, x, y, hair ? 'leafDeep' : 'leafDark');
         if (!(i > 2 && i % 2 === 0 && i < frond.length - 2)) return;
 
@@ -65,8 +69,9 @@ export const fern: Species = {
           }
         }
       });
+      plan.mark(null);
     }
 
-    return { plan: plan.build(), variety };
+    return { plan: plan.build(), variety, parts: plan.parts() };
   },
 };

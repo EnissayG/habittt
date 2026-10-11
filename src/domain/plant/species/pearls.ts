@@ -14,6 +14,7 @@ const STRING_OFFSETS = [-9, 9, -12, 12, -15, 15, -18, 18];
 export const pearls: Species = {
   id: 'pearls',
   hanging: true,
+  rest: 4,
   build({ random: r, anchorX: CX, rimY: T, height: H }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -28,6 +29,8 @@ export const pearls: Species = {
     const startY = offsets.map(() => T + 1 + Math.floor(r() * 2));
     const phases = offsets.map(() => r() * 6);
     const next = lanes(r, count, () => Math.floor((H - 3 - T - 3) / gap), 3);
+    // Gesture: the last two beads of one string swing aside, then come back.
+    const strings = offsets.map((offset) => plan.part({ dx: Math.sign(offset), dy: 0, tail: 2 }));
 
     for (let d = 0; d < MAX_GROWTH_DAYS; d++) {
       const v = next();
@@ -35,6 +38,7 @@ export const pearls: Species = {
       const x = CX + offsets[v]! + Math.round(sin(m * 0.5 + phases[v]!));
       const y = startY[v]! + Math.floor(m * gap);
 
+      plan.mark(strings[v]!, m);
       // The first bead of a string also draws the stem from the pot.
       if (m === 0) {
         for (const [sx, sy] of line(CX + Math.sign(offsets[v]!) * 6, T - 1, x, y)) {
@@ -59,8 +63,9 @@ export const pearls: Species = {
         add(d, x + 2 * s, y - 1, 'leafLight');
         add(d, x + s, y + 1, 'leafDark');
       }
+      plan.mark(null);
     }
 
-    return { plan: plan.build(), variety };
+    return { plan: plan.build(), variety, parts: plan.parts() };
   },
 };

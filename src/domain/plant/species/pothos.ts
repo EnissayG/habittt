@@ -21,6 +21,7 @@ const DRIFT_LENGTH = 70;
 export const pothos: Species = {
   id: 'pothos',
   hanging: true,
+  rest: 4,
   build({ random: r, anchorX: CX, rimY: T, height: H }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -56,6 +57,9 @@ export const pothos: Species = {
       3,
     );
     const grown = anchors.map(() => 0);
+    // Gesture: the end of one vine (its last three leaves) swings aside, then
+    // comes back.
+    const vines = anchors.map(({ bias }) => plan.part({ dx: bias > 0 ? 1 : -1, dy: 0, tail: 3 }));
 
     for (let d = 0; d < MAX_GROWTH_DAYS; d++) {
       // The first vine grows alone for the first days (the turn is still drawn).
@@ -72,6 +76,7 @@ export const pothos: Species = {
       const y = T + 2 + anchor.y + j;
       const sd = t % 2 ? 1 : -1;
 
+      plan.mark(vines[v]!, t);
       if (phase === 0) {
         for (let q = 0; q < step; q++) {
           add(d, anchor.x + (offsets[j - q] as number), y - q, 'leafDark');
@@ -89,8 +94,13 @@ export const pothos: Species = {
         add(d, x + sd, y - 1, 'leaf');
         add(d, x + 2 * sd, y, 'leafDark');
       }
+      plan.mark(null);
     }
 
-    return { plan: plan.build(), variety: big ? 'large-leaf' : 'small-leaf' };
+    return {
+      plan: plan.build(),
+      variety: big ? 'large-leaf' : 'small-leaf',
+      parts: plan.parts(),
+    };
   },
 };

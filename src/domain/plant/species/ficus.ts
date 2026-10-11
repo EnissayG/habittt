@@ -11,6 +11,7 @@ const DRIFT_LENGTH = 60;
 export const ficus: Species = {
   id: 'ficus',
   hanging: false,
+  rest: 6,
   build({ random: r, anchorX: CX, rimY: T }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -30,6 +31,12 @@ export const ficus: Species = {
       drift.push(offset);
     }
     const at = (j: number) => drift[j] as number;
+    // Gesture: one leaf (blade, tip and highlight) dips, then comes back.
+    const leaves = new Map<number, number>();
+    const leaf = (c: number) => {
+      if (!leaves.has(c)) leaves.set(c, plan.part({ dx: 0, dy: 1 }));
+      return leaves.get(c)!;
+    };
 
     for (let d = 0; d < MAX_GROWTH_DAYS; d++) {
       const c = Math.floor(d / 5);
@@ -68,6 +75,7 @@ export const ficus: Species = {
         add(d, sx, y, 'bark');
         add(d, sx + sd, y, 'bud');
       }
+      if (phase >= 2) plan.mark(leaf(c));
       if (phase === 2) {
         for (let i = 1; i <= 3; i++) add(d, sx + sd * i, y, 'leafDeep');
         add(d, sx + sd * 2, y - 1, 'leafDark');
@@ -87,8 +95,9 @@ export const ficus: Species = {
         add(d, sx + sd * 2, y - 1, 'leafLight');
         add(d, sx + sd * 3, y - 1, 'leaf');
       }
+      plan.mark(null);
     }
 
-    return { plan: plan.build(), variety };
+    return { plan: plan.build(), variety, parts: plan.parts() };
   },
 };

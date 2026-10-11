@@ -15,6 +15,7 @@ const SPREADS = [0.2, 0.62, 1.0];
 export const monstera: Species = {
   id: 'monstera',
   hanging: false,
+  rest: 5,
   build({ random: r, anchorX: CX, rimY: T, width: W }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -83,11 +84,18 @@ export const monstera: Species = {
           ]);
         }
       }
+      // Gesture: one big leaf dips under its own weight, then comes back.
+      plan.mark(plan.part({ dx: 0, dy: 1 }));
       blade.forEach(([x, y, tone], i) =>
         add(d0 + cut + Math.floor((i * (per - cut)) / blade.length), x, y, tone),
       );
+      plan.mark(null);
     }
 
-    return { plan: plan.build(), variety: adansonii ? 'adansonii' : 'deliciosa' };
+    return {
+      plan: plan.build(),
+      variety: adansonii ? 'adansonii' : 'deliciosa',
+      parts: plan.parts(),
+    };
   },
 };

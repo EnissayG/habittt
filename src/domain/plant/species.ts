@@ -1,4 +1,4 @@
-import type { GrowthPlan } from './growthPlan';
+import type { GrowthPlan, PartPlan } from './growthPlan';
 import type { Random } from './random';
 
 /** Everything a species may use to plan its growth. */
@@ -28,6 +28,11 @@ export interface Species {
   readonly hanging: boolean;
   /** Sits on a shallow tray with feet instead of a pot (bonsai). */
   readonly tray?: boolean;
+  /**
+   * Seconds between two gestures of the living plant (see gesture.ts): the
+   * stiffer the plant, the longer it keeps still.
+   */
+  readonly rest: number;
   build(ctx: SpeciesContext): SpeciesPlan;
 }
 
@@ -35,4 +40,6 @@ export interface SpeciesPlan {
   plan: GrowthPlan;
   /** Variety id chosen from the seed, or null for a species without varieties. */
   variety: string | null;
+  /** The parts that can make a gesture (see GrowthPlanBuilder.part). */
+  parts: PartPlan;
 }

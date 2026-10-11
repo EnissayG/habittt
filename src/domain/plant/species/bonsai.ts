@@ -32,6 +32,7 @@ export const bonsai: Species = {
   id: 'bonsai',
   hanging: false,
   tray: true,
+  rest: 7,
   build({ random: r, anchorX: CX, rimY: T }) {
     const plan = new GrowthPlanBuilder();
     const style = choose(r, STYLES);
@@ -89,8 +90,8 @@ export const bonsai: Species = {
     });
 
     // Each pad's cells, ordered from the center out with a little jitter.
-    const padCells = pads.map((pad) => {
-      const cells: [...Cell, number][] = [];
+    const padCells = pads.map((pad, index) => {
+      const cells: [...Cell, order: number, pad: number, upper: boolean][] = [];
       for (let dy = -pad.ry; dy <= pad.ry; dy++) {
         for (let dx = -pad.rx; dx <= pad.rx; dx++) {
           const q = (dx * dx) / (pad.rx * pad.rx + 0.5) + (dy * dy) / (pad.ry * pad.ry + 0.5);
@@ -105,25 +106,32 @@ export const bonsai: Species = {
                 : dx % 2
                   ? 'leafDark'
                   : 'leaf';
-          cells.push([pad.x + dx, pad.y + dy, tone, q + r() * 0.35]);
+          cells.push([pad.x + dx, pad.y + dy, tone, q + r() * 0.35, index, dy < 0]);
         }
       }
       return cells.sort((a, b) => a[3] - b[3]);
     });
 
     // Pads fill in together: first cell of each pad, then the second, etc.
-    const foliage: Cell[] = [];
+    const foliage: [...Cell, pad: number, upper: boolean][] = [];
     for (let i = 0; padCells.some((cells) => i < cells.length); i++) {
       for (const cells of padCells) {
         const cell = cells[i];
-        if (cell) foliage.push([cell[0], cell[1], cell[2]]);
+        if (cell) foliage.push([cell[0], cell[1], cell[2], cell[4], cell[5]]);
       }
     }
 
     spread(plan.at, trunk, 0, 28);
     spread(plan.at, limbs, 28, 42);
-    spread(plan.at, foliage, 42, MAX_GROWTH_DAYS);
+    // Gesture: the top of one pad of foliage shivers, away from the trunk;
+    // the trunk and the branches never move.
+    const tops = pads.map((pad) => plan.part({ dx: pad.x < CX ? -1 : 1, dy: 0 }));
+    foliage.forEach(([x, y, tone, pad, upper], i) => {
+      plan.mark(upper ? tops[pad]! : null);
+      plan.at(42 + Math.floor((i * (MAX_GROWTH_DAYS - 42)) / foliage.length), x, y, tone);
+    });
+    plan.mark(null);
 
-    return { plan: plan.build(), variety: style };
+    return { plan: plan.build(), variety: style, parts: plan.parts() };
   },
 };

@@ -23,7 +23,8 @@ export {
   type SceneryTone,
   type Tone,
 } from './grid';
-export type { GrowthPlan, Stroke } from './growthPlan';
+export { GESTURE_SECONDS, gestureAt, gestureParts, livingPlant, withGesture } from './gesture';
+export type { GrowthPlan, PartPlan, PartSpec, PartTag, Stroke } from './growthPlan';
 export {
   FALLBACK_SPECIES_ID,
   isSpeciesId,

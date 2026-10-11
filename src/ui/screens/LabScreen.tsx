@@ -11,6 +11,7 @@ import {
   planRoom,
   PLANT_GRID,
   MAX_GROWTH_DAYS,
+  livingPlant,
   renderPlant,
   SPECIES_IDS,
   WINDOW_VIEWS,
@@ -77,6 +78,8 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
     [species, seed, days, relapseA, relapseB],
   );
   const t = useWindowClock(useIsFocused());
+  // The plant with the gesture of its species, at its real pace.
+  const living = useMemo(() => livingPlant(image, t), [image, t]);
   const windowImage = useMemo(() => drawWindow(view, t), [view, t]);
   // The floor mirrors the still window: it does not need to redraw with t.
   const stillWindow = useMemo(() => drawWindow(view), [view]);
@@ -124,7 +127,7 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
         </>
       )}
 
-      <PlantCanvas image={image} maxWidth={width - 28} maxHeight={360} />
+      <PlantCanvas image={living} maxWidth={width - 28} maxHeight={360} />
       <Text style={styles.description}>
         {describePlant(image)}
         {isRare(image) ? ' · rare' : ''}

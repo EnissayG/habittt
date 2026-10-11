@@ -17,7 +17,7 @@ import { RenameSheet } from '../habit/RenameSheet';
 import type { ScreenProps } from '../navigation/types';
 import { MOOD_LABELS, replantErrorMessage } from '../messages';
 import { describePlant } from '../plant/labels';
-import { PlantPixels } from '../plant/PlantCanvas';
+import { LivingPlant } from '../plant/LivingPlant';
 import { pixelScale } from '../plant/pixelScale';
 import { colors, fonts } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
@@ -247,7 +247,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
           accessibilityLabel="La plante : ouvrir son journal"
           onPress={() => navigation.navigate('Journal', { id })}
         >
-          <PlantPixels image={plant} cellSize={scale.cellSize} />
+          <LivingPlant image={plant} cellSize={scale.cellSize} />
         </Pressable>
         {counterInside && counter}
         <FallingDrop drop={drops} distance={freeAbove} />

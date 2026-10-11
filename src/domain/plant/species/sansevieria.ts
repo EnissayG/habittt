@@ -18,6 +18,7 @@ const VARIETIES = [
 export const sansevieria: Species = {
   id: 'sansevieria',
   hanging: false,
+  rest: 12,
   build({ random: r, anchorX: CX, rimY: T }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -45,10 +46,13 @@ export const sansevieria: Species = {
         Math.min(1.05, (rosette ? offset / 5 : (offset / 16) * fan) + (r() - 0.5) * 0.4),
       );
       const halfWidth = rosette ? 2 : 1;
+      // Gesture: the very tip of one blade leans the way the blade does.
+      const part = plan.part({ dx: lean < 0 ? -1 : 1, dy: 0, tail: 3 });
 
       for (let s = 0; s < length && d < MAX_GROWTH_DAYS; s++, d++) {
         for (let q = 0; q < 2; q++) {
           const h = s * 2 + q;
+          plan.mark(part, h);
           const y = T - 1 - h;
           const x = CX + offset + Math.round((lean * h) / 3);
           const band =
@@ -72,9 +76,10 @@ export const sansevieria: Species = {
           }
         }
       }
+      plan.mark(null);
       k++;
     }
 
-    return { plan: plan.build(), variety };
+    return { plan: plan.build(), variety, parts: plan.parts() };
   },
 };

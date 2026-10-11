@@ -49,6 +49,7 @@ function bladeTone(style: LeafStyle, row: number, dx: number): PlantTone {
 export const calathea: Species = {
   id: 'calathea',
   hanging: false,
+  rest: 6,
   build({ random: r, anchorX: CX, rimY: T }) {
     const plan = new GrowthPlanBuilder();
     const add = plan.at;
@@ -76,11 +77,14 @@ export const calathea: Species = {
           ]);
         }
       });
+      // Gesture: one leaf opens a little, outwards, then comes back.
+      plan.mark(plan.part({ dx: side, dy: 0 }));
       blade.forEach(([x, y, tone], i) =>
         add(d0 + 4 + Math.floor((i * 6) / blade.length), x, y, tone),
       );
+      plan.mark(null);
     }
 
-    return { plan: plan.build(), variety: style.id };
+    return { plan: plan.build(), variety: style.id, parts: plan.parts() };
   },
 };
