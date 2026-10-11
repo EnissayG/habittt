@@ -1,6 +1,7 @@
 import type {
   CreateHabitError,
   Mood,
+  RenameHabitError,
   ReplantHabitError,
   ToggleRelapseError,
   WaterTodayError,
@@ -29,6 +30,13 @@ export const noteErrorMessage: Record<WaterTodayError, string> = {
   HABIT_NOT_FOUND: "Cette habitude n'existe plus.",
   HABIT_RETIRED: "Cette plante a quitté l'étagère : son histoire ne change plus.",
   PLANT_DEAD: "Elle n'a pas tenu cette fois. Replante-la pour l'arroser.",
+};
+
+export const renameErrorMessage: Record<RenameHabitError, string> = {
+  NAME_EMPTY: createHabitErrorMessage.NAME_EMPTY,
+  NAME_TOO_LONG: createHabitErrorMessage.NAME_TOO_LONG,
+  HABIT_NOT_FOUND: "Cette habitude n'existe plus.",
+  HABIT_RETIRED: "Cette plante a quitté l'étagère : son histoire ne change plus.",
 };
 
 export const replantErrorMessage: Record<ReplantHabitError, string> = {

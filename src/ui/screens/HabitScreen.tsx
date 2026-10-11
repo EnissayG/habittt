@@ -13,6 +13,7 @@ import { dayMonth, days, lowerFirst } from '../format';
 import { FallingDrop } from '../habit/FallingDrop';
 import { NoteSheet } from '../habit/NoteSheet';
 import { RelapseSheet } from '../habit/RelapseSheet';
+import { RenameSheet } from '../habit/RenameSheet';
 import type { ScreenProps } from '../navigation/types';
 import { MOOD_LABELS, replantErrorMessage } from '../messages';
 import { describePlant } from '../plant/labels';
@@ -30,6 +31,7 @@ type OpenSheet =
   | 'menu'
   | 'water'
   | 'relapse'
+  | 'rename'
   | { kind: 'note'; day: number }
   | { kind: 'askNote'; day: number }
   | null;
@@ -129,6 +131,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
                 navigation.navigate('Journal', { id });
               }}
             />
+            <Button label="Renommer" variant="alt" onPress={() => setSheet('rename')} />
             <Button
               label="Retirer"
               variant="alt"
@@ -139,6 +142,19 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
             />
             <Button label="Fermer" variant="quiet" onPress={() => setSheet(null)} />
           </Sheet>
+
+          {sheet === 'rename' && (
+            <RenameSheet
+              habitId={id}
+              name={habit.name}
+              onClose={() => setSheet(null)}
+              onDone={() => {
+                setSheet(null);
+                setNotice('Le nom a changé.');
+                void reload();
+              }}
+            />
+          )}
 
           {sheet === 'water' && (
             <NoteSheet
