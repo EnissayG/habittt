@@ -497,18 +497,19 @@ Décisions détaillées dans
 Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
 écran dessine sa barre du haut ; les panneaux montent du bas (`Sheet`).
 
-| Écran                    | Fichier              | Données (cas d'usage)           |
-| ------------------------ | -------------------- | ------------------------------- |
-| 1. Ouverture             | `OpeningScreen`      | `openingPlant()`                |
-| 2. L'étagère             | `ShelfScreen`        | `getShelf()`                    |
-| 3. Le nom et la date     | `NewHabitNameScreen` | `checkHabitName()`              |
-| 4. Le choix de la plante | `PlantChoiceScreen`  | `addHabit()`                    |
-| 5. Une habitude          | `HabitScreen`        | `getHabit()`                    |
-| 6. Arroser, une note     | `habit/NoteSheet`    | `waterToday()`, `saveNote()`    |
-| 7. Journal               | `JournalScreen`      | `getHabit()`, `toggleRelapse()` |
-| 8. Une rechute           | `habit/RelapseSheet` | `recordRelapse()`               |
-| 9. Retirer               | `RetireScreen`       | `retireHabit()`, `eraseHabit()` |
-| 11. Réglages             | `SettingsScreen`     | (phase 3)                       |
+| Écran                    | Fichier              | Données (cas d'usage)              |
+| ------------------------ | -------------------- | ---------------------------------- |
+| 1. Ouverture             | `OpeningScreen`      | `openingPlant()`                   |
+| 2. L'étagère             | `ShelfScreen`        | `getShelf()`                       |
+| 3. Le nom et la date     | `NewHabitNameScreen` | `checkHabitName()`                 |
+| 4. Le choix de la plante | `PlantChoiceScreen`  | `addHabit()`                       |
+| 5. Une habitude          | `HabitScreen`        | `getHabit()`                       |
+| 6. Arroser, une note     | `habit/NoteSheet`    | `waterToday()`, `saveNote()`       |
+| 7. Journal               | `JournalScreen`      | `getHabit()`, `toggleRelapse()`    |
+| 8. Une rechute           | `habit/RelapseSheet` | `recordRelapse()`                  |
+| 9. Retirer               | `RetireScreen`       | `retireHabit()`, `eraseHabit()`    |
+| 10. L'herbier            | `HerbariumScreen`    | `getHerbarium()`                   |
+| 11. Réglages             | `SettingsScreen`     | `herbariumCount()`, `exportData()` |
 
 ### L'étagère
 
@@ -612,6 +613,32 @@ Décisions détaillées dans [l'ADR 0011](decisions/0011-retirer-et-effacer.md).
   ne la fasse pas réapparaître.
 - **Migration SQLite n° 4** : `status`, `retired_on`, `updated_at` et
   `deleted_at` sur `habits`.
+
+## La plante meurt, l'herbier (phase 3, fait)
+
+Décisions détaillées dans [l'ADR 0013](decisions/0013-la-plante-meurt.md).
+
+- **Vies** (`splitLives`, `lives.ts`) : chaque rechute termine la vie en
+  cours, sa plante est morte (`PlantImage.dead`, le rendu séché viendra).
+  « Replanter » (`replantHabit`) ouvre une vie, graine `replantSeed(habitId,
+date)`, compteur à 0 le jour même. Rien n'est stocké en dehors des dates
+  de replantation : annuler une rechute ranime la plante.
+- **Compteur** : les jours de la vie en cours (0 une fois morte) ; le
+  record est la meilleure vie.
+- **Migration SQLite n° 5** : table `replantings`, et une replantation le
+  jour de chaque rechute existante.
+- **Herbier** (`getHerbarium`) : les vies passées, et la dernière vie d'une
+  habitude retirée vers l'herbier.
+
+## Réglages, rappel, export, renommer (phase 3, fait)
+
+Décisions détaillées dans [l'ADR 0014](decisions/0014-reglages-rappel-export.md).
+
+- **Rappel du soir** : notification locale à 20 h, désactivée par défaut ;
+  son état est la notification programmée elle-même.
+- **Export** (`buildExport`) : un fichier JSON (format 1) remis à la
+  feuille de partage.
+- **Renommer** (`renameHabit`) : mêmes règles qu'à la création.
 
 ## Prévu (décidé, pas encore construit)
 

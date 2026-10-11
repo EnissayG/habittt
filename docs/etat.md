@@ -23,38 +23,46 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 3c         | Chiffres en Jersey 10, étiquettes et faits plus lisibles                             | fait, testé                                 |
 | Phase 3d         | Retirer et effacer une habitude (écran 9)                                            | fait (ADR 0011), testé                      |
 | Phase 3e         | Le journal de la plante (remplace l'historique)                                      | fait (ADR 0012), **à tester sur téléphone** |
-| Phase 3f         | La plante meurt (vies, replanter), herbier, réglages, renommer                       | en cours (ADR 0013)                         |
+| Phase 3f         | La plante meurt (vies, replanter), herbier, réglages, renommer                       | fait (ADR 0013, 0014), **à tester**         |
 
-Chiffres au dernier commit : 545 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 584 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
 
-### Phase 3f (en cours) : la plante meurt
+### Prochaine étape
 
-Changement de concept décidé le 11 octobre 2026 : **une rechute fait
-mourir la plante** de la vie en cours, on peut replanter (ADR 0013). À
-faire, dans l'ordre :
-
-1. Domaine : vies (`splitLives`), graine de replantation, replanter,
-   statistiques et plante par vie, champ `PlantImage.dead`.
-2. Données : table `replantings`, migration n° 5 (une replantation le jour
-   de chaque rechute existante, pour ne rien faire mourir d'un coup).
-3. Écrans : plante morte sur l'étagère et sur l'écran de l'habitude,
-   « Replanter », nouveau texte du panneau de rechute.
-4. **Herbier** (remplace le jardin) : les vies passées de chaque habitude.
-5. **Réglages** (écran 11) : musique et barre « bientôt » ; rappel doux à
-   20 h (notification locale, désactivé par défaut, « Ta plante est là, si
-   tu as envie de passer la voir. ») ; l'herbier ; compte et
-   synchronisation « bientôt » ; exporter mes données (JSON, feuille de
-   partage) ; à propos (licences, dont Pixelify Sans et Jersey 10).
-6. **Renommer** une habitude (menu de l'écran 5).
-7. Doc de la phase.
+La phase 3 est terminée. Reste à tester sur téléphone (ci-dessous), puis à
+choisir la suite parmi [idees.md](idees.md). Le rendu séché d'une plante
+morte est attendu : le domaine passe `PlantImage.dead`, que
+`plantColor` ou `PlantCanvas` utilisera.
 
 ### Hors périmètre pour l'instant
 
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
 marques après 120 jours, meubles et décors.
+
+### À vérifier sur téléphone (phase 3f)
+
+- **La migration n° 5 sur ta vraie base** : tes habitudes restent
+  vivantes, avec le même compteur ; leurs plantes sont celles de la vie en
+  cours (plus jeunes, nouvelle graine) ; les vies passées sont dans
+  l'herbier.
+- Une rechute : « Ça arrive. » et le nouveau texte ; puis « Elle n'a pas
+  tenu cette fois. Tu peux replanter. » et la proposition d'écrire.
+- La plante morte : sur l'étagère, ses jours en gris ; sur son écran, ses
+  jours tenus, le message et « Replanter » (ni arrosage, ni rechute). Le
+  rendu séché n'est pas encore là : elle a l'air vivante.
+- « Replanter » : un pot vide, compteur à 0, « Une nouvelle plante est en
+  terre. » ; le lendemain, 1 jour et une pousse.
+- Annuler la rechute dans le journal : la plante revient, avec son âge.
+- Le menu : Journal, Renommer, Retirer ; renommer.
+- Retirer : « Elle rejoint l'herbier ».
+- Réglages : les lignes « bientôt » ; le rappel (permission, puis une
+  notification à 20 h ; le désactiver) ; l'herbier ; l'export (feuille de
+  partage, fichier lisible) ; « À propos ».
+- La démo du Labo : deux plantes mortes (Réseaux, Râler), un herbier
+  rempli.
 
 ### À vérifier sur téléphone (phase 3e, le journal)
 
