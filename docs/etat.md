@@ -23,31 +23,33 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 3c         | Chiffres en Jersey 10, étiquettes et faits plus lisibles                             | fait, testé                                 |
 | Phase 3d         | Retirer et effacer une habitude (écran 9)                                            | fait (ADR 0011), testé                      |
 | Phase 3e         | Le journal de la plante (remplace l'historique)                                      | fait (ADR 0012), **à tester sur téléphone** |
-| Phase 3f         | Jardin, réglages, renommer                                                           | à faire, après le test                      |
+| Phase 3f         | La plante meurt (vies, replanter), herbier, réglages, renommer                       | en cours (ADR 0013)                         |
 
 Chiffres au dernier commit : 545 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
 
-### Phase 3b (prochaine, après le test des notes)
+### Phase 3f (en cours) : la plante meurt
 
-Décisions déjà prises : voir
-[architecture.md, section « Prévu en phase 3 »](architecture.md). À faire :
+Changement de concept décidé le 11 octobre 2026 : **une rechute fait
+mourir la plante** de la vie en cours, on peut replanter (ADR 0013). À
+faire, dans l'ordre :
 
-1. Les notes et l'arrosage sont faits (ADR 0009).
-2. **Écran 9, retirer** : par appui long sur l'étagère ou par le menu de
-   l'écran 5, jamais par glissement (il sert à changer de mur) ; « Elle rejoint le jardin » ou « Je
-   la donne » ; « Tout effacer définitivement » avec une seconde
-   confirmation.
-3. **Écran 10, le jardin** : même présentation que l'étagère, en lecture
-   seule ; accessible par les réglages pour l'instant.
-4. **Écran 11, réglages** : musique et barre de musique affichées
-   « bientôt » ; rappel doux le soir (notification locale, désactivé par
-   défaut) ; le jardin ; compte et synchronisation « bientôt » ; exporter mes
-   données ; à propos (licences, dont Pixelify Sans).
-5. **Renommer** une habitude (menu de l'écran 5).
-6. Doc et ADR de la phase.
+1. Domaine : vies (`splitLives`), graine de replantation, replanter,
+   statistiques et plante par vie, champ `PlantImage.dead`.
+2. Données : table `replantings`, migration n° 5 (une replantation le jour
+   de chaque rechute existante, pour ne rien faire mourir d'un coup).
+3. Écrans : plante morte sur l'étagère et sur l'écran de l'habitude,
+   « Replanter », nouveau texte du panneau de rechute.
+4. **Herbier** (remplace le jardin) : les vies passées de chaque habitude.
+5. **Réglages** (écran 11) : musique et barre « bientôt » ; rappel doux à
+   20 h (notification locale, désactivé par défaut, « Ta plante est là, si
+   tu as envie de passer la voir. ») ; l'herbier ; compte et
+   synchronisation « bientôt » ; exporter mes données (JSON, feuille de
+   partage) ; à propos (licences, dont Pixelify Sans et Jersey 10).
+6. **Renommer** une habitude (menu de l'écran 5).
+7. Doc de la phase.
 
 ### Hors périmètre pour l'instant
 
@@ -88,8 +90,8 @@ marques après 120 jours, meubles et décors.
   la plante.
 - « Tout effacer définitivement » : la seconde confirmation, puis la
   plante disparaît.
-- Une plante mise au jardin n'est visible nulle part tant que l'écran du
-  jardin n'existe pas : c'est normal à ce stade.
+- Une plante mise dans l'herbier n'est visible nulle part tant que l'écran de
+  l'herbier n'existe pas : c'est normal à ce stade.
 
 ### À vérifier sur téléphone (phase 3b, la pièce)
 
@@ -184,9 +186,14 @@ marques après 120 jours, meubles et décors.
   GNU sed le lit comme « début de ligne ». Préférer un petit script Node ou
   l'outil d'édition.
 
-## Questions ouvertes pour la phase 3
+## Réponses aux questions de la phase 3
 
-- « Je la donne » : la plante quitte l'étagère et n'est pas au jardin ; où
-  peut-on la retrouver (réglages, rien) ?
-- Format de l'export : JSON partagé avec la feuille de partage native ?
-- Le rappel du soir : à quelle heure, et avec quel texte (sans reproche) ?
+- « Je la donne » : la plante disparaît de l'app ; ses données restent et
+  figurent dans l'export.
+- L'export : un fichier JSON partagé avec la feuille de partage native
+  (`expo-file-system`, `expo-sharing`).
+- Le rappel du soir : 20 h, « Ta plante est là, si tu as envie de passer la
+  voir. ».
+- Pas de retour de l'herbier vers l'étagère pour l'instant (`idees.md`).
+- Le rendu séché d'une plante morte sera fourni ; le domaine passe
+  `PlantImage.dead`.

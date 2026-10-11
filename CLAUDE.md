@@ -1,9 +1,10 @@
 # habittt
 
 Application mobile pour **arrêter** des habitudes (« jours sans fumer »). Le
-compteur avance avec le temps ; le seul événement saisi est une rechute.
-Chaque habitude est une plante en pixel art, calculée par une fonction pure,
-jamais stockée comme image.
+compteur avance avec le temps ; les événements saisis sont la rechute et la
+replantation. Chaque habitude est une plante en pixel art, calculée par une
+fonction pure, jamais stockée comme image. **Une rechute fait mourir la
+plante** de la vie en cours ; on peut replanter (ADR 0013).
 
 Expo SDK 57, React Native, TypeScript strict, Jest. Doit rester compatible
 avec Expo Go.
@@ -35,11 +36,17 @@ Voir `docs/architecture.md`, `docs/decisions/` et **`docs/etat.md`** (où on en 
 - `App.tsx` : racine de composition, seul endroit qui relie les trois couches.
 - Règle : `ui -> domain <- data`. Le domaine n'importe jamais les deux autres.
   Appliquée par ESLint, ne pas la contourner.
-- Modèle : `Habit { id, name, seed, species, startDate, createdAt }`,
-  `Relapse { id, habitId, date, deletedAt, updatedAt }`. UUID, dates `YYYY-MM-DD` locales.
-  Rechute : une max par jour, `startDate <= date <= aujourd'hui`, suppression logique.
-- `plante = f(seed, startDate, rechutes, aujourd'hui)`. Date du jour et aléatoire
+- Modèle : `Habit { id, name, seed, species, startDate, createdAt, status, retiredOn,
+updatedAt, deletedAt }`, `Relapse { id, habitId, date, deletedAt, updatedAt }`,
+  `Replanting { id, habitId, date, updatedAt }`, plus `Note` et `Watering`. UUID, dates
+  `YYYY-MM-DD` locales. Rechute : une max par jour, `startDate <= date <= aujourd'hui`,
+  suppression logique.
+- **Vies** (`lives.ts`) : chaque rechute termine la vie en cours, la plante de cette
+  vie est morte ; « Replanter » ouvre une vie (graine tirée de habitId + date). Mort et
+  vies sont **calculées, jamais stockées**. Les notes restent attachées à l'habitude.
+- `plante = f(vie, aujourd'hui)` : graine et début de la vie. Date du jour et aléatoire
   injectés : jamais de `Date.now()` ni `Math.random()` dans `domain/`.
+- Ton : « Elle n'a pas tenu cette fois. Tu peux replanter. » Jamais de rouge ni de reproche.
 - Plante (`src/domain/plant/`) : port exact de `docs/prototypes/plants.js` (test de
   parité). Une espèce = un fichier + une ligne du registre. Trigo : `trig.ts` seulement.
 

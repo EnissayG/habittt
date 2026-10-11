@@ -8,7 +8,8 @@ choix de stack sont dans [l'ADR 0001](decisions/0001-stack-et-architecture.md).
 L'utilisateur suit des habitudes qu'il veut **arrêter** (« jours sans fumer »).
 Le compteur avance tout seul avec le temps ; le seul événement saisi est une
 **rechute**. Chaque habitude est une plante en pixel art qui pousse jour après
-jour, garde une trace visible de chaque rechute, et repousse.
+jour. Une rechute la fait mourir ; on replante une nouvelle plante, et les
+vies passées restent visibles dans l'herbier ([ADR 0013](decisions/0013-la-plante-meurt.md)).
 
 L'app se veut un **compagnon de poche, doux et sans jugement**. Chaque habitude
 est une plante d'intérieur posée sur une étagère ; on veut que les gens aient
@@ -19,10 +20,12 @@ envie de collectionner les plantes.
 Ces principes priment sur toute idée de fonctionnalité. Une proposition qui en
 contredit un est refusée ou retravaillée.
 
-- **La plante ne meurt jamais.**
-- **La santé de la plante est toujours récupérable.**
-- **Aucun message culpabilisant, aucune notification de reproche.**
-- **Une rechute laisse une trace, pas une punition.**
+- **La plante meurt quand l'habitude échoue ; on peut toujours replanter.**
+  (Ce principe remplace « la plante ne meurt jamais », ADR 0013.)
+- **Aucun message culpabilisant, aucune notification de reproche.** Une
+  plante morte se dit « Elle n'a pas tenu cette fois. Tu peux replanter. »,
+  sans rouge.
+- **Une vie passée reste visible**, dans l'herbier et dans le journal.
 - **Écrire une note est toujours facultatif.**
 
 Les idées notées pour plus tard sont dans [idees.md](idees.md).
@@ -90,9 +93,11 @@ violée (voir `eslint.config.js`).
 
 ## Modèle de données
 
-Deux entités principales, dans `src/domain/habit.ts` et `src/domain/relapse.ts`
-(les notes et les arrosages, ajoutés en phase 3, sont décrits dans
-[l'ADR 0009](decisions/0009-notes-et-arrosage.md)) :
+Les entités principales sont dans `src/domain/habit.ts`, `src/domain/relapse.ts`
+et `src/domain/lives.ts`. Les notes et les arrosages sont décrits dans
+[l'ADR 0009](decisions/0009-notes-et-arrosage.md), le statut d'une habitude
+dans [l'ADR 0011](decisions/0011-retirer-et-effacer.md), les vies dans
+[l'ADR 0013](decisions/0013-la-plante-meurt.md).
 
 ```ts
 type HabitId = string; // UUID
@@ -105,6 +110,10 @@ interface Habit {
   species: string; // espèce de la plante, ex. 'monstera' (voir plus bas)
   startDate: LocalDate; // premier jour du suivi, startDate <= aujourd'hui
   createdAt: string; // instant ISO 8601 UTC
+  status: 'shelf' | 'garden' | 'given'; // garden : dans l'herbier
+  retiredOn: LocalDate | null; // jour où elle a quitté l'étagère
+  updatedAt: string;
+  deletedAt: string | null; // effacée : il n'en reste qu'une trace
 }
 
 interface Relapse {
@@ -115,6 +124,15 @@ interface Relapse {
   updatedAt: string; // instant ISO 8601 UTC de la dernière modification
 }
 // Unicité : une seule rechute par (habitId, date), lignes annulées comprises.
+
+interface Replanting {
+  id: string; // UUID déterministe, calculé à partir de (habitId, date)
+  habitId: HabitId;
+  date: LocalDate; // le jour où une plante morte a été replantée
+  updatedAt: string;
+}
+// Les vies (et la mort de chaque plante) sont calculées à partir des
+// rechutes et des replantations ; elles ne sont jamais stockées.
 ```
 
 ### L'espèce de la plante (`Habit.species`)
@@ -204,8 +222,16 @@ NULL DEFAULT 'monstera'`, puis répartition des habitudes existantes sur les
 ## La plante : une fonction pure
 
 ```
-plante = f(seed, startDate, rechutes, aujourd'hui)
+plante = f(vie, aujourd'hui)      // vie : graine, premier jour, fin
 ```
+
+Depuis l'ADR 0013, une habitude a des **vies** successives (`splitLives`,
+`lives.ts`) : chaque rechute termine la vie en cours, « Replanter » en ouvre
+une nouvelle avec une graine tirée de `(habitId, date)`. La plante dessinée
+est celle de la vie en cours (morte si une rechute l'a terminée). Tout ce
+qui suit vaut **à l'intérieur d'une vie** ; la graine et le jour 1 sont ceux
+de la vie. Rien de cela n'est stocké : supprimer une rechute ranime la
+plante.
 
 Le générateur, dans `domain/`, renvoie une **description** de la plante (une
 grille de pixels, ou une liste d'éléments positionnés), pas une image. `ui/` la
@@ -269,9 +295,9 @@ Pourquoi ce découpage :
   - la plante d'aujourd'hui est un **préfixe** de la plante de demain ;
   - ajouter ou annuler une rechute au jour `n` ne modifie **que** la case `n` ;
   - les positions sont identiques avec ou sans rechutes.
-- Une rechute ne supprime rien : elle laisse une trace visible à son jour, et
-  les jours sans rechute qui suivent continuent de pousser. C'est ainsi que la
-  plante « repousse ».
+- Le générateur sait encore jaunir le jour d'une rechute (parité avec le
+  prototype), mais depuis l'ADR 0013 une rechute termine la vie : la plante
+  d'une vie n'a jamais de jour de rechute.
 
 **Ce que ce choix exclut, volontairement :** une apparence qui dépendrait des
 jours précédents (par exemple des feuilles plus jeunes juste après une
@@ -553,8 +579,8 @@ forme.
 - Le `day` de chaque pixel permet des effets dans le temps : la fatigue peut
   toucher surtout les pousses récentes.
 - Arroser change un paramètre du thème : l'effet est immédiat, sans recalcul.
-- Les principes sont respectés : la plante ne meurt jamais, la soif et la
-  fatigue sont toujours récupérables.
+- La soif et la fatigue sont toujours récupérables ; elles ne concernent
+  qu'une plante vivante. Seule une rechute fait mourir la plante (ADR 0013).
 
 ## Notes et arrosage (phase 3, fait)
 
@@ -575,7 +601,8 @@ Décisions détaillées dans [l'ADR 0009](decisions/0009-notes-et-arrosage.md).
 
 Décisions détaillées dans [l'ADR 0011](decisions/0011-retirer-et-effacer.md).
 
-- **Statut** (`Habit.status`) : sur l'étagère, au jardin ou donnée, par un
+- **Statut** (`Habit.status`) : sur l'étagère, dans l'herbier (valeur
+  stockée `garden`, ADR 0013) ou donnée, par un
   appui long sur la plante ou par le menu de l'habitude (écran 9), jamais
   par un glissement. **Une plante retirée cesse de pousser** (`growthEnd`)
   et plus rien ne s'écrit sur elle.
