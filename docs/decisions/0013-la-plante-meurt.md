@@ -30,12 +30,13 @@ replantations (`splitLives`, domaine, pur).
 - **Vie k ≥ 1** : commence le jour d'une **replantation** `R`. Son premier
   jour compté est **le lendemain de `R`** : le compteur affiche **0** le
   jour où l'on replante, et la plante n'est qu'un pot fraîchement semé.
-- **Fin d'une vie** : la première rechute active datée **au moins du jour
-  de début** de cette vie et **strictement après la rechute qui a terminé
-  la vie précédente**. On peut donc rechuter puis replanter le même jour :
-  la rechute de ce jour appartient à la vie précédente. Une rechute le jour
-  même d'une replantation faite un jour plus tard tue la nouvelle plante
-  sans qu'elle ait poussé.
+- **Fin d'une vie** : pour la vie 0, la première rechute active datée au
+  moins de `startDate` ; pour une vie replantée le jour `R`, la première
+  rechute active **après `R`**. On rechute puis on replante souvent le
+  même jour : la rechute de ce jour appartient à la vie précédente.
+  **Limite connue** : une rechute le soir même d'une replantation ne tue
+  pas la nouvelle plante, qui n'est encore qu'un pot à 0 jour. Le journal
+  garde la rechute.
 - **Vie suivante** : elle commence à la première replantation datée au
   moins du jour de la rechute fatale. Une replantation antérieure est
   ignorée.
