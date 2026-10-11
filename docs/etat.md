@@ -1,7 +1,7 @@
 # État du projet
 
-Point de reprise entre deux sessions. À jour au **6 octobre 2026**, après la
-phase 2, la refonte de l'étagère en murs et les retours du premier test. À lire en premier avec `CLAUDE.md`, puis
+Point de reprise entre deux sessions. À jour au **11 octobre 2026**, après la
+phase 4a (le coin méditation). À lire en premier avec `CLAUDE.md`, puis
 [architecture.md](architecture.md) et les [ADR](decisions/).
 
 ## Où on en est
@@ -26,20 +26,53 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 3f         | La plante meurt (vies, replanter), herbier, réglages, renommer                       | fait (ADR 0013, 0014), **à tester**         |
 | Phase 3g         | Reflet miroir du plancher, nouveaux tableaux, plante séchée                          | fait (ADR 0015), **à tester sur téléphone** |
 | Phase 3h         | Gestes des plantes, un par espèce (habitude, Labo, étagère et son reflet)            | fait (ADR 0016), **à tester sur téléphone** |
+| Phase 4a         | Le coin méditation : une plante pousse à chaque souffle (écran 12)                   | fait (ADR 0017), **à tester sur téléphone** |
 
-Chiffres au dernier commit : 1167 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 1192 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
 
 ### Prochaine étape
 
-La phase 3 est terminée. Reste à tester sur téléphone (ci-dessous), puis à
-choisir la suite parmi [idees.md](idees.md).
+La phase 4a (le coin méditation, [meditation.md](meditation.md)) est
+faite. Reste à la tester sur téléphone (ci-dessous), avec les phases 3, puis
+à choisir la suite parmi [idees.md](idees.md).
 
 La phase 3g (ADR 0015) a été écrite hors de Claude Code, sans téléphone :
 les tests, le typecheck et le lint passent, mais **le bundle n'a pas été
 recompilé et rien n'a été vu dans Expo Go**.
+
+### À vérifier sur téléphone (phase 4a, le coin méditation)
+
+- **L'entrée** : sur le mur de décor, toucher le fauteuil ouvre l'écran 12 ;
+  toucher la lampe, le tableau ou le tapis ne fait rien. Avec VoiceOver :
+  « Le fauteuil : méditer ».
+- **Le choix** : « Combien de temps ? », les trois durées, le texte,
+  l'interrupteur « Vibrer à chaque inspiration », activé à chaque fois.
+- **La séance** : le pot vide en grand, puis une pousse à la fin de chaque
+  expiration. La barre se remplit en 4 s et se vide en 6 s, par cases
+  carrées, sans coin arrondi. Les phrases aux bons moments, 14 s chacune,
+  sur deux lignes au plus. « encore N min » et « Terminer » en bas ;
+  toucher l'écran les masque ou les montre.
+- **La séance de 5 minutes en entier** : la plante est adulte à la fin ;
+  « Elle a poussé pendant que tu respirais. », son nom (par exemple « Une
+  fougère de Boston (retombante). »), « Revenir à la pièce ». Vérifier que
+  l'article est le bon pour l'espèce qui sort.
+- **La plante ne fait aucun geste** pendant la séance, ni à la fin.
+- **La vibration** : un coup léger au début de chaque inspiration (le
+  premier dès le début), aucun avec l'interrupteur désactivé ; une
+  vibration plus longue à la fin, même avec l'interrupteur désactivé
+  (dis si ça gêne).
+- **L'écran reste allumé** pendant toute la séance, puis s'éteint de
+  nouveau normalement après être revenu à la pièce.
+- **Arrière-plan** : quitter l'app au milieu, attendre, revenir ; la séance
+  reprend où elle en était (même phrase, même plante, même temps restant).
+- **Quitter avant la fin** : « Terminer » ou le glisser-retour ramène à la
+  pièce, sans message.
+- **« Réduire les animations »** : les mots « inspire » et « expire » à la
+  place de la barre ; la plante pousse quand même.
+- Rien de neuf dans l'export ni dans la base.
 
 ### À vérifier sur téléphone (phase 3h, les gestes)
 
@@ -76,7 +109,7 @@ recompilé et rien n'a été vu dans Expo Go**.
 ### Hors périmètre pour l'instant
 
 Voir [idees.md](idees.md) : musique, vitalité, compte et synchronisation,
-marques après 120 jours, meubles et décors.
+marques après 120 jours, meubles et décors, garder la plante de méditation.
 
 ### À vérifier sur téléphone (phase 3f)
 
@@ -225,6 +258,8 @@ marques après 120 jours, meubles et décors.
 - **Notifications** : les notifications locales (rappel doux) fonctionnent
   dans Expo Go ; seules les notifications push en sont exclues (vérifié dans
   la doc SDK 57).
+- **`expo-haptics` et `expo-keep-awake`** sont inclus dans Expo Go (vérifié
+  dans la doc SDK 57).
 - **Sous Git Bash, ne pas utiliser `sed` avec un motif contenant `` \` ``** :
   GNU sed le lit comme « début de ligne ». Préférer un petit script Node ou
   l'outil d'édition.

@@ -510,6 +510,7 @@ Navigation : React Navigation, pile native (`src/ui/navigation/`). Chaque
 | 9. Retirer               | `RetireScreen`       | `retireHabit()`, `eraseHabit()`    |
 | 10. L'herbier            | `HerbariumScreen`    | `getHerbarium()`                   |
 | 11. Réglages             | `SettingsScreen`     | `herbariumCount()`, `exportData()` |
+| 12. Le coin méditation   | `MeditationScreen`   | `drawMeditationPlant()`            |
 
 ### L'étagère
 
@@ -671,6 +672,25 @@ Décisions détaillées dans [l'ADR 0014](decisions/0014-reglages-rappel-export.
 - **Export** (`buildExport`) : un fichier JSON (format 1) remis à la
   feuille de partage.
 - **Renommer** (`renameHabit`) : mêmes règles qu'à la création.
+
+## Le coin méditation (phase 4a, fait)
+
+Décisions détaillées dans [l'ADR 0017](decisions/0017-le-coin-meditation.md),
+textes dans [meditation.md](meditation.md).
+
+- **Domaine** (`meditation.ts`) : tout se calcule à partir des secondes
+  passées dans la séance : le souffle (`breathAt`, `breathLevel`), les
+  jours de la plante (`plantDaysAt` : 0 au début, 120 au dernier souffle),
+  la phrase du moment (`phraseAt`), le temps restant (`minutesLeft`). La
+  plante est tirée avec le générateur de graines injecté.
+- **Entrée** : le décor du plan de la pièce porte son nom
+  (`PlacedContent.piece`) ; l'étagère pose une zone tactile sur le
+  fauteuil.
+- **UI** (`MeditationScreen`, `ui/meditation/`) : l'horloge de la séance
+  n'avance qu'au premier plan (`useSessionClock`). La plante est affichée
+  sans geste. L'écran reste allumé (`expo-keep-awake`), une vibration
+  marque chaque inspiration et la fin (`expo-haptics`).
+- **Rien n'est enregistré.**
 
 ## Prévu (décidé, pas encore construit)
 

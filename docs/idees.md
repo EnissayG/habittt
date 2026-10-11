@@ -23,7 +23,9 @@ les [principes du produit](architecture.md#principes-du-produit) le moment venu.
 - **La musique et sa barre** (lecture, suivant, titre, égaliseur). Piste
   envisagée : des morceaux « chiptune » calmes générés par IA, à condition
   que la licence de l'outil autorise l'usage commercial dans une app.
-- **Le coin méditation** : spécifié, voir [meditation.md](meditation.md).
+- **Garder la dernière plante de méditation** près du fauteuil jusqu'au
+  lendemain. Le coin méditation est fait (ADR 0017), mais sa plante n'est
+  pas gardée : il faudrait l'enregistrer.
 - **La vitalité** de la plante : la soif et la fatigue (voir
   [architecture.md](architecture.md)).
 - **Le compte et la synchronisation** (Supabase).
