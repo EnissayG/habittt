@@ -14,7 +14,7 @@ import { FallingDrop } from '../habit/FallingDrop';
 import { NoteSheet } from '../habit/NoteSheet';
 import { RelapseSheet } from '../habit/RelapseSheet';
 import type { ScreenProps } from '../navigation/types';
-import { MOOD_LABELS } from '../messages';
+import { MOOD_LABELS, replantErrorMessage } from '../messages';
 import { describePlant } from '../plant/labels';
 import { PlantPixels } from '../plant/PlantCanvas';
 import { pixelScale } from '../plant/pixelScale';
@@ -60,7 +60,15 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
 
   if (!detail) return <Screen>{null}</Screen>;
 
-  const { habit, stats, plant } = detail;
+  async function replantPlant() {
+    const result = await tracker.replantHabit(id);
+    setNotice(result.ok ? 'Une nouvelle plante est en terre.' : replantErrorMessage[result.error]);
+    await reload();
+  }
+
+  const { habit, stats, plant, life } = detail;
+  // A relapse ended the current life (ADR 0013): no running counter, replant it.
+  const dead = life.dead;
   const entryOf = (day: number) => detail.days[day - 1];
   const dayOpen = typeof sheet === 'object' && sheet !== null ? sheet : null;
   const openEntry = dayOpen ? entryOf(dayOpen.day) : undefined;
@@ -76,9 +84,11 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
       style={counterInside ? styles.counterOverlay : undefined}
       pointerEvents={counterInside ? 'none' : 'auto'}
     >
-      <Text style={styles.count}>{stats.currentStreak}</Text>
-      <Text style={styles.countLabel}>
-        {stats.currentStreak > 1 ? 'jours' : 'jour'} sans {lowerFirst(habit.name)}
+      <Text style={[styles.count, dead && styles.deadCount]}>{life.days}</Text>
+      <Text style={[styles.countLabel, dead && styles.deadLabel]}>
+        {dead
+          ? `${life.days > 1 ? 'jours tenus' : 'jour tenu'} cette fois`
+          : `${life.days > 1 ? 'jours' : 'jour'} sans ${lowerFirst(habit.name)}`}
       </Text>
     </View>
   );
@@ -88,8 +98,19 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
       scroll
       footer={
         <>
-          <Button label="Arroser et écrire une note" onPress={() => setSheet('water')} />
-          <Button label="J'ai rechuté" variant="quiet" onPress={() => setSheet('relapse')} />
+          {dead ? (
+            <>
+              <Text style={styles.deadMessage}>
+                Elle n&apos;a pas tenu cette fois. Tu peux replanter.
+              </Text>
+              <Button label="Replanter" onPress={() => void replantPlant()} />
+            </>
+          ) : (
+            <>
+              <Button label="Arroser et écrire une note" onPress={() => setSheet('water')} />
+              <Button label="J'ai rechuté" variant="quiet" onPress={() => setSheet('relapse')} />
+            </>
+          )}
           {notice && (
             <Text style={styles.notice} accessibilityLiveRegion="polite">
               {notice}
@@ -141,9 +162,9 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
 
           {dayOpen?.kind === 'askNote' && (
             <Sheet visible onClose={() => setSheet(null)}>
-              <Text style={styles.sheetTitle}>{"C'est noté."}</Text>
+              <Text style={styles.sheetTitle}>{"Elle n'a pas tenu cette fois."}</Text>
               <Text style={styles.body}>
-                {"Veux-tu écrire quelques mots sur ce jour ? C'est facultatif."}
+                {"Tu peux replanter. Veux-tu écrire quelques mots sur ce jour ? C'est facultatif."}
               </Text>
               <Button
                 label="Écrire un mot"
@@ -271,6 +292,16 @@ const styles = StyleSheet.create({
   counterOverlay: { position: 'absolute', left: 0, top: 0 },
   count: { fontFamily: fonts.numeric, fontSize: 64, color: colors.text, lineHeight: 64 },
   countLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+  // A dead plant's days are kept, quieter: they no longer run.
+  deadCount: { color: colors.muted },
+  deadLabel: { color: colors.muted },
+  deadMessage: {
+    fontFamily: fonts.display,
+    fontSize: 14,
+    color: colors.text,
+    textAlign: 'center',
+    lineHeight: 19,
+  },
   name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
   traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   hint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
