@@ -64,4 +64,9 @@ export interface PlantImage {
   readonly genome: Genome;
   /** True when the requested species was unknown and a fallback was drawn. */
   readonly fallback: boolean;
+  /**
+   * The plant's life is over (ADR 0013). Its pixels are those of its last
+   * day, unchanged: drying it is the drawing's job.
+   */
+  readonly dead: boolean;
 }

@@ -251,6 +251,15 @@ describe('render output', () => {
     expect(render('monstera', 42, 120).genome).toEqual(image.genome);
   });
 
+  it('says whether the plant is dead, without changing a pixel (the UI dries it)', () => {
+    const params = { species: 'monstera', seed: 42, elapsedDays: 30, relapseDays: [] };
+    const alive = renderPlant(params);
+    const dead = renderPlant({ ...params, dead: true });
+    expect(alive.dead).toBe(false);
+    expect(dead.dead).toBe(true);
+    expect(dead.pixels).toEqual(alive.pixels);
+  });
+
   it('gives different genomes to different seeds', () => {
     const genomes = new Set(
       SEEDS.map((seed) => JSON.stringify(render('monstera', seed, 1).genome)),

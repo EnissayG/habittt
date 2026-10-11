@@ -46,6 +46,8 @@ export interface RenderPlantParams {
   relapseDays: Iterable<number>;
   /** Day numbers (1 = start day) when the plant was watered: each blooms once. */
   wateredDays?: Iterable<number>;
+  /** The life of this plant is over (ADR 0013): passed on to the drawing, which dries it. */
+  dead?: boolean;
 }
 
 export interface PlanForSeed {
@@ -180,5 +182,5 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
     }
   }
 
-  return { width, height, pixels, species, variety, genome, fallback };
+  return { width, height, pixels, species, variety, genome, fallback, dead: params.dead ?? false };
 }

@@ -65,6 +65,7 @@ describe('buildColorRuns', () => {
     species: 'monstera',
     variety: null,
     fallback: false,
+    dead: false,
     // row 0: leaf leaf . bark   row 1: . bark bark bark
     pixels: [
       pixel('leaf'),
