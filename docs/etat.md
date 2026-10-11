@@ -24,8 +24,9 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 3d         | Retirer et effacer une habitude (écran 9)                                            | fait (ADR 0011), testé                      |
 | Phase 3e         | Le journal de la plante (remplace l'historique)                                      | fait (ADR 0012), **à tester sur téléphone** |
 | Phase 3f         | La plante meurt (vies, replanter), herbier, réglages, renommer                       | fait (ADR 0013, 0014), **à tester**         |
+| Phase 3g         | Reflet animé du plancher, nouveaux tableaux, plante séchée                           | fait (ADR 0015), **à tester sur téléphone** |
 
-Chiffres au dernier commit : 584 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 885 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -33,9 +34,30 @@ iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 ### Prochaine étape
 
 La phase 3 est terminée. Reste à tester sur téléphone (ci-dessous), puis à
-choisir la suite parmi [idees.md](idees.md). Le rendu séché d'une plante
-morte est attendu : le domaine passe `PlantImage.dead`, que
-`plantColor` ou `PlantCanvas` utilisera.
+choisir la suite parmi [idees.md](idees.md).
+
+La phase 3g (ADR 0015) a été écrite hors de Claude Code, sans téléphone :
+les tests, le typecheck et le lint passent, mais **le bundle n'a pas été
+recompilé et rien n'a été vu dans Expo Go**.
+
+### À vérifier sur téléphone (phase 3g)
+
+- **Le reflet** : un vrai miroir du mur, dont les lignes ondulent
+  doucement, de plus en plus loin du mur ; il s'estompe vers le bas. Il
+  doit bouger sans à-coups pendant qu'on glisse d'un mur à l'autre, et
+  l'onde doit continuer sans cassure d'un mur au suivant.
+- Aucune ligne claire ou sombre entre deux lignes du reflet, et rien de
+  décalé aux deux bouts de la pièce.
+- Le tapis reste net, par-dessus le reflet.
+- Avec « Réduire les animations » : le reflet est immobile.
+- Si le plancher apparaît sans aucun reflet, ou si l'étagère est lente :
+  le dire, le reflet animé utilise une image Skia (`mirrorImage`).
+- **Les tableaux** : la mer au crépuscule et l'estampe du bonsaï sur les
+  murs de tablettes, les montagnes à l'aube sur le mur de décor.
+- **La plante séchée** : Réseaux et Râler dans la démo du Labo ; sur
+  l'étagère, sur l'écran de l'habitude et dans le reflet. Couleurs de
+  paille, feuillage clairsemé, quelques feuilles sur la tablette, le pot
+  intact.
 
 ### Hors périmètre pour l'instant
 
@@ -51,8 +73,7 @@ marques après 120 jours, meubles et décors.
 - Une rechute : « Ça arrive. » et le nouveau texte ; puis « Elle n'a pas
   tenu cette fois. Tu peux replanter. » et la proposition d'écrire.
 - La plante morte : sur l'étagère, ses jours en gris ; sur son écran, ses
-  jours tenus, le message et « Replanter » (ni arrosage, ni rechute). Le
-  rendu séché n'est pas encore là : elle a l'air vivante.
+  jours tenus, le message et « Replanter » (ni arrosage, ni rechute).
 - « Replanter » : un pot vide, compteur à 0, « Une nouvelle plante est en
   terre. » ; le lendemain, 1 jour et une pousse.
 - Annuler la rechute dans le journal : la plante revient, avec son âge.
@@ -109,7 +130,7 @@ marques après 120 jours, meubles et décors.
   traverser plusieurs murs (dis si tu préfères un mur à la fois).
 - La fluidité pendant le glissement, surtout sur la démo (4 murs).
 - Les points qui suivent le doigt.
-- Le mur 2 : tablettes vides dessinées, tableau du coucher de soleil en
+- Le mur 2 : tablettes vides dessinées, tableau de la mer au crépuscule en
   haut tant qu'aucune plante retombante n'y pend.
 - Le mur de décor : fauteuil et lampe posés sur la ligne du sol, tableau,
   tapis devant le fauteuil ; leurs proportions par rapport aux pots.
@@ -203,5 +224,4 @@ marques après 120 jours, meubles et décors.
 - Le rappel du soir : 20 h, « Ta plante est là, si tu as envie de passer la
   voir. ».
 - Pas de retour de l'herbier vers l'étagère pour l'instant (`idees.md`).
-- Le rendu séché d'une plante morte sera fourni ; le domaine passe
-  `PlantImage.dead`.
+- Le rendu séché d'une plante morte est fait (ADR 0015).

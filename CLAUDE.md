@@ -42,7 +42,7 @@ updatedAt, deletedAt }`, `Relapse { id, habitId, date, deletedAt, updatedAt }`,
   `YYYY-MM-DD` locales. Rechute : une max par jour, `startDate <= date <= aujourd'hui`,
   suppression logique.
 - **Vies** (`lives.ts`) : chaque rechute termine la vie en cours, la plante de cette
-  vie est morte ; « Replanter » ouvre une vie (graine tirée de habitId + date). Mort et
+  vie est morte, dessinée séchée (`plant/wither.ts`) ; « Replanter » ouvre une vie (graine tirée de habitId + date). Mort et
   vies sont **calculées, jamais stockées**. Les notes restent attachées à l'habitude.
 - `plante = f(vie, aujourd'hui)` : graine et début de la vie. Date du jour et aléatoire
   injectés : jamais de `Date.now()` ni `Math.random()` dans `domain/`.

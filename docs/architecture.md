@@ -532,12 +532,21 @@ et [l'ADR 0010](decisions/0010-la-piece-en-entier.md).
 - **Plan** (`planRoom`, domaine) : chaque élément placé en cellules, tous
   murs côte à côte ; chaque bande a la hauteur de sa plante la plus haute,
   rien n'est coupé ; tous les murs reposent sur la même ligne de sol.
-- **Plancher miroir** (`composeRoom`, `drawFloor`, domaine) : le bas de la
-  pièce composée, retourné à partir de sa plus basse ligne dessinée, une
-  ligne sur deux, estompé en 12 paliers, sous les joints des planches. Ce
-  qui ne tient pas n'est pas reflété. Une seule règle pour tout ce qui est
-  au mur, décor compris (ADR 0008). Le tapis est posé sur le plancher, par
-  dessus, sans reflet.
+- **Plancher miroir** (`composeRoom`, `drawFloor`, `mirrorRows`, domaine) :
+  le bas de la pièce composée, retourné à partir de sa plus basse ligne
+  dessinée, à taille réelle (une ligne de plancher par ligne de mur). Chaque
+  ligne est décalée par une onde qui avance avec le temps et s'élargit en
+  s'éloignant du mur ; le reflet s'estompe avec la distance et le mur nu se
+  reflète à peine. Il passe sur les planches et leurs joints. Ce qui ne
+  tient pas n'est pas reflété. Une seule règle pour tout ce qui est au mur,
+  décor compris. Le tapis est posé par dessus, sans reflet (ADR 0015).
+- **Reflet animé** (`ui/shelf/floorMirror.ts`, `scenePicture.ts`,
+  `SceneClock.tsx`) : l'étagère dessine le plancher en trois couches, les
+  planches (fixes), le reflet et le tapis (fixe). Le reflet est une seule
+  image Skia calculée une fois ; 6 fois par seconde, on redessine ses
+  lignes décalées, sans recalculer une couleur. Une seule horloge pour la
+  fenêtre et le plancher de tous les murs. Un test vérifie que ce chemin
+  rapide donne le même plancher que `drawFloor`.
 - **Échelle et hauteur** (`ui/shelf/fitRoom.ts`) : une échelle entière pour
   toute la pièce, trois plantes sur la largeur au plus ; la fenêtre juste
   sous l'en-tête ; rangées alignées d'un mur à l'autre ; on raccourcit le
@@ -619,7 +628,8 @@ Décisions détaillées dans [l'ADR 0011](decisions/0011-retirer-et-effacer.md).
 Décisions détaillées dans [l'ADR 0013](decisions/0013-la-plante-meurt.md).
 
 - **Vies** (`splitLives`, `lives.ts`) : chaque rechute termine la vie en
-  cours, sa plante est morte (`PlantImage.dead`, le rendu séché viendra).
+  cours, sa plante est morte (`PlantImage.dead`) et dessinée séchée (`wither`,
+  ADR 0015).
   « Replanter » (`replantHabit`) ouvre une vie, graine `replantSeed(habitId,
 date)`, compteur à 0 le jour même. Rien n'est stocké en dehors des dates
   de replantation : annuler une rechute ranime la plante.
