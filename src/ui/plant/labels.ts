@@ -9,6 +9,7 @@ import {
   type SpeciesId,
   type TraitId,
 } from '../../domain';
+import { lowerFirst } from '../format';
 
 // French labels for the ids the plant generator returns. The texts match the
 // prototype's (checked by prototypeParity.test.ts).
@@ -27,6 +28,23 @@ export const SPECIES_LABELS: Record<SpeciesId, string> = {
   bamboo: 'Bambou',
   pearls: 'Collier de perles',
   bonsai: 'Bonsaï',
+};
+
+/** The article of each species, for its name at the end of a meditation. */
+export const SPECIES_ARTICLES: Record<SpeciesId, 'Un' | 'Une'> = {
+  monstera: 'Une',
+  pothos: 'Un',
+  calathea: 'Un',
+  jade: 'Un',
+  sansevieria: 'Une',
+  spider: 'Une',
+  cactus: 'Un',
+  aloe: 'Un',
+  fern: 'Une',
+  ficus: 'Un',
+  bamboo: 'Un',
+  pearls: 'Un',
+  bonsai: 'Un',
 };
 
 const VARIETY_LABELS: Record<string, string> = {
@@ -127,6 +145,14 @@ export function describePlant(image: PlantImage): string {
     FOLIAGE_LABELS[image.genome.foliage],
     ...(trait ? [trait] : []),
   ].join(' · ');
+}
+
+/** Its name on one line, as a sentence: "Une fougère de Boston (retombante)." */
+export function plantName(image: PlantImage): string {
+  const species = speciesLabel(image.species);
+  const variety = varietyLabel(image.variety);
+  const article = SPECIES_ARTICLES[image.species as SpeciesId] ?? 'Une';
+  return `${article} ${lowerFirst(species)}${variety ? ` ${variety}` : ''}.`;
 }
 
 export function isRare(image: PlantImage): boolean {
