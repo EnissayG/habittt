@@ -95,8 +95,8 @@ export function RelapseSheet({
     <Sheet visible={visible} onClose={close}>
       <Text style={styles.title}>Ça arrive.</Text>
       <Text style={styles.body}>
-        Ta plante garde une trace de ce jour et continue de pousser. Ton compteur repart, pas ta
-        plante.
+        Cette fois, ta plante n&apos;aura pas tenu. Tu pourras en replanter une nouvelle ; ses jours
+        restent dans l&apos;herbier.
       </Text>
       <View style={styles.chips}>
         <Chip
