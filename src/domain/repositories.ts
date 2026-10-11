@@ -2,6 +2,7 @@ import type { Habit, HabitId } from './habit';
 import type { LocalDate } from './localDate';
 import type { Note } from './note';
 import type { Relapse } from './relapse';
+import type { Replanting } from './replanting';
 import type { Watering } from './watering';
 
 /**
@@ -15,7 +16,7 @@ export interface HabitRepository {
   save(habit: Habit): Promise<void>;
   /**
    * Saves the trace of an erased habit and deletes, for real and at once,
-   * everything that belongs to it (relapses, notes, waterings). The only
+   * everything that belongs to it (relapses, notes, waterings, replantings). The only
    * hard delete of the app: what was written must not survive an erase.
    */
   erase(trace: Habit): Promise<void>;
@@ -39,4 +40,10 @@ export interface WateringRepository {
   listByHabit(habitId: HabitId): Promise<Watering[]>;
   findByHabitAndDate(habitId: HabitId, date: LocalDate): Promise<Watering | undefined>;
   save(watering: Watering): Promise<void>;
+}
+
+export interface ReplantingRepository {
+  listByHabit(habitId: HabitId): Promise<Replanting[]>;
+  findByHabitAndDate(habitId: HabitId, date: LocalDate): Promise<Replanting | undefined>;
+  save(replanting: Replanting): Promise<void>;
 }

@@ -4,10 +4,12 @@ import type { LocalDate } from './localDate';
 import type { Clock } from './ports';
 import type { Note } from './note';
 import type { Relapse } from './relapse';
+import type { Replanting } from './replanting';
 import type {
   HabitRepository,
   NoteRepository,
   RelapseRepository,
+  ReplantingRepository,
   WateringRepository,
 } from './repositories';
 import type { Watering } from './watering';
@@ -102,6 +104,10 @@ export class InMemoryNoteRepository
 export class InMemoryWateringRepository
   extends InMemoryDailyRepository<Watering>
   implements WateringRepository {}
+
+export class InMemoryReplantingRepository
+  extends InMemoryDailyRepository<Replanting>
+  implements ReplantingRepository {}
 
 export function makeRelapse(date: LocalDate, overrides: Partial<Relapse> = {}): Relapse {
   return {

@@ -10,13 +10,7 @@ export {
   type HabitId,
   type HabitStatus,
 } from './habit';
-export {
-  eraseHabit,
-  growthEnd,
-  isOnShelf,
-  retireHabit,
-  type RetireError,
-} from './retirement';
+export { eraseHabit, growthEnd, isOnShelf, retireHabit, type RetireError } from './retirement';
 export {
   journalMonths,
   monthCalendar,
@@ -52,6 +46,9 @@ export {
   createHabitTracker,
   type AddHabitInput,
   type HabitAccessError,
+  type HerbariumEntry,
+  type HerbariumLife,
+  type ReplantHabitError,
   type HabitDetail,
   type HabitSummary,
   type HabitTracker,
@@ -121,6 +118,7 @@ export type {
   HabitRepository,
   NoteRepository,
   RelapseRepository,
+  ReplantingRepository,
   WateringRepository,
 } from './repositories';
 export { err, ok, type Result } from './result';

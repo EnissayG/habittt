@@ -5,7 +5,8 @@ import {
   type HabitId,
   type HabitStatus,
 } from './habit';
-import type { LocalDate } from './localDate';
+import { daysBetween, type LocalDate } from './localDate';
+import { record, splitLives, type Life } from './lives';
 import { MAX_GROWTH_DAYS, type PlantImage } from './plant/grid';
 import { FALLBACK_SPECIES_ID, SPECIES_IDS, type SpeciesId } from './plant/registry';
 import { renderPlant } from './plant/renderPlant';
@@ -18,10 +19,12 @@ import {
   type WriteNoteOutcome,
 } from './note';
 import { cancelRelapse, isActive, recordRelapse, type RecordRelapseError } from './relapse';
+import { replant, type ReplantError } from './replanting';
 import type {
   HabitRepository,
   NoteRepository,
   RelapseRepository,
+  ReplantingRepository,
   WateringRepository,
 } from './repositories';
 import { err, ok, type Result } from './result';
@@ -36,11 +39,18 @@ import { water, type WaterError } from './watering';
 
 export interface HabitSummary {
   habit: Habit;
+  /** currentStreak: the days of the current life, 0 once dead; longestStreak: the best life. */
   stats: HabitStats;
+  /** The plant of the current life (dead once a relapse ended it). */
   plant: PlantImage;
+  /** The current life (ADR 0013). */
+  life: Life;
 }
 
 export interface HabitDetail extends HabitSummary {
+  /** Every life, oldest first; the last one is the current one. */
+  lives: Life[];
+  /** Every day since the start, whatever the life (the journal). */
   days: DayEntry[];
   /** Active notes, newest first. */
   notes: Note[];
@@ -57,7 +67,24 @@ export interface NoteInput {
 /** HABIT_RETIRED: the plant left the shelf, nothing more is written about it. */
 export type HabitAccessError = 'HABIT_NOT_FOUND' | 'HABIT_RETIRED';
 export type SaveNoteError = WriteNoteError | HabitAccessError;
-export type WaterTodayError = SaveNoteError | WaterError;
+/** PLANT_DEAD: only a living plant is watered. */
+export type WaterTodayError = SaveNoteError | WaterError | 'PLANT_DEAD';
+export type ReplantHabitError = HabitAccessError | ReplantError;
+
+/** A past life in the herbarium: ended by a relapse, or by leaving the shelf. */
+export interface HerbariumLife {
+  index: number;
+  start: LocalDate;
+  end: LocalDate;
+  days: number;
+  endedBy: 'relapse' | 'retired';
+}
+
+export interface HerbariumEntry {
+  habit: Habit;
+  /** Newest first. */
+  lives: HerbariumLife[];
+}
 
 export interface Shelf {
   layout: ShelfLayout;
@@ -83,6 +110,7 @@ export interface HabitTrackerDeps {
   relapses: RelapseRepository;
   notes: NoteRepository;
   waterings: WateringRepository;
+  replantings: ReplantingRepository;
   clock: Clock;
   generateId: IdGenerator;
   generateSeed: SeedGenerator;
@@ -96,7 +124,7 @@ const OPENING_DEFAULT = { species: 'bonsai', seed: 12 } as const;
  * interfaces, applies the pure domain rules, and saves the result.
  */
 export function createHabitTracker(deps: HabitTrackerDeps) {
-  const { habits, relapses, notes, waterings, clock } = deps;
+  const { habits, relapses, notes, waterings, replantings, clock } = deps;
 
   /** A habit that can still be written about: on the shelf, not erased. */
   async function writable(id: HabitId): Promise<Result<Habit, HabitAccessError>> {
@@ -110,32 +138,73 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
     // A retired plant stops growing on the day it left the shelf.
     const today = growthEnd(habit, now);
     const live = isOnShelf(habit);
-    const [habitRelapses, habitNotes, habitWaterings] = await Promise.all([
+    const [habitRelapses, habitNotes, habitWaterings, habitReplantings] = await Promise.all([
       relapses.listByHabit(habit.id),
       notes.listByHabit(habit.id),
       waterings.listByHabit(habit.id),
+      replantings.listByHabit(habit.id),
     ]);
     const params = { startDate: habit.startDate, relapses: habitRelapses, today };
-    const stats = computeStats(params);
+    const lives = splitLives({
+      habit,
+      relapses: habitRelapses,
+      replantings: habitReplantings,
+      today,
+    });
+    const life = lives[lives.length - 1]!;
+    const stats = {
+      ...computeStats(params),
+      currentStreak: life.dead ? 0 : life.days,
+      longestStreak: record(lives),
+    };
     const days = buildTimeline({ ...params, notes: habitNotes, waterings: habitWaterings });
     const plant = renderPlant({
       species: habit.species,
-      seed: habit.seed,
-      elapsedDays: stats.totalDays,
-      // Plant day numbers start at 1 on startDate; timeline indexes at 0.
-      relapseDays: days.filter((day) => day.relapsed).map((day) => day.index + 1),
-      wateredDays: days.filter((day) => day.watered).map((day) => day.index + 1),
+      seed: life.seed,
+      elapsedDays: life.days,
+      // A life never holds a relapse: one ends it.
+      relapseDays: [],
+      // Plant day numbers start at 1 on the life's first day.
+      wateredDays: habitWaterings
+        .map((watering) => daysBetween(life.firstDay, watering.date) + 1)
+        .filter((n) => n >= 1 && n <= life.days),
+      dead: life.dead,
     });
     const todayEntry = days[days.length - 1];
     return {
       habit,
       stats,
+      life,
+      lives,
       days,
       plant,
       notes: days.flatMap((day) => (day.note ? [day.note] : [])).reverse(),
       todayNote: live ? (todayEntry?.note ?? null) : null,
       wateredToday: live && (todayEntry?.watered ?? false),
     };
+  }
+
+  async function herbarium(): Promise<HerbariumEntry[]> {
+    const today = clock.today();
+    const kept = (await habits.list())
+      .filter((habit) => habit.deletedAt === null && habit.status !== 'given')
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const entries = await Promise.all(
+      kept.map(async (habit): Promise<HerbariumEntry> => {
+        const { lives } = await detail(habit, today);
+        const past = lives.flatMap((life): HerbariumLife[] => {
+          if (life.end !== null) {
+            const { index, start, end, days } = life;
+            return [{ index, start, end, days, endedBy: 'relapse' }];
+          }
+          if (habit.retiredOn === null) return [];
+          const { index, start, days } = life;
+          return [{ index, start, end: habit.retiredOn, days, endedBy: 'retired' }];
+        });
+        return { habit, lives: past.reverse() };
+      }),
+    );
+    return entries.filter((entry) => entry.lives.length > 0);
   }
 
   /** The habits of the shelf, oldest first. */
@@ -153,13 +222,45 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
     async listHabits(): Promise<HabitSummary[]> {
       const today = clock.today();
       const details = await Promise.all((await oldestFirst()).map((h) => detail(h, today)));
-      return details.map(({ habit, stats, plant }) => ({ habit, stats, plant }));
+      return details.map(({ habit, stats, plant, life }) => ({ habit, stats, plant, life }));
     },
 
     /** A habit of the shelf or the garden (a given one too); never an erased one. */
     async getHabit(id: HabitId): Promise<HabitDetail | undefined> {
       const habit = await habits.getById(id);
       return habit && habit.deletedAt === null ? detail(habit, clock.today()) : undefined;
+    },
+
+    /** Replants a dead plant today: a new life, with its own seed (ADR 0013). */
+    async replantHabit(id: HabitId): Promise<Result<void, ReplantHabitError>> {
+      const found = await writable(id);
+      if (!found.ok) return found;
+      const today = clock.today();
+      const { life } = await detail(found.value, today);
+      const result = replant({
+        habit: found.value,
+        dead: life.dead,
+        existing: await replantings.findByHabitAndDate(id, today),
+        clock,
+      });
+      if (!result.ok) return result;
+      await replantings.save(result.value);
+      return ok(undefined);
+    },
+
+    /**
+     * The herbarium: the past lives of every habit of the shelf and of the
+     * herbarium itself (a retired habit's last life ends on its day). Given
+     * and erased habits are left out, and so are habits without a past life.
+     */
+    getHerbarium(): Promise<HerbariumEntry[]> {
+      return herbarium();
+    },
+
+    /** How many past lives the herbarium holds (for the settings). */
+    async herbariumCount(): Promise<number> {
+      const entries = await herbarium();
+      return entries.reduce((sum, entry) => sum + entry.lives.length, 0);
     },
 
     /** Takes a plant off the shelf, to the garden or given away. */
@@ -188,7 +289,9 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       const today = clock.today();
       const summaries = await Promise.all((await oldestFirst()).map((h) => detail(h, today)));
       const byId: Record<HabitId, HabitSummary> = {};
-      for (const { habit, stats, plant } of summaries) byId[habit.id] = { habit, stats, plant };
+      for (const { habit, stats, plant, life } of summaries) {
+        byId[habit.id] = { habit, stats, plant, life };
+      }
 
       const layout = arrangeShelf(summaries.map(({ habit }) => habit));
       const view = windowView(clock.hour(), today);
@@ -254,6 +357,7 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
       if (!found.ok) return found;
       const habit = found.value;
       const today = clock.today();
+      if ((await detail(habit, today)).life.dead) return err('PLANT_DEAD');
       const watered = water({
         habit,
         date: today,

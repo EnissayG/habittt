@@ -4,6 +4,7 @@ import {
   InMemoryHabitRepository,
   InMemoryNoteRepository,
   InMemoryRelapseRepository,
+  InMemoryReplantingRepository,
   InMemoryWateringRepository,
 } from '../../domain/testSupport';
 import { DEMO_HABITS, demoSeeds, seedDemo } from './demoData';
@@ -15,6 +16,7 @@ async function demoShelf() {
     relapses: new InMemoryRelapseRepository(),
     notes: new InMemoryNoteRepository(),
     waterings: new InMemoryWateringRepository(),
+    replantings: new InMemoryReplantingRepository(),
     clock: fixedClock(),
     generateId: () => `demo-${++next}`,
     generateSeed: demoSeeds(),

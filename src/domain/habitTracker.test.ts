@@ -3,10 +3,12 @@ import { SPECIES_IDS } from './plant/registry';
 import { MAX_GROWTH_DAYS } from './plant/grid';
 import { renderPlant } from './plant/renderPlant';
 import { relapseIdFor } from './relapse';
+import { replantSeed } from './replanting';
 import {
   InMemoryHabitRepository,
   InMemoryNoteRepository,
   InMemoryRelapseRepository,
+  InMemoryReplantingRepository,
   InMemoryWateringRepository,
   TODAY,
   day,
@@ -17,18 +19,20 @@ function setup(hour = 10) {
   const relapses = new InMemoryRelapseRepository();
   const notes = new InMemoryNoteRepository();
   const waterings = new InMemoryWateringRepository();
-  const habits = new InMemoryHabitRepository([relapses, notes, waterings]);
+  const replantings = new InMemoryReplantingRepository();
+  const habits = new InMemoryHabitRepository([relapses, notes, waterings, replantings]);
   let nextId = 0;
   const tracker = createHabitTracker({
     habits,
     relapses,
     notes,
     waterings,
+    replantings,
     clock: fixedClock(undefined, undefined, hour),
     generateId: () => `habit-${++nextId}`,
     generateSeed: () => 7,
   });
-  return { tracker, habits, relapses, notes, waterings };
+  return { tracker, habits, relapses, notes, waterings, replantings };
 }
 
 async function withHabit(startOffset = -9) {
@@ -92,7 +96,8 @@ describe('habit tracker use cases', () => {
     const habitId = added.value.id;
 
     expect(await tracker.toggleRelapse(habitId, day(-1))).toEqual({ ok: true, value: 'recorded' });
-    expect((await tracker.getHabit(habitId))?.stats.currentStreak).toBe(1);
+    // The relapse ended the life: the plant is dead, no running counter.
+    expect((await tracker.getHabit(habitId))?.stats.currentStreak).toBe(0);
 
     expect(await tracker.toggleRelapse(habitId, day(-1))).toEqual({
       ok: true,
@@ -119,7 +124,7 @@ describe('habit tracker use cases', () => {
     });
   });
 
-  it('returns the plant drawn from the habit and its relapses', async () => {
+  it('returns the plant of the current life, dead once a relapse ended it', async () => {
     const { tracker } = setup();
     const added = await tracker.addHabit({
       name: 'No smoking',
@@ -129,13 +134,15 @@ describe('habit tracker use cases', () => {
     if (!added.ok) throw new Error('setup failed');
     await tracker.toggleRelapse(added.value.id, day(-1)); // day 2 of the plant
 
+    // It held day 1, and died on day 2: drawn as on its last day held.
     const detail = await tracker.getHabit(added.value.id);
     expect(detail?.plant).toEqual(
       renderPlant({
         species: 'pothos',
         seed: added.value.seed,
-        elapsedDays: 3,
-        relapseDays: [2],
+        elapsedDays: 1,
+        relapseDays: [],
+        dead: true,
       }),
     );
   });
@@ -182,8 +189,8 @@ describe('habit tracker use cases', () => {
       await tracker.recordRelapse(a.value.id, day(-1));
 
       const shelf = await tracker.getShelf();
-      // Smoking: relapse yesterday, 1 day in a row; Sugar: 3 days in a row.
-      expect(shelf.totals).toEqual({ plants: 2, currentDays: 1 + 3 });
+      // Smoking: relapse yesterday, its plant is dead (0); Sugar: 3 days in a row.
+      expect(shelf.totals).toEqual({ plants: 2, currentDays: 0 + 3 });
       expect(Object.keys(shelf.habits).sort()).toEqual([a.value.id, b.value.id].sort());
       expect(shelf.layout.walls.map((wall) => wall.kind)).toEqual(['plants', 'plants', 'decor']);
     });
@@ -374,6 +381,115 @@ describe('habit tracker use cases', () => {
         ok: false,
         error: 'HABIT_NOT_FOUND',
       });
+    });
+  });
+
+  describe('lives: the plant dies, and is replanted', () => {
+    it('kills the plant on a relapse: dead, no running counter, its days as a record', async () => {
+      const { tracker, id } = await withHabit(-9);
+      await tracker.recordRelapse(id, TODAY);
+      const detail = (await tracker.getHabit(id))!;
+      expect(detail.life).toMatchObject({ index: 0, dead: true, days: 9 });
+      expect(detail.plant.dead).toBe(true);
+      expect(detail.stats.currentStreak).toBe(0);
+      expect(detail.stats.longestStreak).toBe(9);
+      expect((await tracker.getShelf()).totals.currentDays).toBe(0);
+    });
+
+    it('draws the plant of the current life only, from its own seed and first day', async () => {
+      const { tracker, id } = await withHabit(-9);
+      await tracker.recordRelapse(id, day(-4));
+      await tracker.replantHabit(id);
+      const detail = (await tracker.getHabit(id))!;
+      expect(detail.life).toMatchObject({ index: 1, start: TODAY, days: 0, dead: false });
+      expect(detail.life.seed).toBe(replantSeed(id, TODAY));
+      expect(detail.lives).toHaveLength(2);
+      expect(detail.plant).toEqual(
+        renderPlant({
+          species: detail.habit.species,
+          seed: replantSeed(id, TODAY),
+          elapsedDays: 0,
+          relapseDays: [],
+          wateredDays: [],
+        }),
+      );
+      // The journal still shows every day of the habit.
+      expect(detail.days).toHaveLength(10);
+    });
+
+    it('refuses to replant a living plant, a retired one, or twice the same day', async () => {
+      const { tracker, id } = await withHabit(-9);
+      expect(await tracker.replantHabit(id)).toEqual({ ok: false, error: 'PLANT_ALIVE' });
+      await tracker.recordRelapse(id, TODAY);
+      expect(await tracker.replantHabit(id)).toEqual({ ok: true, value: undefined });
+      expect(await tracker.replantHabit(id)).toEqual({ ok: false, error: 'PLANT_ALIVE' });
+      await tracker.retireHabit(id, 'garden');
+      expect(await tracker.replantHabit(id)).toEqual({ ok: false, error: 'HABIT_RETIRED' });
+    });
+
+    it('brings the plant back when its relapse is cancelled', async () => {
+      const { tracker, id } = await withHabit(-9);
+      await tracker.recordRelapse(id, day(-2));
+      await tracker.replantHabit(id);
+      await tracker.toggleRelapse(id, day(-2));
+      const detail = (await tracker.getHabit(id))!;
+      expect(detail.lives).toHaveLength(1);
+      expect(detail.life).toMatchObject({ index: 0, dead: false, days: 10 });
+      expect(detail.plant.dead).toBe(false);
+    });
+
+    it('waters a living plant only', async () => {
+      const { tracker, id } = await withHabit(-9);
+      await tracker.recordRelapse(id, TODAY);
+      expect(await tracker.waterToday(id)).toEqual({ ok: false, error: 'PLANT_DEAD' });
+    });
+
+    it('blooms the days watered during the current life only', async () => {
+      const { tracker, id, waterings } = await withHabit(-9);
+      await tracker.waterToday(id);
+      await tracker.recordRelapse(id, day(-3));
+      await tracker.replantHabit(id);
+      expect(waterings.rows.size).toBe(1);
+      // Watered today, but the new plant was replanted today and has not grown yet.
+      const detail = (await tracker.getHabit(id))!;
+      expect(detail.plant.pixels.some((pixel) => pixel?.bloom)).toBe(false);
+    });
+
+    it('erases the replantings with the habit', async () => {
+      const { tracker, id, replantings } = await withHabit(-9);
+      await tracker.recordRelapse(id, TODAY);
+      await tracker.replantHabit(id);
+      await tracker.eraseHabit(id);
+      expect(replantings.rows.size).toBe(0);
+    });
+  });
+
+  describe('getHerbarium', () => {
+    it('lists the past lives of each habit, newest first; a retired one ends on its day', async () => {
+      const { tracker, id } = await withHabit(-9);
+      await tracker.recordRelapse(id, day(-6));
+      await tracker.replantHabit(id);
+      const sugar = await tracker.addHabit({ name: 'Sucre', startDate: day(-4) });
+      const given = await tracker.addHabit({ name: 'Écrans', startDate: day(-4) });
+      if (!sugar.ok || !given.ok) throw new Error('setup failed');
+      await tracker.retireHabit(sugar.value.id, 'garden');
+      await tracker.recordRelapse(given.value.id, day(-1));
+      await tracker.retireHabit(given.value.id, 'given');
+
+      const herbarium = await tracker.getHerbarium();
+      expect(herbarium.map((entry) => entry.habit.name)).toEqual(['Fumer', 'Sucre']);
+      expect(herbarium[0]!.lives).toEqual([
+        { index: 0, start: day(-9), end: day(-6), days: 3, endedBy: 'relapse' },
+      ]);
+      expect(herbarium[1]!.lives).toEqual([
+        { index: 0, start: day(-4), end: TODAY, days: 5, endedBy: 'retired' },
+      ]);
+      expect(await tracker.herbariumCount()).toBe(2);
+    });
+
+    it('leaves out habits without a past life', async () => {
+      const { tracker } = await withHabit(-9);
+      expect(await tracker.getHerbarium()).toEqual([]);
     });
   });
 });

@@ -1,4 +1,10 @@
-import type { CreateHabitError, Mood, ToggleRelapseError, WaterTodayError } from '../domain';
+import type {
+  CreateHabitError,
+  Mood,
+  ReplantHabitError,
+  ToggleRelapseError,
+  WaterTodayError,
+} from '../domain';
 import { HABIT_NAME_MAX_LENGTH, NOTE_MAX_LENGTH } from '../domain';
 
 export const createHabitErrorMessage: Record<CreateHabitError, string> = {
@@ -20,6 +26,14 @@ export const noteErrorMessage: Record<WaterTodayError, string> = {
   NOTE_TOO_LONG: `Une note ne peut pas dépasser ${NOTE_MAX_LENGTH} caractères.`,
   WATERING_IN_FUTURE: 'On ne peut pas arroser un jour à venir.',
   WATERING_BEFORE_START: 'Ce jour est avant le début du suivi.',
+  HABIT_NOT_FOUND: "Cette habitude n'existe plus.",
+  HABIT_RETIRED: "Cette plante a quitté l'étagère : son histoire ne change plus.",
+  PLANT_DEAD: "Elle n'a pas tenu cette fois. Replante-la pour l'arroser.",
+};
+
+export const replantErrorMessage: Record<ReplantHabitError, string> = {
+  PLANT_ALIVE: 'Ta plante est vivante : rien à replanter.',
+  ALREADY_REPLANTED_TODAY: "Tu as déjà replanté aujourd'hui. Tu pourras recommencer demain.",
   HABIT_NOT_FOUND: "Cette habitude n'existe plus.",
   HABIT_RETIRED: "Cette plante a quitté l'étagère : son histoire ne change plus.",
 };
