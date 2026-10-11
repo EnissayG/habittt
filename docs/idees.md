@@ -20,7 +20,16 @@ les [principes du produit](architecture.md#principes-du-produit) le moment venu.
 
 ## Hors périmètre pour l'instant
 
-- **La musique et sa barre** (lecture, suivant, titre, égaliseur).
+- **La musique et sa barre** (lecture, suivant, titre, égaliseur). Piste
+  envisagée : des morceaux « chiptune » calmes générés par IA, à condition
+  que la licence de l'outil autorise l'usage commercial dans une app.
+- **Le coin méditation** : le fauteuil du mur de décor devient une place où
+  s'asseoir. Une séance de 5, 10 ou 30 minutes au choix, accompagnée par
+  des phrases qui s'affichent au fil du temps.
+- **Des plantes qui bougent sur l'étagère** : les gestes de l'ADR 0016
+  n'existent pour l'instant que sur l'écran d'une habitude et dans le Labo.
+  Sur l'étagère, tout un mur est un seul dessin : il faudra dessiner à part
+  la plante qui bouge.
 - **La vitalité** de la plante : la soif et la fatigue (voir
   [architecture.md](architecture.md)).
 - **Le compte et la synchronisation** (Supabase).

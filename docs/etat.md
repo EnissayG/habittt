@@ -24,9 +24,10 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 3d         | Retirer et effacer une habitude (écran 9)                                            | fait (ADR 0011), testé                      |
 | Phase 3e         | Le journal de la plante (remplace l'historique)                                      | fait (ADR 0012), **à tester sur téléphone** |
 | Phase 3f         | La plante meurt (vies, replanter), herbier, réglages, renommer                       | fait (ADR 0013, 0014), **à tester**         |
-| Phase 3g         | Reflet animé du plancher, nouveaux tableaux, plante séchée                           | fait (ADR 0015), **à tester sur téléphone** |
+| Phase 3g         | Reflet miroir du plancher, nouveaux tableaux, plante séchée                          | fait (ADR 0015), **à tester sur téléphone** |
+| Phase 3h         | Gestes des plantes, un par espèce (écran de l'habitude et Labo)                      | fait (ADR 0016), **à tester sur téléphone** |
 
-Chiffres au dernier commit : 885 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 1118 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -40,18 +41,27 @@ La phase 3g (ADR 0015) a été écrite hors de Claude Code, sans téléphone :
 les tests, le typecheck et le lint passent, mais **le bundle n'a pas été
 recompilé et rien n'a été vu dans Expo Go**.
 
+### À vérifier sur téléphone (phase 3h, les gestes)
+
+- Sur l'écran d'une habitude : la plante est immobile, puis une seule
+  partie bouge d'un pixel pendant une seconde et revient. Dans le Labo :
+  pareil, pour essayer chaque espèce, chaque graine et chaque âge.
+- Le geste de chaque espèce (tableau de l'ADR 0016) et son rythme : toutes
+  les 4 secondes pour les plus souples, 12 pour les plus raides.
+- Le cactus ne bouge pas ; une fois fleuri, une fleur se referme un peu.
+- Une plante séchée et un pot vide ne bougent pas.
+- Avec « Réduire les animations » : aucun geste.
+- Rien d'autre ne saute sur l'écran quand la plante bouge (compteur,
+  goutte d'arrosage).
+
 ### À vérifier sur téléphone (phase 3g)
 
-- **Le reflet** : un vrai miroir du mur, dont les lignes ondulent
-  doucement, de plus en plus loin du mur ; il s'estompe vers le bas. Il
-  doit bouger sans à-coups pendant qu'on glisse d'un mur à l'autre, et
-  l'onde doit continuer sans cassure d'un mur au suivant.
-- Aucune ligne claire ou sombre entre deux lignes du reflet, et rien de
-  décalé aux deux bouts de la pièce.
+- **Le reflet** : un vrai miroir du mur, à taille réelle, immobile (plus
+  d'ondulation) ; il s'estompe vers le bas.
+- Le glissement d'un mur à l'autre reste fluide.
 - Le tapis reste net, par-dessus le reflet.
-- Avec « Réduire les animations » : le reflet est immobile.
-- Si le plancher apparaît sans aucun reflet, ou si l'étagère est lente :
-  le dire, le reflet animé utilise une image Skia (`mirrorImage`).
+- Si le plancher apparaît sans aucun reflet : le dire, le reflet est une
+  image Skia (`mirrorImage`).
 - **Les tableaux** : la mer au crépuscule et l'estampe du bonsaï sur les
   murs de tablettes, les montagnes à l'aube sur le mur de décor.
 - **La plante séchée** : Réseaux et Râler dans la démo du Labo ; sur

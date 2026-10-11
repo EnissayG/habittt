@@ -49,6 +49,9 @@ updatedAt, deletedAt }`, `Relapse { id, habitId, date, deletedAt, updatedAt }`,
 - Ton : « Elle n'a pas tenu cette fois. Tu peux replanter. » Jamais de rouge ni de reproche.
 - Plante (`src/domain/plant/`) : port exact de `docs/prototypes/plants.js` (test de
   parité). Une espèce = un fichier + une ligne du registre. Trigo : `trig.ts` seulement.
+- Gestes (`plant/gesture.ts`, ADR 0016) : une plante vivante est immobile et fait de
+  temps en temps un petit geste propre à son espèce. Chaque espèce désigne ses parties
+  mobiles (`plan.part`, `plan.mark`) sans changer ses traits, et donne son repos (`rest`).
 
 ## Expo Go
 

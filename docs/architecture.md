@@ -534,19 +534,18 @@ et [l'ADR 0010](decisions/0010-la-piece-en-entier.md).
   rien n'est coupé ; tous les murs reposent sur la même ligne de sol.
 - **Plancher miroir** (`composeRoom`, `drawFloor`, `mirrorRows`, domaine) :
   le bas de la pièce composée, retourné à partir de sa plus basse ligne
-  dessinée, à taille réelle (une ligne de plancher par ligne de mur). Chaque
-  ligne est décalée par une onde qui avance avec le temps et s'élargit en
-  s'éloignant du mur ; le reflet s'estompe avec la distance et le mur nu se
-  reflète à peine. Il passe sur les planches et leurs joints. Ce qui ne
-  tient pas n'est pas reflété. Une seule règle pour tout ce qui est au mur,
-  décor compris. Le tapis est posé par dessus, sans reflet (ADR 0015).
-- **Reflet animé** (`ui/shelf/floorMirror.ts`, `scenePicture.ts`,
-  `SceneClock.tsx`) : l'étagère dessine le plancher en trois couches, les
-  planches (fixes), le reflet et le tapis (fixe). Le reflet est une seule
-  image Skia calculée une fois ; 6 fois par seconde, on redessine ses
-  lignes décalées, sans recalculer une couleur. Une seule horloge pour la
-  fenêtre et le plancher de tous les murs. Un test vérifie que ce chemin
-  rapide donne le même plancher que `drawFloor`.
+  dessinée, à taille réelle (une ligne de plancher par ligne de mur, chaque
+  colonne sous elle-même). Immobile : c'est du bois poli, pas de l'eau. Le
+  reflet s'estompe avec la distance et le mur nu se reflète à peine. Il
+  passe sur les planches et leurs joints. Ce qui ne tient pas n'est pas
+  reflété. Une seule règle pour tout ce qui est au mur, décor compris. Le
+  tapis est posé par dessus, sans reflet (ADR 0015).
+- **Le reflet est une image** (`ui/shelf/floorMirror.ts`, `floorPicture`
+  dans `scenePicture.ts`) : chaque ligne a sa propre opacité, donc un
+  dessin « une forme par couleur » en compterait des milliers. L'étagère
+  calcule les pixels du miroir une fois, en fait une image Skia et la pose
+  sur les planches en un seul dessin. Un test vérifie que le résultat est
+  le plancher de `drawFloor`.
 - **Échelle et hauteur** (`ui/shelf/fitRoom.ts`) : une échelle entière pour
   toute la pièce, trois plantes sur la largeur au plus ; la fenêtre juste
   sous l'en-tête ; rangées alignées d'un mur à l'autre ; on raccourcit le
@@ -622,6 +621,25 @@ Décisions détaillées dans [l'ADR 0011](decisions/0011-retirer-et-effacer.md).
   ne la fasse pas réapparaître.
 - **Migration SQLite n° 4** : `status`, `retired_on`, `updated_at` et
   `deleted_at` sur `habits`.
+
+## Les gestes des plantes
+
+Décisions détaillées dans [l'ADR 0016](decisions/0016-gestes-des-plantes.md).
+
+- Une plante vivante est immobile ; de temps en temps, une seule de ses
+  parties bouge d'un pixel pendant une seconde, puis revient.
+- **Chaque espèce désigne ses parties** pendant qu'elle planifie sa
+  croissance (`GrowthPlanBuilder.part`, `mark`) : une feuille, le bout d'une
+  liane, le dessus d'un coussin. Les traits ne changent pas : le dessin
+  reste celui du prototype, et le test de parité passe tel quel.
+- **Le rendu** (`renderPlant`, paramètre `gesture`) redessine la plante avec
+  les traits de cette partie décalés, dans l'ordre des jours : ce qui était
+  dessous apparaît, rien ne se troue. Jamais par-dessus le pot.
+- **Le moment** (`gestureAt`, `gesture.ts`) : un geste à la fin de chaque
+  repos, dont la durée dépend de l'espèce (`Species.rest`) ; la partie est
+  tirée de la graine. Rien d'aléatoire à l'exécution.
+- **L'UI** (`ui/plant/LivingPlant.tsx`) suit l'horloge et demande
+  `livingPlant(image, t)` : la même image tant que rien ne bouge.
 
 ## La plante meurt, l'herbier (phase 3, fait)
 

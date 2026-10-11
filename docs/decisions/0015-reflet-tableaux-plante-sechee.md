@@ -1,4 +1,4 @@
-# 0015. Reflet animé, nouveaux tableaux et plante séchée
+# 0015. Reflet miroir, nouveaux tableaux et plante séchée
 
 - **Statut :** accepté
 - **Date :** 2026-10-11
@@ -17,32 +17,29 @@ domaine signalait par `PlantImage.dead` sans encore la dessiner.
 ### Le reflet
 
 - **Un vrai miroir** : une ligne de plancher par ligne de mur, à partir de
-  la plus basse ligne dessinée de la pièce. L'ancien reflet gardait une
-  ligne sur deux.
-- **L'onde** (`mirrorRows`, `REFLECTION`) reprend les nombres de la
-  maquette : décalage = arrondi(sin(ligne × 0,85 + t × 1,8) × (0,3 +
-  ligne × 0,045)), t en secondes, soit 0,3 radian par image à 6 images par
-  seconde. Le sinus est celui de `trig.ts`.
+  la plus basse ligne dessinée de la pièce, chaque colonne sous elle-même.
+  L'ancien reflet gardait une ligne sur deux.
+- **Immobile.** Une première version reprenait l'onde de la maquette
+  (chaque ligne décalée par un sinus qui avance). Vue en mouvement, elle
+  donnait un reflet d'eau ; le plancher est du bois poli. L'onde a été
+  retirée le jour même, et la maquette n'est plus la référence sur ce
+  point.
 - **Opacité** : 0,62 pour ce qui est au mur, 0,10 pour le mur nu (ton
   `wall`), multipliée par (1 − ligne / hauteur)^1,3.
 - **Le reflet passe sur les joints** des planches, comme dans la maquette
   (avant, les joints passaient dessus). Le tapis reste par-dessus.
-- **Aux bords de la pièce**, une ligne décalée répète la dernière colonne.
-- **Dans l'étagère, le reflet est une image que l'on fait glisser.**
-  Redessiner tout le plancher 6 fois par seconde (une couleur calculée par
-  pixel, un chemin Skia par couleur) coûterait trop cher. `floorMirror`
-  calcule donc une fois les pixels du miroir, avec leur opacité ;
-  `mirrorImage` en fait une image Skia ; à chaque image de l'animation,
-  `reflectionPicture` redessine seulement des bandes de lignes décalées.
-  Les planches et le tapis sont deux dessins fixes, dessous et dessus.
-- **`drawFloor` reste la référence** : le plancher entier à un instant t,
-  utilisé par le Labo et par les tests. Un test compose le chemin rapide à
-  la main et le compare à `drawFloor` (écart d'arrondi de 2 niveaux sur
-  255 au plus).
-- **Une seule horloge** (`SceneClock`) pour la fenêtre et le plancher de
-  tous les murs : l'onde est la même d'un mur au suivant.
+- **Dans l'étagère, le reflet est une image.** Chaque ligne a sa propre
+  opacité : le dessin habituel, une forme Skia par couleur, en compterait
+  des milliers et ralentirait le glissement. `floorMirror` calcule donc
+  une fois les pixels du miroir, avec leur opacité ; `mirrorImage` en fait
+  une image Skia ; `floorPicture` enregistre le plancher entier : les
+  planches, l'image, le tapis.
+- **`drawFloor` reste la référence** : le plancher entier en une image du
+  domaine, utilisé par le Labo et par les tests. Un test compose le chemin
+  de l'étagère à la main et le compare à `drawFloor` (écart d'arrondi de
+  2 niveaux sur 255 au plus).
 - **Repli** : si Skia ne peut pas créer l'image, le plancher est dessiné
-  entier et immobile, comme avant.
+  à partir de `drawFloor`, comme avant.
 
 ### Les tableaux
 
@@ -78,4 +75,4 @@ domaine signalait par `PlantImage.dead` sans encore la dessiner.
 - Le test « une plante morte garde ses pixels » de l'ADR 0013 est remplacé
   par `wither.test.ts`.
 - Écrit sans téléphone : à vérifier dans Expo Go (voir `etat.md`), en
-  particulier la fluidité du reflet.
+  particulier la fluidité du glissement d'un mur à l'autre.
