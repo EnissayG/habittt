@@ -113,9 +113,9 @@ const IMAGES = {
   armchair: drawArmchair(),
   lamp: drawFloorLamp(),
   rug: drawRug(),
-  day: drawPainting('day'),
-  sunset: drawPainting('sunset'),
-  leaf: drawPainting('leaf'),
+  peaks: drawPainting('peaks'),
+  sea: drawPainting('sea'),
+  bonsai: drawPainting('bonsai'),
 };
 
 /** Hanging rows show the top of the images, down to the lowest vine. */
@@ -261,7 +261,11 @@ function decorItems(left: number, floorLine: number): PlacedItem[] {
   // In a low room the painting comes down rather than being cut (the room
   // is always taller than the lamp, so the furniture never is).
   return [
-    placeDecor(IMAGES.day, left + DECOR.painting.x, Math.max(0, floorLine - DECOR.painting.above)),
+    placeDecor(
+      IMAGES.peaks,
+      left + DECOR.painting.x,
+      Math.max(0, floorLine - DECOR.painting.above),
+    ),
     standing(IMAGES.armchair, DECOR.armchair.x),
     standing(IMAGES.lamp, DECOR.lamp.x),
   ];

@@ -149,7 +149,7 @@ describe('planRoom', () => {
     expect(wall.items).toHaveLength(7);
     expect(plantsOf(room, 1)).toHaveLength(0);
     const painting = wall.items.find((p) => p.content.kind === 'decor')!;
-    expect(painting.content.image).toEqual(drawPainting('sunset'));
+    expect(painting.content.image).toEqual(drawPainting('sea'));
     expect(painting.x).toBe(wall.left + 8);
     expect(painting.y).toBe(4);
     expect(painting.labelled).toBe(false);
@@ -173,7 +173,7 @@ describe('planRoom', () => {
     expect(lamp!.content.image).toEqual(drawFloorLamp());
     expect(lamp!.x).toBe(wall.left + 104);
     expect(lamp!.y + FLOOR_LAMP_SIZE.height).toBe(room.height);
-    expect(painting!.content.image).toEqual(drawPainting('day'));
+    expect(painting!.content.image).toEqual(drawPainting('peaks'));
     expect(painting!.x).toBe(wall.left + 78);
     expect(painting!.y).toBe(Math.max(0, room.height - 130));
     for (const placed of wall.items) {

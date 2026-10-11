@@ -1,4 +1,4 @@
-import type { ScenePixel, SceneTone, WindowView } from '../../domain';
+import type { RoomSource, ScenePixel, SceneTone, WindowView } from '../../domain';
 import { plantColor, SCENERY } from './plantPalette';
 import { colors, solarized } from './tokens';
 
@@ -110,6 +110,7 @@ const FIXED: Record<Exclude<SceneTone, ViewTone>, string> = {
   curtain: solarized.base2,
   curtainLight: solarized.base3,
   curtainShade: '#D3CBB7',
+  wall: colors.background,
   wallLine: '#D3CBB7',
   baseboard: '#A89F88',
   plank0: '#6B4423',
@@ -125,11 +126,38 @@ const FIXED: Record<Exclude<SceneTone, ViewTone>, string> = {
   chairDark: '#1F7A72',
   lampShade: '#F2C94C',
   lampLight: '#FDE9A8',
-  paintSky: '#A8D8E8',
-  paintDusk: '#F6B26B',
-  paintHill: solarized.green,
-  paintHillDark: '#46580A',
-  paintPaper: solarized.base3,
+  paintDawn0: '#CFE3E6',
+  paintDawn1: '#F3E3C3',
+  paintDawn2: '#F8CFA6',
+  paintRidge0: '#B4C8C4',
+  paintRidge1: '#86A6A0',
+  paintRidge2: '#4F7F7B',
+  paintRidge3: '#1F5552',
+  paintPine: solarized.base02,
+  paintDusk0: '#5B4B8A',
+  paintDusk1: '#8E5285',
+  paintDusk2: '#B0567A',
+  paintDusk3: '#E77C5A',
+  paintDusk4: '#F6B26B',
+  paintCloud: '#F9C9A0',
+  paintSea0: '#3F5F8C',
+  paintSea1: '#2F4A73',
+  paintSea2: '#22375A',
+  paintGlint: '#F6B26B',
+  paintGlintDeep: '#C9785F',
+  paintLand: '#1B2A44',
+  paintSail: solarized.base3,
+  paintPaper: solarized.base2,
+  paintDisc: '#E9BE5A',
+  paintInk: solarized.base1,
+  paintPot: solarized.blue,
+  paintPotLight: '#5AAAE0',
+  paintPotShade: '#1E6FA8',
+  paintBark: '#7A5230',
+  paintLeaf: solarized.green,
+  paintLeafLight: '#A8BD2A',
+  paintLeafDark: '#5F7000',
+  paintSeal: solarized.magenta,
   rugA: solarized.magenta,
   rugB: solarized.base2,
   glare: '#FFFFFF',
@@ -161,4 +189,12 @@ export function sceneColor(pixel: ScenePixel, view: WindowView): string {
     color = color.map((c, i) => Math.round(top[i]! * alpha + c * (1 - alpha))) as typeof color;
   }
   return hex(color);
+}
+
+/** Color of what the floor mirrors at one cell of the room; the bare wall when nothing is there. */
+export function roomColor(source: RoomSource | null, view: WindowView): string {
+  if (!source) return colors.background.toUpperCase();
+  return source.kind === 'tone'
+    ? toneColor(source.tone, view).toUpperCase()
+    : plantColor(source.pixel, source.genome).toUpperCase();
 }

@@ -43,7 +43,7 @@ describe('arrangeShelf', () => {
           index: 1,
           kind: 'plants',
           window: false,
-          painting: 'sunset',
+          painting: 'sea',
           top: [null, null, null],
           shelves: BARE,
         },
@@ -63,12 +63,12 @@ describe('arrangeShelf', () => {
 
   it('hangs a painting in the top band of the other walls while no plant hangs there', () => {
     const walls = plantWalls([...hanging(2), ...standing(12, 10)]);
-    expect(walls.map((wall) => wall.painting)).toEqual([null, null, 'leaf']);
+    expect(walls.map((wall) => wall.painting)).toEqual([null, null, 'bonsai']);
     expect(plantWalls(standing(18)).map((wall) => wall.painting)).toEqual([
       null,
-      'sunset',
-      'leaf',
-      'sunset',
+      'sea',
+      'bonsai',
+      'sea',
     ]);
   });
 

@@ -9,7 +9,7 @@ import {
   type ScenePixel,
 } from '../../domain';
 import { plantColor } from './plantPalette';
-import { sceneColor } from './scenePalette';
+import { roomColor, sceneColor } from './scenePalette';
 import { colors } from './tokens';
 
 const HEX = /^#[0-9A-F]{6}$/;
@@ -54,6 +54,19 @@ describe('sceneColor', () => {
       layers: [{ alpha: 1, source: { kind: 'plant', pixel: leaf, genome: plant.genome } }],
     };
     expect(sceneColor(pixel, 'night')).toBe(plantColor(leaf, plant.genome).toUpperCase());
+  });
+
+  it('gives what the floor mirrors the color it has on the wall', () => {
+    const plant = renderPlant({ species: 'cactus', seed: 1, elapsedDays: 60, relapseDays: [] });
+    const leaf = plant.pixels.find((p) => p && p.day > 0)!;
+    expect(roomColor({ kind: 'plant', pixel: leaf, genome: plant.genome }, 'day')).toBe(
+      plantColor(leaf, plant.genome).toUpperCase(),
+    );
+    expect(roomColor({ kind: 'tone', tone: 'sky0' }, 'night')).toBe(
+      sceneColor({ tone: 'sky0', layers: [] }, 'night'),
+    );
+    expect(roomColor(null, 'day')).toBe(colors.background.toUpperCase());
+    expect(roomColor(null, 'day')).toBe(sceneColor({ tone: 'wall', layers: [] }, 'day'));
   });
 
   it('changes the sky with the view', () => {

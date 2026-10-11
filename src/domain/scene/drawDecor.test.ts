@@ -69,8 +69,23 @@ describe('drawDecor', () => {
     const images = PAINTINGS.map(drawPainting);
     expect(new Set(images.map((image) => JSON.stringify(image.pixels))).size).toBe(3);
     for (const image of images) expect(tones(image).has('frame')).toBe(true);
-    expect(tones(drawPainting('leaf')).has('paintPaper')).toBe(true);
-    expect(tones(drawPainting('sunset')).has('paintDusk')).toBe(true);
+    expect(tones(drawPainting('peaks')).has('paintRidge0')).toBe(true);
+    expect(tones(drawPainting('sea')).has('paintSea0')).toBe(true);
+    expect(tones(drawPainting('bonsai')).has('paintPaper')).toBe(true);
+  });
+
+  it('fills every picture up to its frame, which is the same all around', () => {
+    for (const image of PAINTINGS.map(drawPainting)) {
+      expect(image.pixels.every((pixel) => pixel !== null)).toBe(true);
+      const at = (x: number, y: number) => image.pixels[y * image.width + x]!.tone;
+      const frame = new Set(['frameDark', 'frame', 'frameLight', 'frameShade']);
+      for (let x = 0; x < image.width; x++) {
+        for (let y = 0; y < image.height; y++) {
+          const inFrame = x < 3 || y < 3 || x >= image.width - 3 || y >= image.height - 3;
+          expect(frame.has(at(x, y)!)).toBe(inFrame);
+        }
+      }
+    }
   });
 
   it('never uses translucent layers: decor is opaque', () => {

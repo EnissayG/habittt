@@ -12,7 +12,7 @@ export const TOP_SLOTS_PER_WALL = 3;
 /** Walls of shelves the room always has, even when they hold no plant. */
 export const MIN_PLANT_WALLS = 2;
 /** Paintings of the walls of shelves after the first, in turn, while no plant hangs there. */
-const WALL_PAINTINGS: readonly Painting[] = ['sunset', 'leaf'];
+const WALL_PAINTINGS: readonly Painting[] = ['sea', 'bonsai'];
 
 const STANDING_PER_WALL = SLOTS_PER_SHELF * SHELVES_PER_WALL;
 
