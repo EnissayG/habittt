@@ -27,8 +27,9 @@ phase 4a (le coin méditation). À lire en premier avec `CLAUDE.md`, puis
 | Phase 3g         | Reflet miroir du plancher, nouveaux tableaux, plante séchée                          | fait (ADR 0015), **à tester sur téléphone** |
 | Phase 3h         | Gestes des plantes, un par espèce (habitude, Labo, étagère et son reflet)            | fait (ADR 0016), **à tester sur téléphone** |
 | Phase 4a         | Le coin méditation : une plante pousse à chaque souffle (écran 12)                   | fait (ADR 0017), **à tester sur téléphone** |
+| Phase 4b         | Le coin méditation revu : décor, bouton, lumière du souffle, vibrations rythmées     | fait (ADR 0018), **à tester sur téléphone** |
 
-Chiffres au dernier commit : 1192 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 1222 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -42,6 +43,33 @@ faite. Reste à la tester sur téléphone (ci-dessous), avec les phases 3, puis
 La phase 3g (ADR 0015) a été écrite hors de Claude Code, sans téléphone :
 les tests, le typecheck et le lint passent, mais **le bundle n'a pas été
 recompilé et rien n'a été vu dans Expo Go**.
+
+### À vérifier sur téléphone (phase 4b, le coin méditation revu)
+
+Écrit hors de Claude Code, sans téléphone : tests, typecheck et lint
+passent, le bundle n'a pas été recompilé. Cette liste remplace, pour
+l'entrée, la barre et la vibration, celle de la phase 4a ci-dessous.
+
+- **Le coin** : sur le dernier mur, le fauteuil sur son tapis sous le
+  tableau des montagnes ; à côté, la table basse avec la bougie, la statue
+  assise, les galets et l'encens dont la fumée monte ; au-dessus, le
+  rouleau au cercle ; entre les deux cadres, la lanterne de papier pendue
+  au plafond ; la lampe au bout du mur. Tout se reflète dans le plancher.
+- **Le bouton « Méditer »** au-dessus du fauteuil : visible, il ne touche
+  ni le tableau ni le fauteuil. Toucher le fauteuil, la table ou le rouleau
+  ouvre aussi l'écran 12. Avec VoiceOver : un seul bouton, « Méditer ».
+- **Avec très peu de plantes** (pièce basse) : le rouleau, la lanterne ou
+  le tableau peuvent manquer ; rien ne se chevauche.
+- **La lumière du souffle** : un disque clair derrière la plante, qui
+  grandit 4 s et se retire 6 s, en douceur ; le mot « inspire » ou
+  « expire » dessous. La plante reste lisible devant la lumière.
+- **Les vibrations** : pendant l'inspiration, de petits coups de plus en
+  plus rapprochés et marqués ; une pause en haut ; pendant l'expiration,
+  des coups qui s'espacent et s'adoucissent ; puis le silence jusqu'au
+  souffle suivant. Dire si c'est trop, pas assez, ou si on ne sent pas la
+  différence entre les trois forces. Aucune avec l'interrupteur désactivé.
+- **« Réduire les animations »** : la lumière ne bouge plus, les mots
+  changent, la plante pousse.
 
 ### À vérifier sur téléphone (phase 4a, le coin méditation)
 

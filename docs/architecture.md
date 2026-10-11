@@ -527,7 +527,8 @@ et [l'ADR 0010](decisions/0010-la-piece-en-entier.md).
   la première place debout libre.
 - **La pièce existe toujours en entier** : au moins deux murs de tablettes
   (tablettes vides dessinées), puis le mur de décor, toujours le dernier
-  (fauteuil, lampe sur pied, tableau, tapis au sol, `drawDecor`). Un
+  (le coin méditation : fauteuil, tapis, table basse avec sa statue,
+  rouleau, lanterne, tableau, lampe sur pied, `drawDecor`, ADR 0018). Un
   tableau occupe la bande du haut des autres murs de tablettes tant
   qu'aucune plante n'y pend.
 - **Plan** (`planRoom`, domaine) : chaque élément placé en cellules, tous
@@ -684,12 +685,18 @@ textes dans [meditation.md](meditation.md).
   la phrase du moment (`phraseAt`), le temps restant (`minutesLeft`). La
   plante est tirée avec le générateur de graines injecté.
 - **Entrée** : le décor du plan de la pièce porte son nom
-  (`PlacedContent.piece`) ; l'étagère pose une zone tactile sur le
-  fauteuil.
+  (`PlacedContent.piece`) ; l'étagère pose un bouton « Méditer » au-dessus
+  du fauteuil et une zone tactile sur les pièces du coin
+  (`MEDITATION_PIECES`).
+- **Le souffle à l'écran et dans la main** (ADR 0018) : `breathFullness`
+  donne le remplissage du souffle, adouci aux deux bouts ; `drawHalo`
+  dessine la lumière derrière la plante ; `BREATH_PULSES` et
+  `pulsesBetween` donnent les vibrations dues entre deux battements de
+  l'horloge.
 - **UI** (`MeditationScreen`, `ui/meditation/`) : l'horloge de la séance
   n'avance qu'au premier plan (`useSessionClock`). La plante est affichée
-  sans geste. L'écran reste allumé (`expo-keep-awake`), une vibration
-  marque chaque inspiration et la fin (`expo-haptics`).
+  sans geste. L'écran reste allumé (`expo-keep-awake`), des vibrations
+  suivent le souffle et une autre marque la fin (`expo-haptics`).
 - **Rien n'est enregistré.**
 
 ## Prévu (décidé, pas encore construit)
