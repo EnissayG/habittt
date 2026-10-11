@@ -1,4 +1,12 @@
-import type { Habit, LocalDate, Note, Relapse, Watering } from '../domain';
+import {
+  replantingIdFor,
+  type Habit,
+  type LocalDate,
+  type Note,
+  type Relapse,
+  type Replanting,
+  type Watering,
+} from '../domain';
 import {
   habitFromRow,
   habitToRow,
@@ -6,6 +14,9 @@ import {
   noteToRow,
   relapseFromRow,
   relapseToRow,
+  replantingFromRow,
+  replantingsForRelapses,
+  replantingToRow,
   wateringFromRow,
   wateringToRow,
 } from './rows';
@@ -93,5 +104,32 @@ describe('row mapping', () => {
 
   it('rejects a corrupted date coming from the database', () => {
     expect(() => habitFromRow({ ...habitToRow(habit), start_date: '2026-13-01' })).toThrow();
+  });
+
+  it('round-trips a replanting', () => {
+    const replanting: Replanting = {
+      id: 'p1',
+      habitId: 'h1',
+      date: '2026-10-02' as LocalDate,
+      updatedAt: '2026-10-03T10:00:00.000Z',
+    };
+    expect(replantingFromRow(replantingToRow(replanting))).toEqual(replanting);
+  });
+});
+
+describe('replantingsForRelapses (migration 5)', () => {
+  it('replants on the day of every active relapse, so that no plant dies at the update', () => {
+    const rows = [
+      relapseToRow(relapse),
+      relapseToRow({ ...relapse, id: 'r2', date: '2026-09-30' as LocalDate, deletedAt: 'x' }),
+    ];
+    expect(replantingsForRelapses(rows)).toEqual([
+      {
+        id: replantingIdFor('h1', '2026-10-02' as LocalDate),
+        habit_id: 'h1',
+        date: '2026-10-02',
+        updated_at: relapse.updatedAt,
+      },
+    ]);
   });
 });

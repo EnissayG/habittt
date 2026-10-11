@@ -9,6 +9,8 @@ import type {
   NoteRepository,
   Relapse,
   RelapseRepository,
+  Replanting,
+  ReplantingRepository,
   Watering,
   WateringRepository,
 } from '../domain';
@@ -19,11 +21,14 @@ import {
   noteToRow,
   relapseFromRow,
   relapseToRow,
+  replantingFromRow,
+  replantingToRow,
   wateringFromRow,
   wateringToRow,
   type HabitRow,
   type NoteRow,
   type RelapseRow,
+  type ReplantingRow,
   type WateringRow,
 } from './rows';
 
@@ -74,7 +79,7 @@ export class SqliteHabitRepository implements HabitRepository {
 
   async erase(trace: Habit): Promise<void> {
     await this.db.withTransactionAsync(async () => {
-      for (const table of ['relapses', 'notes', 'waterings']) {
+      for (const table of ['relapses', 'notes', 'waterings', 'replantings']) {
         await this.db.runAsync(`DELETE FROM ${table} WHERE habit_id = ?`, trace.id);
       }
       await this.save(trace);
@@ -188,6 +193,37 @@ export class SqliteWateringRepository implements WateringRepository {
     const row = wateringToRow(watering);
     await this.db.runAsync(
       `INSERT INTO waterings (id, habit_id, date, updated_at)
+       VALUES ($id, $habit_id, $date, $updated_at)
+       ON CONFLICT(id) DO UPDATE SET updated_at = excluded.updated_at`,
+      { $id: row.id, $habit_id: row.habit_id, $date: row.date, $updated_at: row.updated_at },
+    );
+  }
+}
+
+export class SqliteReplantingRepository implements ReplantingRepository {
+  constructor(private readonly db: SQLiteDatabase) {}
+
+  async listByHabit(habitId: HabitId): Promise<Replanting[]> {
+    const rows = await this.db.getAllAsync<ReplantingRow>(
+      'SELECT * FROM replantings WHERE habit_id = ? ORDER BY date',
+      habitId,
+    );
+    return rows.map(replantingFromRow);
+  }
+
+  async findByHabitAndDate(habitId: HabitId, date: LocalDate): Promise<Replanting | undefined> {
+    const row = await this.db.getFirstAsync<ReplantingRow>(
+      'SELECT * FROM replantings WHERE habit_id = ? AND date = ?',
+      habitId,
+      date,
+    );
+    return row ? replantingFromRow(row) : undefined;
+  }
+
+  async save(replanting: Replanting): Promise<void> {
+    const row = replantingToRow(replanting);
+    await this.db.runAsync(
+      `INSERT INTO replantings (id, habit_id, date, updated_at)
        VALUES ($id, $habit_id, $date, $updated_at)
        ON CONFLICT(id) DO UPDATE SET updated_at = excluded.updated_at`,
       { $id: row.id, $habit_id: row.habit_id, $date: row.date, $updated_at: row.updated_at },

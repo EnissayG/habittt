@@ -2,11 +2,13 @@ import {
   HABIT_STATUSES,
   MOODS,
   parseLocalDate,
+  replantingIdFor,
   type Habit,
   type HabitStatus,
   type Mood,
   type Note,
   type Relapse,
+  type Replanting,
   type Watering,
 } from '../domain';
 
@@ -151,4 +153,40 @@ export function wateringToRow(watering: Watering): WateringRow {
     date: watering.date,
     updated_at: watering.updatedAt,
   };
+}
+
+export type ReplantingRow = WateringRow;
+
+export function replantingFromRow(row: ReplantingRow): Replanting {
+  return {
+    id: row.id,
+    habitId: row.habit_id,
+    date: parseLocalDate(row.date),
+    updatedAt: row.updated_at,
+  };
+}
+
+export function replantingToRow(replanting: Replanting): ReplantingRow {
+  return {
+    id: replanting.id,
+    habit_id: replanting.habitId,
+    date: replanting.date,
+    updated_at: replanting.updatedAt,
+  };
+}
+
+/**
+ * Migration 5 (ADR 0013): before, a relapse did not kill the plant and
+ * nobody replanted. A replanting on the day of every active relapse keeps
+ * every plant alive at the update, with the same current counter.
+ */
+export function replantingsForRelapses(relapses: readonly RelapseRow[]): ReplantingRow[] {
+  return relapses
+    .filter((row) => row.deleted_at === null)
+    .map((row) => ({
+      id: replantingIdFor(row.habit_id, parseLocalDate(row.date)),
+      habit_id: row.habit_id,
+      date: row.date,
+      updated_at: row.updated_at,
+    }));
 }

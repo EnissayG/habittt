@@ -1,14 +1,19 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
+import { replantingsForRelapses, type RelapseRow } from './rows';
+
 const DATABASE_NAME = 'habittt.db';
 /** A separate file for the demo data (development only): the real data is never touched. */
 export const DEMO_DATABASE_NAME = 'habittt-demo.db';
+
+/** SQL, or a step that needs code (computed ids). Runs inside a transaction. */
+type Migration = string | ((db: SQLiteDatabase) => Promise<void>);
 
 /**
  * Ordered schema migrations. The database stores how many have run in
  * PRAGMA user_version. Never edit a shipped migration: append a new one.
  */
-const MIGRATIONS: readonly string[] = [
+const MIGRATIONS: readonly Migration[] = [
   `
   CREATE TABLE habits (
     id TEXT PRIMARY KEY NOT NULL,
@@ -67,6 +72,29 @@ const MIGRATIONS: readonly string[] = [
   ALTER TABLE habits ADD COLUMN deleted_at TEXT;
   UPDATE habits SET updated_at = created_at;
   `,
+  // 5: replantings (ADR 0013); one on the day of every active relapse, so
+  // that no plant dies at the update (see replantingsForRelapses).
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE replantings (
+        id TEXT PRIMARY KEY NOT NULL,
+        habit_id TEXT NOT NULL REFERENCES habits(id),
+        date TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (habit_id, date)
+      );
+    `);
+    const relapses = await db.getAllAsync<RelapseRow>('SELECT * FROM relapses');
+    for (const row of replantingsForRelapses(relapses)) {
+      await db.runAsync(
+        'INSERT OR IGNORE INTO replantings (id, habit_id, date, updated_at) VALUES (?, ?, ?, ?)',
+        row.id,
+        row.habit_id,
+        row.date,
+        row.updated_at,
+      );
+    }
+  },
 ];
 
 export async function openHabitDatabase(name: string = DATABASE_NAME): Promise<SQLiteDatabase> {
@@ -81,7 +109,7 @@ export async function openFreshDemoDatabase(): Promise<SQLiteDatabase> {
   const db = await openHabitDatabase(DEMO_DATABASE_NAME);
   await db.withTransactionAsync(async () => {
     await db.execAsync(
-      'DELETE FROM notes; DELETE FROM waterings; DELETE FROM relapses; DELETE FROM habits;',
+      'DELETE FROM notes; DELETE FROM waterings; DELETE FROM replantings; DELETE FROM relapses; DELETE FROM habits;',
     );
   });
   return db;
@@ -93,7 +121,9 @@ async function migrate(db: SQLiteDatabase): Promise<void> {
 
   for (let version = current; version < MIGRATIONS.length; version++) {
     await db.withTransactionAsync(async () => {
-      await db.execAsync(MIGRATIONS[version] ?? '');
+      const migration = MIGRATIONS[version] ?? '';
+      if (typeof migration === 'string') await db.execAsync(migration);
+      else await migration(db);
       await db.execAsync(`PRAGMA user_version = ${version + 1}`);
     });
   }
