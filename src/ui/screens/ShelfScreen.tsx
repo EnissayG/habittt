@@ -273,7 +273,11 @@ const WallPage = memo(function WallPage({
               key={`zone-${i}`}
               style={[styles.zone, zone]}
               accessibilityRole="button"
-              accessibilityLabel={`${summary.habit.name}, ${days(summary.stats.currentStreak)}`}
+              accessibilityLabel={
+                summary.life.dead
+                  ? `${summary.habit.name}, n'a pas tenu cette fois, ${days(summary.life.days)} tenus`
+                  : `${summary.habit.name}, ${days(summary.life.days)}`
+              }
               onPress={() => onOpen(id)}
               onLongPress={() => onRetire(id)}
               accessibilityActions={[{ name: 'longpress', label: 'Retirer' }]}
@@ -334,17 +338,20 @@ function AnimatedWindow({ view, cell }: { view: WindowView; cell: number }) {
   );
 }
 
-/** Under a plant: its days first, large, then its name, quieter. */
+/**
+ * Under a plant: its days first, large, then its name, quieter. A dead
+ * plant keeps the days it held, quiet too: they no longer run.
+ */
 function Label({ placed, shelf }: { placed: PlacedItem; shelf: Shelf }) {
   const plant = placed.content.kind === 'plant' ? shelf.habits[placed.content.id] : undefined;
   return (
     <>
       <NumberText
-        style={[styles.count, !plant && styles.newCount]}
+        style={[styles.count, (!plant || plant.life.dead) && styles.newCount]}
         numberOfLines={1}
         maxFontSizeMultiplier={MAX_FONT_SCALE}
       >
-        {plant ? days(plant.stats.currentStreak) : 'Nouvelle'}
+        {plant ? days(plant.life.days) : 'Nouvelle'}
       </NumberText>
       <NumberText style={styles.name} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>
         {plant ? plant.habit.name : 'habitude'}
