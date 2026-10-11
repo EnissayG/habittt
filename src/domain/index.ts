@@ -99,7 +99,18 @@ export {
   type RowBand,
   type WallPlan,
 } from './scene/roomPlan';
-export { drawFloor, FLOOR_ROWS, FLOOR_TOP, type DrawFloorParams } from './scene/drawFloor';
+export {
+  drawFloor,
+  drawFloorBoards,
+  drawFloorItems,
+  FLOOR_ROWS,
+  FLOOR_TOP,
+  mirrorRows,
+  REFLECTION,
+  REFLECTION_MAX_SHIFT,
+  type DrawFloorParams,
+  type MirrorRow,
+} from './scene/drawFloor';
 export type {
   LightTone,
   RoomTone,

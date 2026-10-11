@@ -1,9 +1,20 @@
-import { createPicture, Skia, type SkCanvas, type SkPicture } from '@shopify/react-native-skia';
+import {
+  AlphaType,
+  ColorType,
+  createPicture,
+  FilterMode,
+  MipmapMode,
+  Skia,
+  type SkCanvas,
+  type SkImage,
+  type SkPicture,
+} from '@shopify/react-native-skia';
 
 import type { PlacedItem, PlantPixel, ScenePixel, SceneImage, WindowView } from '../../domain';
 import { buildColorRuns, type ColorRuns } from '../plant/colorRuns';
 import { plantColor } from '../theme/plantPalette';
 import { sceneColor } from '../theme/scenePalette';
+import type { FloorMirror, ShiftBand } from './floorMirror';
 
 /** Draws color runs (in grid units) with sharp pixels, antialiasing off. */
 function drawRuns(canvas: SkCanvas, runs: readonly ColorRuns[]) {
@@ -79,4 +90,52 @@ export function wallPicture(
       canvas.restore();
     }
   }, size);
+}
+
+/** The reflection's pixels as one Skia image (null if Skia cannot make it). */
+export function mirrorImage(mirror: FloorMirror): SkImage | null {
+  return Skia.Image.MakeImage(
+    {
+      width: mirror.width,
+      height: mirror.height,
+      alphaType: AlphaType.Premul,
+      colorType: ColorType.RGBA_8888,
+    },
+    Skia.Data.fromBytes(mirror.bytes),
+    mirror.width * 4,
+  );
+}
+
+/**
+ * Records the reflection at one instant, at `cell` points per pixel: each
+ * band of rows is the same slice of the image, slid sideways by its shift.
+ * A few dozen draws of an image already on the GPU, so it can be recorded
+ * again several times per second.
+ */
+export function reflectionPicture(
+  image: SkImage,
+  pad: number,
+  bands: readonly ShiftBand[],
+  cell: number,
+): SkPicture {
+  const width = image.width();
+  const paint = Skia.Paint();
+  paint.setAntiAlias(false);
+  return createPicture(
+    (canvas) => {
+      canvas.scale(cell, cell);
+      for (const { from, to, shift } of bands) {
+        // The floor's column x shows the room's column x + shift.
+        canvas.drawImageRectOptions(
+          image,
+          Skia.XYWHRect(0, from, width, to - from),
+          Skia.XYWHRect(-pad - shift, from, width, to - from),
+          FilterMode.Nearest,
+          MipmapMode.None,
+          paint,
+        );
+      }
+    },
+    { width: (width - pad * 2) * cell, height: image.height() * cell },
+  );
 }

@@ -1,5 +1,14 @@
 import { drawRug } from './drawDecor';
-import { drawFloor, FLOOR_ROWS, FLOOR_TOP } from './drawFloor';
+import {
+  drawFloor,
+  drawFloorBoards,
+  drawFloorItems,
+  FLOOR_ROWS,
+  FLOOR_TOP,
+  mirrorRows,
+  REFLECTION,
+  REFLECTION_MAX_SHIFT,
+} from './drawFloor';
 import type { RoomImage, RoomSource } from './roomPlan';
 import type { SceneImage } from './sceneImage';
 
@@ -17,8 +26,11 @@ const reflectedAt = (floor: SceneImage, x: number, y: number) =>
     (l) => l.source.kind === 'tone' && l.source.tone === 'roof',
   ) ?? [];
 
-const isSeam = (floor: SceneImage, x: number, y: number) =>
-  floor.pixels[y * floor.width + x]?.tone === 'seam';
+/** Every cell of the given rows, marked. */
+const fullRows = (width: number, rows: number[]) =>
+  rows.flatMap((y) => Array.from({ length: width }, (_, x) => [x, y] as [number, number]));
+
+const range = (length: number) => Array.from({ length }, (_, i) => i);
 
 /** Floor rows where a mark shows, top to bottom. */
 const rowsWithMark = (floor: SceneImage) =>
@@ -53,21 +65,18 @@ describe('drawFloor', () => {
     expect(reflectedAt(floor, 39, FLOOR_TOP)).toHaveLength(0);
   });
 
-  it('keeps one row out of two, from the bottom of the wall', () => {
+  it('is a true mirror: one row of floor per row of wall, from the bottom of the wall', () => {
     const height = 100;
     const rows = FLOOR_ROWS.max;
-    // Column 40 marked on every row except one: the floor row mirroring it stays dark.
-    const skipped = height - 1 - 2 * 10;
-    const marks = Array.from({ length: height }, (_, y) => [40, y] as [number, number]).filter(
-      ([, y]) => y !== skipped,
+    // Every row marked across the room but one: the floor row mirroring it stays dark.
+    const skipped = height - 1 - 10;
+    const marked = range(height).filter((y) => y !== skipped);
+    const floor = drawFloor({ room: room(170, height, fullRows(170, marked)), rows });
+    expect(rowsWithMark(floor)).toEqual(
+      range(rows - FLOOR_TOP)
+        .filter((r) => r !== 10)
+        .map((r) => FLOOR_TOP + r),
     );
-    const floor = drawFloor({ room: room(170, height, marks), rows });
-    for (let r = 0; FLOOR_TOP + r < rows; r++) {
-      const fy = FLOOR_TOP + r;
-      if (isSeam(floor, 40, fy)) continue;
-      const source = height - 1 - 2 * r;
-      expect(reflectedAt(floor, 40, fy)).toHaveLength(source >= 0 && source !== skipped ? 1 : 0);
-    }
   });
 
   it('leaves out what is too high to fit in the floor', () => {
@@ -91,33 +100,59 @@ describe('drawFloor', () => {
       ]),
       rows: FLOOR_ROWS.max,
     });
-    expect(rowsWithMark(floor)).toEqual([FLOOR_TOP, FLOOR_TOP + 1]);
+    expect(rowsWithMark(floor)).toEqual([FLOOR_TOP, FLOOR_TOP + 2]);
   });
 
-  it('is clearly visible under the baseboard, then fades in many steps', () => {
+  it('is clearly visible under the baseboard, then fades away smoothly', () => {
     const height = 140;
-    const marks = Array.from({ length: height }, (_, y) => [7, y] as [number, number]);
-    const floor = drawFloor({ room: room(170, height, marks), rows: FLOOR_ROWS.max });
+    const floor = drawFloor({
+      room: room(170, height, fullRows(170, range(height))),
+      rows: FLOOR_ROWS.max,
+    });
     const alphas = rowsWithMark(floor).map((y) => reflectedAt(floor, 7, y)[0]!.alpha);
-    expect(alphas[0]!).toBeGreaterThanOrEqual(0.45);
-    for (let i = 1; i < alphas.length; i++) expect(alphas[i]!).toBeLessThanOrEqual(alphas[i - 1]!);
-    expect(alphas[alphas.length - 1]!).toBeLessThan(alphas[0]! / 4);
-    expect(new Set(alphas).size).toBeGreaterThan(4);
+    expect(alphas).toHaveLength(FLOOR_ROWS.max - FLOOR_TOP);
+    expect(alphas[0]).toBe(REFLECTION.object);
+    for (let i = 1; i < alphas.length; i++) expect(alphas[i]!).toBeLessThan(alphas[i - 1]!);
+    expect(alphas[alphas.length - 1]!).toBeLessThan(alphas[0]! / 20);
   });
 
-  it('lets the seams of the planks pass over the reflection', () => {
-    const full = room(
-      170,
-      60,
-      Array.from(
-        { length: 170 * 60 },
-        (_, i) => [i % 170, Math.floor(i / 170)] as [number, number],
+  it('hardly shows the bare wall, and fades it the same way', () => {
+    const floor = drawFloor({ room: room(170, 100, [[40, 99]]), rows: FLOOR_ROWS.max });
+    const wallAt = (y: number) =>
+      floor.pixels[y * 170 + 100]!.layers.filter(
+        (l) => l.source.kind === 'tone' && l.source.tone === 'wall',
+      );
+    expect(wallAt(FLOOR_TOP)).toEqual([
+      { alpha: REFLECTION.wall, source: { kind: 'tone', tone: 'wall' } },
+    ]);
+    expect(wallAt(FLOOR_ROWS.max - 1)[0]!.alpha).toBeLessThan(REFLECTION.wall / 20);
+    // Where something stands, the wall is not added behind it.
+    expect(floor.pixels[FLOOR_TOP * 170 + 40]!.layers.at(-1)!.source).toBe(MARK);
+    expect(
+      floor.pixels[FLOOR_TOP * 170 + 40]!.layers.filter(
+        (l) => l.source.kind === 'tone' && l.source.tone === 'wall',
       ),
-    );
-    const floor = drawFloor({ room: full, rows: FLOOR_ROWS.max });
-    const seams = floor.pixels.filter((p) => p?.tone === 'seam');
-    expect(seams.length).toBeGreaterThan(0);
-    for (const seam of seams) expect(seam!.layers).toEqual([]);
+    ).toEqual([]);
+  });
+
+  it('mirrors nothing when the room is empty', () => {
+    const floor = drawFloor({ room: room(170, 100), rows: FLOOR_ROWS.max });
+    expect(floor).toEqual(drawFloorBoards(170, FLOOR_ROWS.max));
+  });
+
+  it('lays the reflection over the planks and over their seams alike', () => {
+    const width = 170;
+    const floor = drawFloor({
+      room: room(width, 100, fullRows(width, range(100))),
+      rows: FLOOR_ROWS.max,
+    });
+    const boards = drawFloorBoards(width, FLOOR_ROWS.max);
+    expect(boards.pixels.some((p) => p?.tone === 'seam')).toBe(true);
+    floor.pixels.forEach((pixel, i) => {
+      expect(pixel!.tone).toBe(boards.pixels[i]!.tone);
+      const mirrored = Math.floor(i / width) >= FLOOR_TOP;
+      expect(pixel!.layers.length).toBe(boards.pixels[i]!.layers.length + (mirrored ? 1 : 0));
+    });
   });
 
   it('reflects plant pixels and scene tones alike', () => {
@@ -165,6 +200,18 @@ describe('drawFloor', () => {
     expect(floor.pixels.some((p) => p?.tone === 'rugA' || p?.tone === 'rugB')).toBe(true);
   });
 
+  it('draws the rug alone exactly where the whole floor has it', () => {
+    const rug = drawRug();
+    const items = [{ x: 20, y: 2, image: rug }];
+    const alone = drawFloorItems(170, FLOOR_ROWS.min, items);
+    const whole = drawFloor({ room: room(170, 60), rows: FLOOR_ROWS.min, items });
+    const boards = drawFloorBoards(170, FLOOR_ROWS.min);
+    expect(alone.pixels.filter((p) => p !== null)).toHaveLength(
+      rug.pixels.filter((p) => p !== null).length,
+    );
+    whole.pixels.forEach((pixel, i) => expect(pixel).toEqual(alone.pixels[i] ?? boards.pixels[i]));
+  });
+
   it('is deterministic', () => {
     const marks: [number, number][] = [
       [3, 4],
@@ -173,5 +220,91 @@ describe('drawFloor', () => {
     expect(drawFloor({ room: room(170, 40, marks), rows: 40 })).toEqual(
       drawFloor({ room: room(170, 40, marks), rows: 40 }),
     );
+  });
+
+  it('moves with time: the same floor, its rows shifted otherwise', () => {
+    const marks: [number, number][] = [
+      [60, 99],
+      [60, 80],
+      [61, 60],
+    ];
+    const still = drawFloor({ room: room(170, 100, marks), rows: FLOOR_ROWS.max, t: 0 });
+    const later = drawFloor({ room: room(170, 100, marks), rows: FLOOR_ROWS.max, t: 1.5 });
+    expect(later).not.toEqual(still);
+    expect(rowsWithMark(later)).toEqual(rowsWithMark(still));
+    expect(drawFloor({ room: room(170, 100, marks), rows: FLOOR_ROWS.max })).toEqual(still);
+  });
+
+  it('repeats the edge of the room where a shifted row reads past it', () => {
+    // The first and last columns marked on every row: whatever the wave, each
+    // edge of the floor mirrors its own edge of the room.
+    const height = 100;
+    const marks = range(height).flatMap((y) => [
+      [0, y] as [number, number],
+      [169, y] as [number, number],
+    ]);
+    for (const t of [0, 0.5, 2]) {
+      const floor = drawFloor({ room: room(170, height, marks), rows: FLOOR_ROWS.max, t });
+      for (let y = FLOOR_TOP; y < FLOOR_ROWS.max; y++) {
+        const left = reflectedAt(floor, 0, y).length;
+        const right = reflectedAt(floor, 169, y).length;
+        expect(left + right).toBeGreaterThanOrEqual(1);
+      }
+    }
+  });
+});
+
+describe('mirrorRows', () => {
+  const full = room(60, 100, fullRows(60, range(100)));
+
+  it('gives one row of the room to each row of the floor, top to bottom', () => {
+    const rows = mirrorRows(full, FLOOR_ROWS.max);
+    expect(rows.map((row) => row.y)).toEqual(
+      range(FLOOR_ROWS.max - FLOOR_TOP).map((r) => FLOOR_TOP + r),
+    );
+    expect(rows.map((row) => row.source)).toEqual(
+      range(FLOOR_ROWS.max - FLOOR_TOP).map((r) => 99 - r),
+    );
+    expect(rows[0]!.fade).toBe(1);
+  });
+
+  it('stops where the room does', () => {
+    const low = room(60, 10, fullRows(60, range(10)));
+    expect(mirrorRows(low, FLOOR_ROWS.max).map((row) => row.source)).toEqual(range(10).reverse());
+    expect(mirrorRows(room(60, 10), FLOOR_ROWS.max)).toEqual([]);
+  });
+
+  it('keeps the wave still at the wall and widens it towards the viewer', () => {
+    const widest = (from: number, to: number) => {
+      let max = 0;
+      for (let t = 0; t < 8; t += 1 / 6) {
+        for (const { shift } of mirrorRows(full, FLOOR_ROWS.max, t).slice(from, to)) {
+          max = Math.max(max, Math.abs(shift));
+        }
+      }
+      return max;
+    };
+    expect(widest(0, 4)).toBe(0);
+    expect(widest(10, 30)).toBeGreaterThanOrEqual(1);
+    expect(widest(50, 69)).toBeGreaterThan(widest(10, 30));
+    expect(widest(0, 69)).toBeLessThanOrEqual(REFLECTION_MAX_SHIFT);
+  });
+
+  it('changes nothing but the shifts with time, and comes back', () => {
+    const still = mirrorRows(full, FLOOR_ROWS.max, 0);
+    const later = mirrorRows(full, FLOOR_ROWS.max, 1);
+    expect(later.map(({ shift: _, ...row }) => row)).toEqual(
+      still.map(({ shift: _, ...row }) => row),
+    );
+    expect(later.map((row) => row.shift)).not.toEqual(still.map((row) => row.shift));
+    const period = (2 * Math.PI) / REFLECTION.speed;
+    expect(mirrorRows(full, FLOOR_ROWS.max, 3 * period).map((row) => row.shift)).toEqual(
+      still.map((row) => row.shift),
+    );
+    for (const { shift } of later) expect(Object.is(shift, -0)).toBe(false);
+  });
+
+  it('moves at the pace of the mockup: 0.3 radian per frame, 6 frames per second', () => {
+    expect(REFLECTION.speed / 6).toBeCloseTo(0.3);
   });
 });

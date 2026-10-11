@@ -1,4 +1,4 @@
-import { Canvas, Group, Picture, type SkPicture } from '@shopify/react-native-skia';
+import { Canvas, Group, Picture, type SkImage, type SkPicture } from '@shopify/react-native-skia';
 import { memo, useCallback, useMemo, useState } from 'react';
 import {
   PixelRatio,
@@ -17,10 +17,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   composeRoom,
   drawFloor,
+  drawFloorBoards,
+  drawFloorItems,
   planRoom,
   PLANT_GRID,
   drawWindow,
   type PlacedItem,
+  type RoomImage,
+  type RoomSource,
   type Shelf,
   type WallPlan,
   type WindowView,
@@ -30,11 +34,13 @@ import { PixelIcon } from '../components/PixelIcon';
 import { days } from '../format';
 import type { ScreenProps } from '../navigation/types';
 import { fitRoom, type RoomFit } from '../shelf/fitRoom';
-import { scenePicture, wallPicture } from '../shelf/scenePicture';
+import { floorMirror, shiftBands, type FloorMirror } from '../shelf/floorMirror';
+import { SceneClock, useSceneTime } from '../shelf/SceneClock';
+import { mirrorImage, reflectionPicture, scenePicture, wallPicture } from '../shelf/scenePicture';
+import { roomColor } from '../theme/scenePalette';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
-import { useWindowClock } from '../useWindowClock';
 
 // Text sizes are fixed so the room can be planned in whole cells; large
 // accessibility sizes are allowed up to this factor.
@@ -80,23 +86,36 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
     });
   }, [shelf, width, height, insets.top, insets.bottom, headerHeight, fontScale]);
 
-  const floor = useMemo(
-    () =>
-      fit &&
-      drawFloor({ room: composeRoom(fit.plan), rows: fit.floorRows, items: fit.plan.floorItems }),
-    [fit],
-  );
-  const picture = useMemo(
-    () => (floor && fit && shelf ? scenePicture(floor, shelf.view, fit.cell) : null),
-    [floor, fit, shelf],
-  );
+  const focused = useIsFocused();
+  const view = shelf?.view;
+  // The floor in three layers, so that the reflection can move alone: the
+  // boards (still), the mirror of the room (its rows slide, see
+  // FloorReflection), and what lies on the floor (still).
+  const floor = useMemo((): FloorLayers | null => {
+    if (!fit || !view) return null;
+    const { plan, floorRows: rows, cell } = fit;
+    const room = composeRoom(plan);
+    const mirror = floorMirror(room, rows, (source: RoomSource | null) => roomColor(source, view));
+    const image = mirrorImage(mirror);
+    const items = scenePicture(drawFloorItems(plan.width, rows, plan.floorItems), view, cell);
+    if (!image) {
+      // Skia could not make the image: the floor is drawn whole, and still.
+      const whole = drawFloor({ room, rows, items: plan.floorItems });
+      return { boards: scenePicture(whole, view, cell), reflection: null, items };
+    }
+    return {
+      boards: scenePicture(drawFloorBoards(plan.width, rows), view, cell),
+      reflection: { room, rows, mirror, image },
+      items,
+    };
+  }, [fit, view]);
 
   // Stable, so that the walls (memoized) do not redraw when the dots move.
   const onOpen = useCallback((id: string) => navigation.navigate('Habit', { id }), [navigation]);
   const onNew = useCallback(() => navigation.navigate('NewHabitName'), [navigation]);
   const onRetire = useCallback((id: string) => navigation.navigate('Retire', { id }), [navigation]);
 
-  if (!shelf || !fit || !picture) return <View style={styles.screen} />;
+  if (!shelf || !fit || !floor) return <View style={styles.screen} />;
 
   const walls = fit.plan.walls;
   const current = Math.min(page, walls.length - 1);
@@ -117,20 +136,22 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
         scrollEventThrottle={32}
         onScroll={onScroll}
       >
-        {walls.map((wall) => (
-          <WallPage
-            key={wall.wall.index}
-            wall={wall}
-            fit={fit}
-            shelf={shelf}
-            width={width}
-            height={height}
-            floor={picture}
-            onOpen={onOpen}
-            onNew={onNew}
-            onRetire={onRetire}
-          />
-        ))}
+        <SceneClock active={focused}>
+          {walls.map((wall) => (
+            <WallPage
+              key={wall.wall.index}
+              wall={wall}
+              fit={fit}
+              shelf={shelf}
+              width={width}
+              height={height}
+              floor={floor}
+              onOpen={onOpen}
+              onNew={onNew}
+              onRetire={onRetire}
+            />
+          ))}
+        </SceneClock>
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top }]}>
@@ -187,13 +208,28 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   );
 }
 
+/** The floor of the whole room, recorded once for all the walls. */
+interface FloorLayers {
+  /** Wall line, baseboard and planks. */
+  boards: SkPicture;
+  /** What the reflection is made of; null when it is already in `boards`. */
+  reflection: {
+    room: RoomImage;
+    rows: number;
+    mirror: FloorMirror;
+    image: SkImage;
+  } | null;
+  /** What lies on the floor, over the reflection. */
+  items: SkPicture;
+}
+
 interface WallPageProps {
   wall: WallPlan;
   fit: RoomFit;
   shelf: Shelf;
   width: number;
   height: number;
-  floor: SkPicture;
+  floor: FloorLayers;
   onOpen: (id: string) => void;
   onNew: () => void;
   /** A long press on a plant: take it off the shelf (never a swipe, kept for moving). */
@@ -201,9 +237,10 @@ interface WallPageProps {
 }
 
 /**
- * One wall, one screen wide, in a single canvas: its part of the floor, the
- * whole wall as one picture, and the window. Transparent touch zones and the
- * labels lie on top.
+ * One wall, one screen wide: its part of the floor's boards and the whole
+ * wall as one picture, in a single canvas; over them, the moving reflection
+ * and the window, each in its own. Transparent touch zones and the labels
+ * lie on top.
  */
 const WallPage = memo(function WallPage({
   wall,
@@ -245,10 +282,22 @@ const WallPage = memo(function WallPage({
     <View style={{ width, height }}>
       <Canvas style={{ width, height }} pointerEvents="none">
         <Group transform={[{ translateX: -pageLeft }, { translateY: fit.floorTop }]}>
-          <Picture picture={floor} />
+          <Picture picture={floor.boards} />
         </Group>
         <Picture picture={picture} />
       </Canvas>
+      <View
+        style={[styles.zone, { left: 0, top: fit.floorTop, width, height: height - fit.floorTop }]}
+        pointerEvents="none"
+      >
+        <FloorReflection
+          floor={floor}
+          cell={cell}
+          pageLeft={pageLeft}
+          width={width}
+          height={height - fit.floorTop}
+        />
+      </View>
       {windowItem && (
         <View
           style={[styles.zone, { left: toX(windowItem.x), top: toY(windowItem.y) }]}
@@ -328,12 +377,54 @@ const WallPage = memo(function WallPage({
  * per second; it stops when the shelf is not shown.
  */
 function AnimatedWindow({ view, cell }: { view: WindowView; cell: number }) {
-  const t = useWindowClock(useIsFocused());
+  const t = useSceneTime();
   const image = useMemo(() => drawWindow(view, t), [view, t]);
   const picture = useMemo(() => scenePicture(image, view, cell), [image, view, cell]);
   return (
     <Canvas style={{ width: image.width * cell, height: image.height * cell }}>
       <Picture picture={picture} />
+    </Canvas>
+  );
+}
+
+/**
+ * A wall's part of the reflection and of what lies on the floor, in its own
+ * canvas: a few times per second the wave moves on and the rows of the
+ * mirror slide, nothing else redraws.
+ */
+function FloorReflection({
+  floor,
+  cell,
+  pageLeft,
+  width,
+  height,
+}: {
+  floor: FloorLayers;
+  cell: number;
+  /** Left of the page in the room, in points. */
+  pageLeft: number;
+  width: number;
+  height: number;
+}) {
+  const t = useSceneTime();
+  const { reflection, items } = floor;
+  const picture = useMemo(
+    () =>
+      reflection &&
+      reflectionPicture(
+        reflection.image,
+        reflection.mirror.pad,
+        shiftBands(reflection.room, reflection.rows, t),
+        cell,
+      ),
+    [reflection, t, cell],
+  );
+  return (
+    <Canvas style={{ width, height }}>
+      <Group transform={[{ translateX: -pageLeft }]}>
+        {picture && <Picture picture={picture} />}
+        <Picture picture={items} />
+      </Group>
     </Canvas>
   );
 }
