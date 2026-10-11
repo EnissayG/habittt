@@ -7,6 +7,7 @@ import { HabitScreen } from '../screens/HabitScreen';
 import { HerbariumScreen } from '../screens/HerbariumScreen';
 import { JournalScreen } from '../screens/JournalScreen';
 import { LabScreen } from '../screens/LabScreen';
+import { MeditationScreen } from '../screens/MeditationScreen';
 import { NewHabitNameScreen } from '../screens/NewHabitNameScreen';
 import { OpeningScreen } from '../screens/OpeningScreen';
 import { PlantChoiceScreen } from '../screens/PlantChoiceScreen';
@@ -47,6 +48,7 @@ export function AppNavigator() {
           <Stack.Screen name="PlantChoice" component={PlantChoiceScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Herbarium" component={HerbariumScreen} />
+          <Stack.Screen name="Meditation" component={MeditationScreen} />
           {__DEV__ && <Stack.Screen name="Lab" component={LabScreen} />}
         </Stack.Navigator>
       </NavigationContainer>
