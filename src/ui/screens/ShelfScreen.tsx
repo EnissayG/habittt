@@ -122,6 +122,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   const onOpen = useCallback((id: string) => navigation.navigate('Habit', { id }), [navigation]);
   const onNew = useCallback(() => navigation.navigate('NewHabitName'), [navigation]);
   const onRetire = useCallback((id: string) => navigation.navigate('Retire', { id }), [navigation]);
+  const onMeditate = useCallback(() => navigation.navigate('Meditation'), [navigation]);
 
   if (!shelf || !fit || !floor) return <View style={styles.screen} />;
 
@@ -156,6 +157,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
             onOpen={onOpen}
             onNew={onNew}
             onRetire={onRetire}
+            onMeditate={onMeditate}
           />
         ))}
       </ScrollView>
@@ -231,6 +233,8 @@ interface WallPageProps {
   onNew: () => void;
   /** A long press on a plant: take it off the shelf (never a swipe, kept for moving). */
   onRetire: (id: string) => void;
+  /** The armchair: the meditation corner (screen 12). */
+  onMeditate: () => void;
 }
 
 /**
@@ -248,6 +252,7 @@ const WallPage = memo(function WallPage({
   onOpen,
   onNew,
   onRetire,
+  onMeditate,
 }: WallPageProps) {
   const { cell } = fit;
   const pixelRatio = PixelRatio.get();
@@ -330,6 +335,17 @@ const WallPage = memo(function WallPage({
               accessibilityRole="button"
               accessibilityLabel="Nouvelle habitude"
               onPress={onNew}
+            />
+          );
+        }
+        if (placed.content.kind === 'decor' && placed.content.piece === 'armchair') {
+          return (
+            <Pressable
+              key={`zone-${i}`}
+              style={[styles.zone, zone]}
+              accessibilityRole="button"
+              accessibilityLabel="Le fauteuil : méditer"
+              onPress={onMeditate}
             />
           );
         }
