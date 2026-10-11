@@ -182,6 +182,15 @@ describe('planRoom', () => {
     }
   });
 
+  it('names each piece of decor, so the armchair can be touched', () => {
+    const room = plan([], {});
+    const pieces = (w: number) =>
+      room.walls[w]!.items.flatMap((p) => (p.content.kind === 'decor' ? [p.content.piece] : []));
+    expect(pieces(2)).toEqual(['painting', 'armchair', 'lamp']);
+    expect(pieces(1)).toEqual(['painting']);
+    expect(room.walls.flatMap((_, w) => pieces(w)).filter((p) => p === 'armchair')).toHaveLength(1);
+  });
+
   it('lays the rug on the floor in front of the armchair', () => {
     const room = plan([], {});
     const wall = room.walls[2]!;

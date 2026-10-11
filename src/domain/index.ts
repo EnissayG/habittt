@@ -110,6 +110,7 @@ export { drawSlot, type SlotKind } from './scene/drawSlot';
 export {
   composeRoom,
   planRoom,
+  type DecorPiece,
   type FloorItem,
   type PlacedContent,
   type PlacedItem,

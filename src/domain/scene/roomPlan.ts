@@ -29,8 +29,11 @@ export type PlacedContent =
   | { kind: 'plant'; id: HabitId; image: PlantImage }
   | { kind: 'slot'; slot: SlotKind; image: SceneImage }
   | { kind: 'window'; image: SceneImage }
-  /** Furniture and paintings: opaque, never labelled, never touched. */
-  | { kind: 'decor'; image: SceneImage };
+  /** Furniture and paintings: opaque, never labelled; only the armchair is touched. */
+  | { kind: 'decor'; piece: DecorPiece; image: SceneImage };
+
+/** What a piece of decor is: the armchair opens the meditation corner. */
+export type DecorPiece = 'armchair' | 'lamp' | 'painting';
 
 export interface PlacedItem {
   /** Left edge, in cells from the room's left edge. */
@@ -237,12 +240,12 @@ export function planRoom({
 }
 
 /** A whole image placed at (x, y). */
-function placeDecor(image: SceneImage, x: number, y: number): PlacedItem {
+function placeDecor(piece: DecorPiece, image: SceneImage, x: number, y: number): PlacedItem {
   return {
     x,
     y,
     rows: { from: 0, to: image.height },
-    content: { kind: 'decor', image },
+    content: { kind: 'decor', piece, image },
     labelled: false,
   };
 }
@@ -251,23 +254,24 @@ function placeDecor(image: SceneImage, x: number, y: number): PlacedItem {
 function plantsWallDecor(wall: PlantsWall, left: number, top: number): PlacedItem[] {
   if (!wall.painting) return [];
   const { x, y } = DECOR.wallPainting;
-  return [placeDecor(IMAGES[wall.painting], left + x, top + y)];
+  return [placeDecor('painting', IMAGES[wall.painting], left + x, top + y)];
 }
 
 /** The decor wall, back to front: the painting, the armchair, the lamp beside it. */
 function decorItems(left: number, floorLine: number): PlacedItem[] {
-  const standing = (image: SceneImage, x: number) =>
-    placeDecor(image, left + x, floorLine - image.height);
+  const standing = (piece: DecorPiece, image: SceneImage, x: number) =>
+    placeDecor(piece, image, left + x, floorLine - image.height);
   // In a low room the painting comes down rather than being cut (the room
   // is always taller than the lamp, so the furniture never is).
   return [
     placeDecor(
+      'painting',
       IMAGES.peaks,
       left + DECOR.painting.x,
       Math.max(0, floorLine - DECOR.painting.above),
     ),
-    standing(IMAGES.armchair, DECOR.armchair.x),
-    standing(IMAGES.lamp, DECOR.lamp.x),
+    standing('armchair', IMAGES.armchair, DECOR.armchair.x),
+    standing('lamp', IMAGES.lamp, DECOR.lamp.x),
   ];
 }
 
