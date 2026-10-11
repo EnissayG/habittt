@@ -12,6 +12,7 @@ import { fnv1a, mulberry32 } from './random';
 import { resolveSpecies } from './registry';
 import { paintScenery, SCENERY_DEPTH, SHELF_ROWS } from './scenery';
 import { settle } from './settle';
+import { wither } from './wither';
 
 /** Row of the pot rim for hanging plants: high on the canvas so they drape down. */
 const HANGING_RIM_Y = 8;
@@ -46,7 +47,7 @@ export interface RenderPlantParams {
   relapseDays: Iterable<number>;
   /** Day numbers (1 = start day) when the plant was watered: each blooms once. */
   wateredDays?: Iterable<number>;
-  /** The life of this plant is over (ADR 0013): passed on to the drawing, which dries it. */
+  /** The life of this plant is over (ADR 0013): it is drawn dried (see wither). */
   dead?: boolean;
 }
 
@@ -182,5 +183,25 @@ export function renderPlant(params: RenderPlantParams): PlantImage {
     }
   }
 
-  return { width, height, pixels, species, variety, genome, fallback, dead: params.dead ?? false };
+  const dead = params.dead ?? false;
+  const halfWidths = potHalfWidths(genome.potShape);
+  return {
+    width,
+    height,
+    pixels: dead
+      ? wither(pixels, {
+          width,
+          height,
+          rimY,
+          anchorX,
+          potHalfWidth: Math.max(...halfWidths),
+          salt: genome.salt,
+        })
+      : pixels,
+    species,
+    variety,
+    genome,
+    fallback,
+    dead,
+  };
 }

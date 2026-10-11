@@ -251,13 +251,15 @@ describe('render output', () => {
     expect(render('monstera', 42, 120).genome).toEqual(image.genome);
   });
 
-  it('says whether the plant is dead, without changing a pixel (the UI dries it)', () => {
+  it('says whether the plant is dead, and draws it dried (see wither.test)', () => {
     const params = { species: 'monstera', seed: 42, elapsedDays: 30, relapseDays: [] };
     const alive = renderPlant(params);
     const dead = renderPlant({ ...params, dead: true });
     expect(alive.dead).toBe(false);
     expect(dead.dead).toBe(true);
-    expect(dead.pixels).toEqual(alive.pixels);
+    expect(alive.pixels.some((pixel) => pixel?.dry)).toBe(false);
+    expect(dead.pixels.some((pixel) => pixel?.dry)).toBe(true);
+    expect(dead.genome).toEqual(alive.genome);
   });
 
   it('gives different genomes to different seeds', () => {

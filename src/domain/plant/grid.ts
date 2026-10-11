@@ -49,6 +49,11 @@ export interface PlantPixel {
    * flower: a change of color, never of shape. Absent everywhere else.
    */
   readonly bloom?: true;
+  /**
+   * Present (true) on the pixels of a plant whose life is over (ADR 0013),
+   * and on its soil: the theme draws them dried. Absent everywhere else.
+   */
+  readonly dry?: true;
 }
 
 export interface PlantImage {
@@ -66,7 +71,8 @@ export interface PlantImage {
   readonly fallback: boolean;
   /**
    * The plant's life is over (ADR 0013). Its pixels are those of its last
-   * day, unchanged: drying it is the drawing's job.
+   * day, dried (see wither): flagged `dry`, the foliage ragged, a few leaves
+   * on the shelf.
    */
   readonly dead: boolean;
 }

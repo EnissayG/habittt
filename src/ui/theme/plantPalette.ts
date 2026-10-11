@@ -87,6 +87,32 @@ const YELLOWED: Record<PlantTone, string> = {
   trait: '#C9A227',
 };
 
+/**
+ * A plant whose life is over is drawn dried: same shades, in straw and dead
+ * wood. Never red, never grey: it is a dry plant, not a reproach.
+ */
+const DRIED: Record<PlantTone, string> = {
+  leafPale: '#CDB47C',
+  leafLight: '#CDB47C',
+  succulentLight: '#CDB47C',
+  trait: '#CDB47C',
+  stripe: '#DCCB9C',
+  spine: '#DCCB9C',
+  leaf: '#AE8F58',
+  succulent: '#AE8F58',
+  leafDark: '#8A6C3E',
+  succulentDark: '#8A6C3E',
+  leafDeep: '#6A5230',
+  bark: '#857159',
+  barkDark: '#64533F',
+  flower: '#B39C80',
+  bud: '#B39C80',
+  leafAccent: '#B39C80',
+};
+
+/** Soil that is no longer watered. */
+const DRY_SOIL = '#8A735A';
+
 /** One [body, shade] pair per pot color. */
 const POTS: Record<PotColorId, readonly [string, string]> = {
   terracotta: [solarized.orange, '#A53C12'],
@@ -136,6 +162,7 @@ export function plantColor(
   if (pixel.bloom) return BLOOM;
   switch (pixel.tone) {
     case 'soil':
+      return pixel.dry ? DRY_SOIL : SCENERY.soil;
     case 'potPattern':
     case 'potPatternShade':
     case 'shelf':
@@ -147,6 +174,7 @@ export function plantColor(
       return POTS[genome.potColor][1];
     default: {
       const tone = pixel.tone;
+      if (pixel.dry) return DRIED[tone];
       if (pixel.relapse) return YELLOWED[tone];
       if (tone === 'trait') return TRAIT[genome.trait];
       if (isFoliageTone(tone)) return FOLIAGE[genome.foliage][tone];

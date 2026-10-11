@@ -31,6 +31,46 @@ describe('plantColor', () => {
     expect(plantColor(leaf(false), genome)).not.toBe(BLOOM);
   });
 
+  it('dries a dead plant: its own color for every shade, the same whatever the foliage', () => {
+    const dry: PlantPixel = { ...leaf(false), dry: true };
+    expect(plantColor(dry, genome)).not.toBe(plantColor(leaf(false), genome));
+    expect(plantColor(dry, genome)).toBe(plantColor(dry, { ...genome, foliage: 'bluish' }));
+    expect(plantColor({ ...dry, relapse: true }, genome)).toBe(plantColor(dry, genome));
+    const shades = (['leafLight', 'leaf', 'leafDark', 'leafDeep'] as const).map((tone) =>
+      plantColor({ ...dry, tone }, genome),
+    );
+    expect(new Set(shades).size).toBe(4);
+  });
+
+  it('dries the soil of a dead plant, and leaves its pot as it was', () => {
+    const soil: PlantPixel = { tone: 'soil', day: 0, relapse: false };
+    expect(plantColor({ ...soil, dry: true }, genome)).not.toBe(plantColor(soil, genome));
+    const pot: PlantPixel = { tone: 'pot', day: 0, relapse: false };
+    expect(plantColor({ ...pot, dry: true }, genome)).toBe(plantColor(pot, genome));
+  });
+
+  it('never draws a dead plant in red', () => {
+    for (const species of SPECIES_IDS) {
+      const image = renderPlant({
+        species,
+        seed: 7,
+        elapsedDays: 120,
+        relapseDays: [5, 60],
+        wateredDays: [3],
+        dead: true,
+      });
+      for (const pixel of image.pixels) {
+        if (!pixel?.dry) continue;
+        const color = plantColor(pixel, image.genome);
+        expect(color).toMatch(/^#[0-9A-F]{6}$/i);
+        const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
+        // Straw and dead wood: warm, and never far from grey.
+        expect(r! - b!).toBeGreaterThan(0);
+        expect(r! - g!).toBeLessThan(48);
+      }
+    }
+  });
+
   it('colors the pot by pot color and the leaves by foliage hue', () => {
     const pot: PlantPixel = { tone: 'pot', day: 0, relapse: false };
     expect(plantColor(pot, genome)).not.toBe(plantColor(pot, { ...genome, potColor: 'blue' }));
