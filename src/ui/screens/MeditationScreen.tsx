@@ -8,9 +8,11 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useKeepAwake } from 'expo-keep-awake';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  BREATH_SECONDS,
   breathAt,
   breathLevel,
   isOver,
@@ -31,6 +33,7 @@ import { Button } from '../components/Button';
 import { NumberText } from '../components/NumberText';
 import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
+import { tapBreathIn, tapEnd } from '../meditation/haptics';
 import { useSessionClock } from '../meditation/useSessionClock';
 import type { ScreenProps } from '../navigation/types';
 import { plantName } from '../plant/labels';
@@ -141,7 +144,8 @@ interface SessionProps {
   onQuit: () => void;
 }
 
-function Session({ meditation, plant, onEnd, onQuit }: SessionProps) {
+function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
+  useKeepAwake();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
   const scale = usePotScale();
@@ -153,12 +157,17 @@ function Session({ meditation, plant, onEnd, onQuit }: SessionProps) {
   useEffect(() => {
     if (!over || ended.current) return;
     ended.current = true;
+    tapEnd();
     onEnd();
   }, [over, onEnd]);
 
   const days = plantDaysAt(meditation, t);
   const image = useMemo(() => sessionPlant(plant, days), [plant, days]);
   const breath = breathAt(t);
+  // A light tap at the start of each breath in, the first one included.
+  useEffect(() => {
+    if (vibrate && !isOver(meditation, breath.number * BREATH_SECONDS)) tapBreathIn();
+  }, [vibrate, meditation, breath.number]);
   const phrase = phraseAt(meditation, t);
   const left = minutesLeft(meditation, t);
 
