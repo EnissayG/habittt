@@ -17,8 +17,8 @@ type Exit = Exclude<HabitStatus, 'shelf'>;
 const EXITS: { exit: Exit; title: string; text: string }[] = [
   {
     exit: 'garden',
-    title: 'Elle rejoint le jardin',
-    text: "Je n'ai plus besoin de la suivre. Elle reste visible, avec ses notes.",
+    title: "Elle rejoint l'herbier",
+    text: "Je n'ai plus besoin de la suivre. Ses vies restent visibles, avec ses notes.",
   },
   {
     exit: 'given',
