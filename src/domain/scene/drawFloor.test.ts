@@ -7,7 +7,6 @@ import {
   FLOOR_TOP,
   mirrorRows,
   REFLECTION,
-  REFLECTION_MAX_SHIFT,
 } from './drawFloor';
 import type { RoomImage, RoomSource } from './roomPlan';
 import type { SceneImage } from './sceneImage';
@@ -222,33 +221,18 @@ describe('drawFloor', () => {
     );
   });
 
-  it('moves with time: the same floor, its rows shifted otherwise', () => {
+  it('keeps still and straight: every column of the floor mirrors the column above it', () => {
     const marks: [number, number][] = [
-      [60, 99],
+      [0, 99],
       [60, 80],
       [61, 60],
+      [169, 45],
     ];
-    const still = drawFloor({ room: room(170, 100, marks), rows: FLOOR_ROWS.max, t: 0 });
-    const later = drawFloor({ room: room(170, 100, marks), rows: FLOOR_ROWS.max, t: 1.5 });
-    expect(later).not.toEqual(still);
-    expect(rowsWithMark(later)).toEqual(rowsWithMark(still));
-    expect(drawFloor({ room: room(170, 100, marks), rows: FLOOR_ROWS.max })).toEqual(still);
-  });
-
-  it('repeats the edge of the room where a shifted row reads past it', () => {
-    // The first and last columns marked on every row: whatever the wave, each
-    // edge of the floor mirrors its own edge of the room.
-    const height = 100;
-    const marks = range(height).flatMap((y) => [
-      [0, y] as [number, number],
-      [169, y] as [number, number],
-    ]);
-    for (const t of [0, 0.5, 2]) {
-      const floor = drawFloor({ room: room(170, height, marks), rows: FLOOR_ROWS.max, t });
-      for (let y = FLOOR_TOP; y < FLOOR_ROWS.max; y++) {
-        const left = reflectedAt(floor, 0, y).length;
-        const right = reflectedAt(floor, 169, y).length;
-        expect(left + right).toBeGreaterThanOrEqual(1);
+    const floor = drawFloor({ room: room(170, 100, marks), rows: FLOOR_ROWS.max });
+    for (const [x, y] of marks) {
+      const fy = FLOOR_TOP + (99 - y);
+      for (let fx = 0; fx < 170; fx++) {
+        expect(reflectedAt(floor, fx, fy)).toHaveLength(fx === x ? 1 : 0);
       }
     }
   });
@@ -274,37 +258,9 @@ describe('mirrorRows', () => {
     expect(mirrorRows(room(60, 10), FLOOR_ROWS.max)).toEqual([]);
   });
 
-  it('keeps the wave still at the wall and widens it towards the viewer', () => {
-    const widest = (from: number, to: number) => {
-      let max = 0;
-      for (let t = 0; t < 8; t += 1 / 6) {
-        for (const { shift } of mirrorRows(full, FLOOR_ROWS.max, t).slice(from, to)) {
-          max = Math.max(max, Math.abs(shift));
-        }
-      }
-      return max;
-    };
-    expect(widest(0, 4)).toBe(0);
-    expect(widest(10, 30)).toBeGreaterThanOrEqual(1);
-    expect(widest(50, 69)).toBeGreaterThan(widest(10, 30));
-    expect(widest(0, 69)).toBeLessThanOrEqual(REFLECTION_MAX_SHIFT);
-  });
-
-  it('changes nothing but the shifts with time, and comes back', () => {
-    const still = mirrorRows(full, FLOOR_ROWS.max, 0);
-    const later = mirrorRows(full, FLOOR_ROWS.max, 1);
-    expect(later.map(({ shift: _, ...row }) => row)).toEqual(
-      still.map(({ shift: _, ...row }) => row),
-    );
-    expect(later.map((row) => row.shift)).not.toEqual(still.map((row) => row.shift));
-    const period = (2 * Math.PI) / REFLECTION.speed;
-    expect(mirrorRows(full, FLOOR_ROWS.max, 3 * period).map((row) => row.shift)).toEqual(
-      still.map((row) => row.shift),
-    );
-    for (const { shift } of later) expect(Object.is(shift, -0)).toBe(false);
-  });
-
-  it('moves at the pace of the mockup: 0.3 radian per frame, 6 frames per second', () => {
-    expect(REFLECTION.speed / 6).toBeCloseTo(0.3);
+  it('fades from the wall to the bottom edge, never to nothing', () => {
+    const fades = mirrorRows(full, FLOOR_ROWS.max).map((row) => row.fade);
+    for (let i = 1; i < fades.length; i++) expect(fades[i]!).toBeLessThan(fades[i - 1]!);
+    expect(fades[fades.length - 1]!).toBeGreaterThan(0);
   });
 });

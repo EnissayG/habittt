@@ -14,7 +14,7 @@ import type { PlacedItem, PlantPixel, ScenePixel, SceneImage, WindowView } from 
 import { buildColorRuns, type ColorRuns } from '../plant/colorRuns';
 import { plantColor } from '../theme/plantPalette';
 import { sceneColor } from '../theme/scenePalette';
-import type { FloorMirror, ShiftBand } from './floorMirror';
+import type { FloorMirror } from './floorMirror';
 
 /** Draws color runs (in grid units) with sharp pixels, antialiasing off. */
 function drawRuns(canvas: SkCanvas, runs: readonly ColorRuns[]) {
@@ -107,35 +107,28 @@ export function mirrorImage(mirror: FloorMirror): SkImage | null {
 }
 
 /**
- * Records the reflection at one instant, at `cell` points per pixel: each
- * band of rows is the same slice of the image, slid sideways by its shift.
- * A few dozen draws of an image already on the GPU, so it can be recorded
- * again several times per second.
+ * Records the whole floor once, at `cell` points per pixel: the boards, the
+ * reflection over them (one image, one draw), then what lies on the floor.
  */
-export function reflectionPicture(
-  image: SkImage,
-  pad: number,
-  bands: readonly ShiftBand[],
+export function floorPicture(
+  boards: SceneImage,
+  mirror: SkImage,
+  items: SceneImage,
+  view: WindowView,
   cell: number,
 ): SkPicture {
-  const width = image.width();
+  const below = buildColorRuns(boards, (pixel: ScenePixel) => sceneColor(pixel, view));
+  const above = buildColorRuns(items, (pixel: ScenePixel) => sceneColor(pixel, view));
   const paint = Skia.Paint();
   paint.setAntiAlias(false);
+  const whole = Skia.XYWHRect(0, 0, mirror.width(), mirror.height());
   return createPicture(
     (canvas) => {
       canvas.scale(cell, cell);
-      for (const { from, to, shift } of bands) {
-        // The floor's column x shows the room's column x + shift.
-        canvas.drawImageRectOptions(
-          image,
-          Skia.XYWHRect(0, from, width, to - from),
-          Skia.XYWHRect(-pad - shift, from, width, to - from),
-          FilterMode.Nearest,
-          MipmapMode.None,
-          paint,
-        );
-      }
+      drawRuns(canvas, below);
+      canvas.drawImageRectOptions(mirror, whole, whole, FilterMode.Nearest, MipmapMode.None, paint);
+      drawRuns(canvas, above);
     },
-    { width: (width - pad * 2) * cell, height: image.height() * cell },
+    { width: boards.width * cell, height: boards.height * cell },
   );
 }

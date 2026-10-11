@@ -1,17 +1,14 @@
-import { sin } from '../plant/trig';
 import type { FloorItem, RoomImage } from './roomPlan';
 import { SceneCanvas, type SceneImage } from './sceneImage';
 
 // The polished floor, as wide as the whole room: dark planks that mirror
-// whatever stands above them, the way water does in Kingdom Two Crowns. It
-// is the reflection of the mockup's whole room (drawPano), with one general
-// rule and no special case per element:
+// whatever stands above them. It is the reflection of the mockup's whole
+// room (drawPano) without its wave: polished wood, not water, so it keeps
+// still. One general rule, with no special case per element:
 //
 // - a true mirror: the composed room is flipped at its lowest drawn row, at
-//   full size, one row of floor per row of wall. What is too high to fit is
-//   left out;
-// - each row is shifted sideways by a wave that travels with time, wider
-//   and wider away from the wall;
+//   full size, one row of floor per row of wall, each column under itself.
+//   What is too high to fit is left out;
 // - it fades with the distance, and the bare wall hardly shows in it.
 //
 // It lies over the planks and their seams. What lies on the floor (the rug)
@@ -34,18 +31,7 @@ export const REFLECTION = {
   wall: 0.1,
   /** How fast it fades towards the viewer (1 = evenly). */
   fade: 1.3,
-  /** Rows of the wave per radian: a ripple every seven rows or so. */
-  ripple: 0.85,
-  /** Radians per second: 0.3 per frame at 6 frames per second. */
-  speed: 1.8,
-  /** Width of the wave, in cells: at the wall, then per row away from it. */
-  swing: { near: 0.3, perRow: 0.045 },
 } as const;
-
-/** The widest shift of a row, in cells, for a floor of the tallest size. */
-export const REFLECTION_MAX_SHIFT = Math.ceil(
-  REFLECTION.swing.near + FLOOR_ROWS.max * REFLECTION.swing.perRow,
-);
 
 /** One row of the floor that mirrors a row of the room. */
 export interface MirrorRow {
@@ -53,29 +39,19 @@ export interface MirrorRow {
   y: number;
   /** Row of the room it mirrors. */
   source: number;
-  /** Columns to the right where it reads the room: the wave, at time t. */
-  shift: number;
   /** 1 under the baseboard, 0 at the bottom edge. */
   fade: number;
 }
 
-/**
- * The rows of the floor that mirror the room, top to bottom, at time t (in
- * seconds). Only `shift` depends on t: a moving picture can keep everything
- * else and slide its rows.
- */
-export function mirrorRows(room: RoomImage, rows: number, t = 0): MirrorRow[] {
+/** The rows of the floor that mirror the room, top to bottom. */
+export function mirrorRows(room: RoomImage, rows: number): MirrorRow[] {
   const depth = rows - FLOOR_TOP;
   const bottom = lowestDrawnRow(room);
   const result: MirrorRow[] = [];
   for (let r = 0; r < depth && r <= bottom; r++) {
-    const swing = REFLECTION.swing.near + r * REFLECTION.swing.perRow;
-    const shift = Math.round(sin(r * REFLECTION.ripple + t * REFLECTION.speed) * swing);
     result.push({
       y: FLOOR_TOP + r,
       source: bottom - r,
-      // Math.round gives -0 for small negative values.
-      shift: shift === 0 ? 0 : shift,
       fade: Math.pow(1 - r / depth, REFLECTION.fade),
     });
   }
@@ -107,22 +83,20 @@ export interface DrawFloorParams {
   rows: number;
   /** Lying on the floor, in front of everything (see RoomPlan.floorItems). */
   items?: readonly FloorItem[];
-  /** Animation time, in seconds: the wave of the reflection travels with it. */
-  t?: number;
 }
 
 /**
- * The whole floor at time t, in one image: boards, reflection, rug. The
- * shelf draws the same three layers apart, to move the reflection alone.
+ * The whole floor in one image: boards, reflection, rug. The shelf draws
+ * the same three layers with the reflection as one image (see floorMirror),
+ * which is much cheaper to draw than one shape per color.
  */
-export function drawFloor({ room, rows, items = [], t = 0 }: DrawFloorParams): SceneImage {
+export function drawFloor({ room, rows, items = [] }: DrawFloorParams): SceneImage {
   const width = room.width;
   const c = new SceneCanvas(width, rows);
   paintBoards(c);
-  for (const { y, source, shift, fade } of mirrorRows(room, rows, t)) {
+  for (const { y, source, fade } of mirrorRows(room, rows)) {
     for (let x = 0; x < width; x++) {
-      const sx = Math.min(width - 1, Math.max(0, x + shift));
-      const mirrored = room.pixels[source * width + sx];
+      const mirrored = room.pixels[source * width + x];
       if (mirrored) c.blend(x, y, 1, 1, mirrored, REFLECTION.object * fade);
       else c.blend(x, y, 1, 1, { kind: 'tone', tone: 'wall' }, REFLECTION.wall * fade);
     }

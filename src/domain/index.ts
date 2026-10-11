@@ -107,7 +107,6 @@ export {
   FLOOR_TOP,
   mirrorRows,
   REFLECTION,
-  REFLECTION_MAX_SHIFT,
   type DrawFloorParams,
   type MirrorRow,
 } from './scene/drawFloor';
