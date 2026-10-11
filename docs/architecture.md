@@ -640,6 +640,10 @@ Décisions détaillées dans [l'ADR 0016](decisions/0016-gestes-des-plantes.md).
   tirée de la graine. Rien d'aléatoire à l'exécution.
 - **L'UI** (`ui/plant/LivingPlant.tsx`) suit l'horloge et demande
   `livingPlant(image, t)` : la même image tant que rien ne bouge.
+- **Sur l'étagère** (`ui/shelf/gesturePatch.ts`, `WallCanvas` dans
+  `ShelfScreen`) : le mur et le plancher restent les dessins enregistrés une
+  fois ; pendant un geste, une retouche est posée par-dessus, avec les
+  cellules qui changent sur le mur et les mêmes dans le reflet.
 
 ## La plante meurt, l'herbier (phase 3, fait)
 

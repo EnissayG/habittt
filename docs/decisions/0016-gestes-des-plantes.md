@@ -63,8 +63,20 @@ et chaque espèce a son propre geste, selon ce qu'elle est et sa rigidité.
   sont gardées en mémoire par image et par partie.
 - **Pas de geste** pour une plante séchée, un pot vide, avec « Réduire les
   animations », ni quand l'écran n'est pas affiché.
-- **Où** : l'écran d'une habitude (`LivingPlant`) et le Labo. Pas encore
-  l'étagère, où tout un mur est un seul dessin (voir `idees.md`).
+- **Où** : partout où une plante vivante est montrée en grand ou dans la
+  pièce : l'écran d'une habitude (`LivingPlant`), le Labo et l'étagère.
+- **Sur l'étagère, chaque plante attend trois fois plus longtemps**
+  (`SHELF_CALM`) : avec six ou sept plantes sur un mur, la pièce doit rester
+  calme.
+- **Sur l'étagère, une retouche.** Un mur entier est un seul dessin
+  enregistré une fois, et le plancher aussi ; les enregistrer à nouveau à
+  chaque geste ferait saccader le glissement. Pendant la seconde que dure
+  un geste, on pose donc par-dessus une retouche (`gesturePatch`) : les
+  seules cellules qui changent, sur le mur, et les mêmes cellules dans le
+  reflet du plancher, au même instant, avec l'opacité de leur ligne. Le
+  mur et le plancher ne sont jamais redessinés. Un test vérifie que mur
+  plus retouche et plancher plus retouche donnent exactement la pièce
+  qu'on aurait dessinée avec la plante déplacée.
 
 ## Conséquences
 

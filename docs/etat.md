@@ -25,9 +25,9 @@ phase 2, la refonte de l'étagère en murs et les retours du premier test. À li
 | Phase 3e         | Le journal de la plante (remplace l'historique)                                      | fait (ADR 0012), **à tester sur téléphone** |
 | Phase 3f         | La plante meurt (vies, replanter), herbier, réglages, renommer                       | fait (ADR 0013, 0014), **à tester**         |
 | Phase 3g         | Reflet miroir du plancher, nouveaux tableaux, plante séchée                          | fait (ADR 0015), **à tester sur téléphone** |
-| Phase 3h         | Gestes des plantes, un par espèce (écran de l'habitude et Labo)                      | fait (ADR 0016), **à tester sur téléphone** |
+| Phase 3h         | Gestes des plantes, un par espèce (habitude, Labo, étagère et son reflet)            | fait (ADR 0016), **à tester sur téléphone** |
 
-Chiffres au dernier commit : 1118 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 1167 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -46,6 +46,10 @@ recompilé et rien n'a été vu dans Expo Go**.
 - Sur l'écran d'une habitude : la plante est immobile, puis une seule
   partie bouge d'un pixel pendant une seconde et revient. Dans le Labo :
   pareil, pour essayer chaque espèce, chaque graine et chaque âge.
+- **Sur l'étagère** : chaque plante fait le même geste, à son rythme, et
+  son reflet bouge au même instant (visible pour la tablette du bas). Le
+  glissement d'un mur à l'autre reste fluide pendant qu'une plante bouge.
+  Après le geste, rien ne reste décalé, ni sur le mur ni dans le reflet.
 - Le geste de chaque espèce (tableau de l'ADR 0016) et son rythme : toutes
   les 4 secondes pour les plus souples, 12 pour les plus raides.
 - Le cactus ne bouge pas ; une fois fleuri, une fleur se referme un peu.
