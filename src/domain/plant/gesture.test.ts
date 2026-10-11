@@ -210,6 +210,19 @@ describe('when a plant moves', () => {
     expect(runs).toBeGreaterThanOrEqual(10);
   });
 
+  it('moves less often where it is asked to keep calm (the shelf)', () => {
+    const image = grown('fern', 42);
+    const { rest } = planPlant('fern', 42);
+    const count = (calm: number) =>
+      Array.from({ length: rest * 30 * FPS }, (_, f) =>
+        gestureAt(image, (f + 1) / FPS, calm),
+      ).filter((part) => part !== null).length;
+    expect(count(1)).toBe(30 * GESTURE_SECONDS * FPS);
+    expect(count(3)).toBe(10 * GESTURE_SECONDS * FPS);
+    // Never faster than the species' own pace.
+    expect(count(0.2)).toBe(count(1));
+  });
+
   it('moves a stiff plant less often than a supple one', () => {
     const rest = (id: (typeof SPECIES_IDS)[number]) => SPECIES_REGISTRY[id].rest;
     for (const supple of ['fern', 'pothos', 'pearls', 'spider'] as const) {

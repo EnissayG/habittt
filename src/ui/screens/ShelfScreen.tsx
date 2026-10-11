@@ -19,9 +19,11 @@ import {
   drawFloor,
   drawFloorBoards,
   drawFloorItems,
+  gestureAt,
   planRoom,
   PLANT_GRID,
   drawWindow,
+  withGesture,
   type PlacedItem,
   type RoomSource,
   type Shelf,
@@ -34,7 +36,15 @@ import { days } from '../format';
 import type { ScreenProps } from '../navigation/types';
 import { fitRoom, type RoomFit } from '../shelf/fitRoom';
 import { floorMirror } from '../shelf/floorMirror';
-import { floorPicture, mirrorImage, scenePicture, wallPicture } from '../shelf/scenePicture';
+import { floorContext, gesturePatch, type FloorContext } from '../shelf/gesturePatch';
+import {
+  floorPicture,
+  mirrorImage,
+  patchPicture,
+  scenePicture,
+  wallPicture,
+  type WallFrame,
+} from '../shelf/scenePicture';
 import { roomColor } from '../theme/scenePalette';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
@@ -51,6 +61,8 @@ const LABEL_GAP = 6;
 const LOGO_LINE = 32;
 const SUBTITLE_LINE = 16;
 const DOTS_HEIGHT = 24;
+/** On the shelf, a plant rests this many times longer between two gestures than on its own screen. */
+const SHELF_CALM = 3;
 
 /**
  * Screen 2: the shelf, a room seen one wall at a time. It fills the screen
@@ -87,25 +99,23 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
 
   const view = shelf?.view;
   // The floor of the whole room, recorded once: its reflection is one image
-  // laid over the boards (see floorMirror).
-  const picture = useMemo(() => {
+  // laid over the boards (see floorMirror). `context` is what a plant's
+  // gesture needs to move its reflection too (see gesturePatch).
+  const floor = useMemo((): Floor | null => {
     if (!fit || !view) return null;
     const { plan, floorRows: rows, cell } = fit;
     const room = composeRoom(plan);
+    const boards = drawFloorBoards(plan.width, rows);
+    const items = drawFloorItems(plan.width, rows, plan.floorItems);
+    const context = floorContext(room, rows, boards, items);
     const mirror = mirrorImage(
       floorMirror(room, rows, (source: RoomSource | null) => roomColor(source, view)),
     );
     // Skia could not make the image: the same floor, one shape per color.
-    if (!mirror) {
-      return scenePicture(drawFloor({ room, rows, items: plan.floorItems }), view, cell);
-    }
-    return floorPicture(
-      drawFloorBoards(plan.width, rows),
-      mirror,
-      drawFloorItems(plan.width, rows, plan.floorItems),
-      view,
-      cell,
-    );
+    const picture = mirror
+      ? floorPicture(boards, mirror, items, view, cell)
+      : scenePicture(drawFloor({ room, rows, items: plan.floorItems }), view, cell);
+    return { picture, context };
   }, [fit, view]);
 
   // Stable, so that the walls (memoized) do not redraw when the dots move.
@@ -113,7 +123,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   const onNew = useCallback(() => navigation.navigate('NewHabitName'), [navigation]);
   const onRetire = useCallback((id: string) => navigation.navigate('Retire', { id }), [navigation]);
 
-  if (!shelf || !fit || !picture) return <View style={styles.screen} />;
+  if (!shelf || !fit || !floor) return <View style={styles.screen} />;
 
   const walls = fit.plan.walls;
   const current = Math.min(page, walls.length - 1);
@@ -142,7 +152,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
             shelf={shelf}
             width={width}
             height={height}
-            floor={picture}
+            floor={floor}
             onOpen={onOpen}
             onNew={onNew}
             onRetire={onRetire}
@@ -204,13 +214,19 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   );
 }
 
+/** The floor of the whole room: its picture, and what a gesture's patch needs. */
+interface Floor {
+  picture: SkPicture;
+  context: FloorContext;
+}
+
 interface WallPageProps {
   wall: WallPlan;
   fit: RoomFit;
   shelf: Shelf;
   width: number;
   height: number;
-  floor: SkPicture;
+  floor: Floor;
   onOpen: (id: string) => void;
   onNew: () => void;
   /** A long press on a plant: take it off the shelf (never a swipe, kept for moving). */
@@ -240,32 +256,34 @@ const WallPage = memo(function WallPage({
   const toY = (y: number) => fit.roomTop + (y * fit.devicePixelsPerCell) / pixelRatio;
   const bandHeight = (placed: PlacedItem) => placed.rows.to - placed.rows.from;
 
+  const frame = useMemo(
+    () => ({
+      pageLeft,
+      roomTop: fit.roomTop,
+      floorTop: fit.floorTop,
+      cell,
+      devicePixelsPerCell: fit.devicePixelsPerCell,
+      pixelRatio,
+    }),
+    [pageLeft, fit, cell, pixelRatio],
+  );
   const picture = useMemo(
-    () =>
-      wallPicture(
-        wall.items,
-        shelf.view,
-        {
-          pageLeft,
-          roomTop: fit.roomTop,
-          cell,
-          devicePixelsPerCell: fit.devicePixelsPerCell,
-          pixelRatio,
-        },
-        { width, height },
-      ),
-    [wall, shelf.view, pageLeft, fit, cell, pixelRatio, width, height],
+    () => wallPicture(wall.items, shelf.view, frame, { width, height }),
+    [wall, shelf.view, frame, width, height],
   );
   const windowItem = wall.items.find((placed) => placed.content.kind === 'window');
 
   return (
     <View style={{ width, height }}>
-      <Canvas style={{ width, height }} pointerEvents="none">
-        <Group transform={[{ translateX: -pageLeft }, { translateY: fit.floorTop }]}>
-          <Picture picture={floor} />
-        </Group>
-        <Picture picture={picture} />
-      </Canvas>
+      <WallCanvas
+        wall={wall}
+        view={shelf.view}
+        picture={picture}
+        floor={floor}
+        frame={frame}
+        width={width}
+        height={height}
+      />
       {windowItem && (
         <View
           style={[styles.zone, { left: toX(windowItem.x), top: toY(windowItem.y) }]}
@@ -339,6 +357,58 @@ const WallPage = memo(function WallPage({
     </View>
   );
 });
+
+interface WallCanvasProps {
+  wall: WallPlan;
+  view: WindowView;
+  /** The wall, recorded once (see wallPicture). */
+  picture: SkPicture;
+  floor: Floor;
+  frame: WallFrame & { floorTop: number };
+  width: number;
+  height: number;
+}
+
+/**
+ * The canvas of one wall: its part of the floor, the wall, and over them the
+ * patch of the plants in the middle of their gesture (see gesturePatch).
+ * Only this component follows the clock, and it draws again only when a
+ * gesture starts or ends: the wall and the floor are never recorded again.
+ */
+function WallCanvas({ wall, view, picture, floor, frame, width, height }: WallCanvasProps) {
+  const t = useWindowClock(useIsFocused());
+  // The plants in the middle of their gesture, and a key that names them.
+  const moving = wall.items.flatMap((placed) => {
+    if (placed.content.kind !== 'plant') return [];
+    const { image } = placed.content;
+    const part = gestureAt(image, t, SHELF_CALM);
+    return part === null ? [] : [{ placed, image, part }];
+  });
+  const key = moving.map(({ placed, part }) => `${placed.x}:${placed.y}:${part}`).join(' ');
+  const patch = useMemo(
+    () => {
+      if (moving.length === 0) return null;
+      const moves = moving.map(({ placed, image, part }) => ({
+        placed,
+        moved: withGesture(image, part),
+      }));
+      return patchPicture(gesturePatch(moves, floor.context, view), frame, { width, height });
+    },
+    // `moving` is rebuilt at every beat of the clock; `key` says when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [key, wall, floor, view, frame, width, height],
+  );
+
+  return (
+    <Canvas style={{ width, height }} pointerEvents="none">
+      <Group transform={[{ translateX: -frame.pageLeft }, { translateY: frame.floorTop }]}>
+        <Picture picture={floor.picture} />
+      </Group>
+      <Picture picture={picture} />
+      {patch && <Picture picture={patch} />}
+    </Canvas>
+  );
+}
 
 /**
  * The window in its own small canvas, so that only it redraws a few times

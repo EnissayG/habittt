@@ -15,6 +15,7 @@ import { buildColorRuns, type ColorRuns } from '../plant/colorRuns';
 import { plantColor } from '../theme/plantPalette';
 import { sceneColor } from '../theme/scenePalette';
 import type { FloorMirror } from './floorMirror';
+import type { GesturePatch } from './gesturePatch';
 
 /** Draws color runs (in grid units) with sharp pixels, antialiasing off. */
 function drawRuns(canvas: SkCanvas, runs: readonly ColorRuns[]) {
@@ -131,4 +132,39 @@ export function floorPicture(
     },
     { width: boards.width * cell, height: boards.height * cell },
   );
+}
+
+/**
+ * Records a gesture's patch (see gesturePatch), in page coordinates: over
+ * the wall, placed exactly as wallPicture places each plant, and over the
+ * floor. A few dozen small squares, recorded when a gesture starts.
+ */
+export function patchPicture(
+  patch: GesturePatch,
+  frame: WallFrame & { floorTop: number },
+  size: { width: number; height: number },
+): SkPicture {
+  const { cell, devicePixelsPerCell: k, pixelRatio } = frame;
+  const paint = Skia.Paint();
+  paint.setAntiAlias(false);
+  return createPicture((canvas) => {
+    for (const { x, y, cells } of patch.walls) {
+      canvas.save();
+      canvas.translate((x * k) / pixelRatio - frame.pageLeft, frame.roomTop + (y * k) / pixelRatio);
+      canvas.scale(cell, cell);
+      for (const { x: cx, y: cy, color } of cells) {
+        paint.setColor(Skia.Color(color));
+        canvas.drawRect(Skia.XYWHRect(cx, cy, 1, 1), paint);
+      }
+      canvas.restore();
+    }
+    canvas.save();
+    canvas.translate(-frame.pageLeft, frame.floorTop);
+    canvas.scale(cell, cell);
+    for (const { x, y, color } of patch.floor) {
+      paint.setColor(Skia.Color(color));
+      canvas.drawRect(Skia.XYWHRect(x, y, 1, 1), paint);
+    }
+    canvas.restore();
+  }, size);
 }

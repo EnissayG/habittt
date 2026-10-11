@@ -67,14 +67,16 @@ function findParts(image: PlantImage): number[] {
  * The part in the middle of its gesture at time t (in seconds since the
  * plant came into view), or null while the plant keeps still, which is most
  * of the time: one gesture at the end of each rest. Each plant has its own
- * offset, so that two plants never move together for long.
+ * offset, so that two plants never move together for long. `calm` stretches
+ * the rest: where many plants are shown together (the shelf), each one
+ * moves less often, so that the room stays quiet.
  */
-export function gestureAt(image: PlantImage, t: number): number | null {
+export function gestureAt(image: PlantImage, t: number, calm = 1): number | null {
   const recipe = recipeOf(image);
   if (!recipe || !(t > 0)) return null;
   const candidates = gestureParts(image);
   if (candidates.length === 0) return null;
-  const { rest } = planPlant(recipe.species, recipe.seed);
+  const rest = planPlant(recipe.species, recipe.seed).rest * Math.max(1, calm);
   const seed = recipe.seed >>> 0;
   const time = t + ((fnv1a(`${seed}:offset`) % 1000) / 1000) * rest;
   const cycle = Math.floor(time / rest);
