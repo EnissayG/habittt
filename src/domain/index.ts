@@ -27,6 +27,15 @@ export {
   type MonthId,
 } from './calendar';
 export { normalizeHabitName } from './habitName';
+export { record, splitLives, type Life, type SplitLivesParams } from './lives';
+export {
+  replant,
+  replantingIdFor,
+  replantSeed,
+  type ReplantError,
+  type Replanting,
+  type ReplantParams,
+} from './replanting';
 export {
   isActiveNote,
   MOODS,
