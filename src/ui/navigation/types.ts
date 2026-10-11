@@ -12,6 +12,7 @@ export type RootStackParamList = {
   NewHabitName: undefined;
   PlantChoice: { name: string; startDate: LocalDate };
   Settings: undefined;
+  Herbarium: undefined;
   Lab: undefined;
 };
 
