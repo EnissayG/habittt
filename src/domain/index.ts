@@ -31,6 +31,27 @@ export {
 export { normalizeHabitName } from './habitName';
 export { record, splitLives, type Life, type SplitLivesParams } from './lives';
 export {
+  BREATH,
+  BREATH_SECONDS,
+  breathAt,
+  breathLevel,
+  breathsDone,
+  isOver,
+  MEDITATION_END,
+  MEDITATION_LENGTHS,
+  MEDITATIONS,
+  minutesLeft,
+  phraseAt,
+  PHRASE_MAX_LENGTH,
+  PHRASE_SECONDS,
+  plantDaysAfter,
+  plantDaysAt,
+  type Breath,
+  type Meditation,
+  type MeditationMinutes,
+  type MeditationPhrase,
+} from './meditation';
+export {
   replant,
   replantingIdFor,
   replantSeed,
