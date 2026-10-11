@@ -12,9 +12,10 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  BREATH_SECONDS,
   breathAt,
-  breathLevel,
+  breathFullness,
+  drawHalo,
+  haloRadius,
   isOver,
   MAX_GROWTH_DAYS,
   MEDITATION_END,
@@ -24,29 +25,31 @@ import {
   phraseAt,
   PLANT_GRID,
   plantDaysAt,
+  pulsesBetween,
   renderPlant,
   type Meditation,
   type MeditationMinutes,
+  type ScenePixel,
   type SpeciesId,
 } from '../../domain';
 import { Button } from '../components/Button';
 import { NumberText } from '../components/NumberText';
 import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
-import { tapBreathIn, tapEnd } from '../meditation/haptics';
+import { tapBreath, tapEnd } from '../meditation/haptics';
 import { useSessionClock } from '../meditation/useSessionClock';
 import type { ScreenProps } from '../navigation/types';
 import { plantName } from '../plant/labels';
+import { PixelCanvas } from '../plant/PixelCanvas';
 import { PlantPixels } from '../plant/PlantCanvas';
 import { pixelScale } from '../plant/pixelScale';
+import { sceneColor } from '../theme/scenePalette';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useReduceMotion } from '../useReduceMotion';
 
-/** Cells of the breath bar: it fills and empties by these steps. */
-const BAR_STEPS = 12;
-/** Size of one step of the bar, in plant cells. */
-const BAR_STEP = { width: 3, height: 2, gap: 1 } as const;
+/** With "reduce motion", the light keeps this size: half a breath. */
+const STILL_FULLNESS = 0.5;
 /** Room for two lines of a phrase, so that nothing moves when one appears. */
 const PHRASE_LINES = 2;
 const PHRASE_LINE = 23;
@@ -112,13 +115,13 @@ export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
         Une plante va pousser pendant que tu respires. Tu peux arrêter quand tu veux.
       </Text>
       <View style={styles.row}>
-        <Text style={styles.rowLabel}>Vibrer à chaque inspiration</Text>
+        <Text style={styles.rowLabel}>Vibrer au rythme du souffle</Text>
         <Switch
           value={vibrate}
           onValueChange={setVibrate}
           trackColor={{ false: colors.line, true: colors.accent }}
           thumbColor={colors.background}
-          accessibilityLabel="Vibrer à chaque inspiration"
+          accessibilityLabel="Vibrer au rythme du souffle"
         />
       </View>
     </Screen>
@@ -164,10 +167,19 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
   const days = plantDaysAt(meditation, t);
   const image = useMemo(() => sessionPlant(plant, days), [plant, days]);
   const breath = breathAt(t);
-  // A light tap at the start of each breath in, the first one included.
+  // The breath, for the hand: the taps due since the last beat of the clock
+  // (closer and stronger breathing in, fading breathing out).
+  const felt = useRef(0);
   useEffect(() => {
-    if (vibrate && !isOver(meditation, breath.number * BREATH_SECONDS)) tapBreathIn();
-  }, [vibrate, meditation, breath.number]);
+    const due = vibrate ? pulsesBetween(meditation, felt.current, t) : [];
+    felt.current = t;
+    const last = due[due.length - 1];
+    if (last) tapBreath(last.strength);
+  }, [vibrate, meditation, t]);
+  // The light behind the plant grows with the breath in, withdraws with the
+  // breath out; it changes size a few times a second, not at every beat.
+  const radius = haloRadius(reduceMotion ? STILL_FULLNESS : breathFullness(t));
+  const halo = useMemo(() => drawHalo(radius), [radius]);
   const phrase = phraseAt(meditation, t);
   const left = minutesLeft(meditation, t);
 
@@ -178,15 +190,16 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
       accessible={false}
     >
       <View style={styles.center}>
-        <PlantPixels image={image} cellSize={scale.cellSize} />
+        <View>
+          <View style={styles.halo}>
+            <PixelCanvas grid={halo} colorOf={haloColor} cellSize={scale.cellSize} />
+          </View>
+          <PlantPixels image={image} cellSize={scale.cellSize} />
+        </View>
         <View style={styles.breath}>
-          {reduceMotion ? (
-            <Text style={styles.breathWord} accessibilityLiveRegion="polite">
-              {breath.phase === 'inhale' ? 'inspire' : 'expire'}
-            </Text>
-          ) : (
-            <BreathBar level={breathLevel(t, BAR_STEPS)} cell={scale.cellSize} />
-          )}
+          <Text style={styles.breathWord} accessibilityLiveRegion="polite">
+            {breath.phase === 'inhale' ? 'inspire' : 'expire'}
+          </Text>
         </View>
         <Text style={styles.phrase} accessibilityLiveRegion="polite">
           {phrase ?? ''}
@@ -204,23 +217,8 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
   );
 }
 
-/** A row of square steps, no rounded corner: full ones for the air breathed in. */
-function BreathBar({ level, cell }: { level: number; cell: number }) {
-  return (
-    <View style={[styles.bar, { gap: BAR_STEP.gap * cell }]} accessible={false}>
-      {Array.from({ length: BAR_STEPS }, (_, i) => (
-        <View
-          key={i}
-          style={{
-            width: BAR_STEP.width * cell,
-            height: BAR_STEP.height * cell,
-            backgroundColor: i < level ? colors.accent : colors.line,
-          }}
-        />
-      ))}
-    </View>
-  );
-}
+/** The light has the same colors whatever the hour: the view does not matter. */
+const haloColor = (pixel: ScenePixel) => sceneColor(pixel, 'day');
 
 function End({ plant, onBack }: { plant: SessionPlant; onBack: () => void }) {
   const scale = usePotScale();
@@ -262,7 +260,7 @@ const styles = StyleSheet.create({
   session: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 14 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   breath: { minHeight: 28, justifyContent: 'center' },
-  bar: { flexDirection: 'row' },
+  halo: { position: 'absolute', left: 0, top: 0 },
   breathWord: { fontFamily: fonts.display, fontSize: 17, color: colors.muted },
   phrase: {
     fontFamily: fonts.body,

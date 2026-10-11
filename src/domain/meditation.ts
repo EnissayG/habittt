@@ -40,7 +40,7 @@ export const PHRASE_MAX_LENGTH = 72;
 export const MEDITATION_END = 'Elle a poussé pendant que tu respirais.';
 
 const INSTALL = "Installe-toi. Il n'y a rien à réussir ici.";
-const BAR = 'Inspire quand la barre se remplit. Expire quand elle se vide.';
+const LIGHT = 'Inspire quand la lumière grandit. Expire quand elle se retire.';
 const POT = 'Regarde le pot. Quelque chose y pousse, sans que tu fasses rien.';
 const FEET = 'Pose tes pieds. Relâche tes épaules.';
 const JAW = 'Relâche ta mâchoire. Ton front. Tes mains.';
@@ -68,7 +68,7 @@ export const MEDITATIONS: Record<MeditationMinutes, Meditation> = {
     growth: { days: 4, every: 1 },
     phrases: [
       at('0:00', INSTALL),
-      at('0:25', BAR),
+      at('0:25', LIGHT),
       at('0:55', POT),
       at('1:30', FEET),
       at('2:05', THOUGHT),
@@ -85,7 +85,7 @@ export const MEDITATIONS: Record<MeditationMinutes, Meditation> = {
     growth: { days: 2, every: 1 },
     phrases: [
       at('0:00', INSTALL),
-      at('0:25', BAR),
+      at('0:25', LIGHT),
       at('0:55', POT),
       at('1:35', FEET),
       at('2:15', JAW),
@@ -107,7 +107,7 @@ export const MEDITATIONS: Record<MeditationMinutes, Meditation> = {
     growth: { days: 2, every: 3 },
     phrases: [
       at('0:00', INSTALL),
-      at('0:30', BAR),
+      at('0:30', LIGHT),
       at('1:05', POT),
       at('2:00', FEET),
       at('3:00', JAW),
@@ -149,10 +149,68 @@ export function breathAt(t: number): Breath {
     : { phase: 'exhale', progress: (within - BREATH.inhale) / BREATH.exhale, number };
 }
 
-/** Full cells of a bar of `steps` cells: it fills breathing in, empties breathing out. */
-export function breathLevel(t: number, steps: number): number {
+/**
+ * How full the breath is at time t: 0 with the lungs empty, 1 at the top of
+ * the breath in. It starts and stops gently, like a breath, not like a
+ * machine: the light behind the plant follows it (see drawHalo).
+ */
+export function breathFullness(t: number): number {
   const { phase, progress } = breathAt(t);
-  return Math.round((phase === 'inhale' ? progress : 1 - progress) * steps);
+  // Smoothstep: only +, - and *, the same on every phone.
+  const eased = progress * progress * (3 - 2 * progress);
+  return phase === 'inhale' ? eased : 1 - eased;
+}
+
+export type PulseStrength = 'soft' | 'light' | 'medium';
+
+export interface BreathPulse {
+  /** Seconds from the start of the breath. */
+  at: number;
+  strength: PulseStrength;
+}
+
+/**
+ * The breath, for the hand: small taps that come closer and stronger while
+ * breathing in, a pause at the top, then taps that space out and fade
+ * while breathing out, and silence before the next breath. With the eyes
+ * closed, one feels the air come and go, not only when a breath starts.
+ */
+export const BREATH_PULSES: readonly BreathPulse[] = [
+  { at: 0, strength: 'soft' },
+  { at: 0.9, strength: 'soft' },
+  { at: 1.6, strength: 'light' },
+  { at: 2.2, strength: 'light' },
+  { at: 2.7, strength: 'medium' },
+  { at: 3.1, strength: 'medium' },
+  { at: 3.45, strength: 'medium' },
+  { at: 4.3, strength: 'medium' },
+  { at: 4.8, strength: 'light' },
+  { at: 5.4, strength: 'light' },
+  { at: 6.1, strength: 'soft' },
+  { at: 6.9, strength: 'soft' },
+  { at: 7.8, strength: 'soft' },
+];
+
+/**
+ * The taps due between two beats of the session's clock: after `from`, up
+ * to `to` (both in seconds of session). None once the session is over, nor
+ * over a jump (the app came back from the background): one does not catch
+ * up on missed taps.
+ */
+export function pulsesBetween(meditation: Meditation, from: number, to: number): BreathPulse[] {
+  if (!(to > from) || to - from > 1 || to > meditation.seconds) return [];
+  const due: BreathPulse[] = [];
+  const first = Math.floor(Math.max(0, from) / BREATH_SECONDS);
+  for (let breath = first; breath * BREATH_SECONDS <= to; breath++) {
+    for (const pulse of BREATH_PULSES) {
+      const at = breath * BREATH_SECONDS + pulse.at;
+      // The very first tap of the session is due at its first beat; the
+      // breath that would start as the session ends is not taken.
+      const after = at > from || (at === 0 && from === 0);
+      if (after && at <= to && at < meditation.seconds) due.push(pulse);
+    }
+  }
+  return due;
 }
 
 /** Breaths ended so far (the plant grows at the end of each breath out). */

@@ -1,7 +1,13 @@
 import { PLANT_GRID } from '../plant/grid';
 import {
+  ALTAR_SIZE,
   ARMCHAIR_SIZE,
+  drawAltar,
   drawArmchair,
+  drawLantern,
+  drawScroll,
+  LANTERN_SIZE,
+  SCROLL_SIZE,
   drawFloorLamp,
   drawPainting,
   drawRug,
@@ -23,6 +29,14 @@ describe('drawDecor', () => {
     ['armchair', drawArmchair, ARMCHAIR_SIZE],
     ['floor lamp', drawFloorLamp, FLOOR_LAMP_SIZE],
     ['rug', drawRug, RUG_SIZE],
+    ['altar', drawAltar, ALTAR_SIZE],
+    ['scroll', drawScroll, SCROLL_SIZE],
+    ['lantern', () => drawLantern(0), LANTERN_SIZE],
+    [
+      'lantern on a cord',
+      () => drawLantern(40),
+      { width: LANTERN_SIZE.width, height: LANTERN_SIZE.height + 40 },
+    ],
     ...PAINTINGS.map(
       (painting) =>
         [`painting ${painting}`, () => drawPainting(painting), PAINTING_SIZE] as [
@@ -91,5 +105,35 @@ describe('drawDecor', () => {
   it('never uses translucent layers: decor is opaque', () => {
     for (const [, draw] of pieces)
       for (const pixel of draw().pixels) expect(pixel?.layers ?? []).toEqual([]);
+  });
+
+  it('stands the low table on two legs, the stone figure in the middle of it', () => {
+    const altar = drawAltar();
+    const at = (x: number, y: number) => altar.pixels[y * altar.width + x]?.tone ?? null;
+    const last = Array.from({ length: altar.width }, (_, x) => at(x, altar.height - 1));
+    expect(last.filter((tone) => tone !== null).length).toBe(8);
+    expect(last.every((tone) => tone === null || tone.startsWith('table'))).toBe(true);
+    const stone = altar.pixels.flatMap((pixel, i) =>
+      pixel?.tone === 'stone' ? [i % altar.width] : [],
+    );
+    const middle = (Math.min(...stone) + Math.max(...stone)) / 2;
+    expect(Math.abs(middle - altar.width / 2)).toBeLessThan(6);
+    expect(tones(altar).has('sunCore')).toBe(true);
+    expect(tones(altar).has('ember')).toBe(true);
+    expect(tones(altar).has('incense')).toBe(true);
+  });
+
+  it('draws the circle of the scroll open: a stroke, not a ring', () => {
+    const scroll = drawScroll();
+    const ink = scroll.pixels.filter((p) => p?.tone === 'ink' || p?.tone === 'inkDeep').length;
+    expect(ink).toBeGreaterThan(60);
+    expect(tones(scroll).has('ink')).toBe(true);
+    expect(tones(scroll).has('inkDeep')).toBe(true);
+    // Paper shows in the middle of the circle and through its gap.
+    const at = (x: number, y: number) => scroll.pixels[y * scroll.width + x]?.tone;
+    expect(at(15, 24)).toBe('paintPaper');
+    const ring = (dx: number, dy: number) => at(15 + dx, 24 + dy);
+    expect(ring(-10, 0)).toMatch(/^ink/);
+    expect(ring(7, -7)).toBe('paintPaper');
   });
 });

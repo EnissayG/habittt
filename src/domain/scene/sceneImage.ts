@@ -99,7 +99,24 @@ export type DecorTone =
   | 'paintLeafDark'
   | 'paintSeal'
   | 'rugA'
-  | 'rugB';
+  | 'rugB'
+  // The meditation corner (drawAltar, drawScroll).
+  | 'tableTop'
+  | 'tableLight'
+  | 'tableShade'
+  | 'stone'
+  | 'stoneLight'
+  | 'stoneShade'
+  | 'wax'
+  | 'waxShade'
+  | 'ember'
+  | 'incense'
+  | 'paperShade'
+  | 'ink'
+  | 'inkDeep'
+  // The light of a meditation (drawHalo).
+  | 'halo'
+  | 'haloHeart';
 
 /** Tones only ever used as translucent layers. */
 export type LightTone = 'glare' | 'shine' | 'shadow';

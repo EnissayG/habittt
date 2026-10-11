@@ -34,7 +34,11 @@ export {
   BREATH,
   BREATH_SECONDS,
   breathAt,
-  breathLevel,
+  BREATH_PULSES,
+  breathFullness,
+  pulsesBetween,
+  type BreathPulse,
+  type PulseStrength,
   breathsDone,
   isOver,
   MEDITATION_END,
@@ -107,9 +111,11 @@ export { buildTimeline, type DayEntry } from './timeline';
 export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';
 export { drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
 export { drawSlot, type SlotKind } from './scene/drawSlot';
+export { drawHalo, HALO_CENTER, HALO_RADIUS, haloRadius } from './scene/drawHalo';
 export {
   composeRoom,
   planRoom,
+  MEDITATION_PIECES,
   type DecorPiece,
   type FloorItem,
   type PlacedContent,

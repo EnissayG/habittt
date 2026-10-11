@@ -13,6 +13,10 @@ export const ARMCHAIR_SIZE = { width: 56, height: 52 } as const;
 export const FLOOR_LAMP_SIZE = { width: 17, height: 80 } as const;
 export const PAINTING_SIZE = { width: 40, height: 30 } as const;
 export const RUG_SIZE = { width: 84, height: 9 } as const;
+export const ALTAR_SIZE = { width: 46, height: 56 } as const;
+export const SCROLL_SIZE = { width: 30, height: 46 } as const;
+/** The paper lantern, without its cord. */
+export const LANTERN_SIZE = { width: 21, height: 16 } as const;
 
 /** Dawn over misty ridges, dusk over the sea, and a bonsai print. */
 export const PAINTINGS = ['peaks', 'sea', 'bonsai'] as const;
@@ -278,5 +282,179 @@ export function drawRug(): SceneImage {
     const inset = row === 0 || row === height - 1 ? 3 : row === 1 || row === height - 2 ? 1 : 0;
     c.fill(inset, row, width - inset * 2, 1, row % 4 < 2 ? 'rugA' : 'rugB');
   }
+  return c.toImage();
+}
+
+/**
+ * The meditation corner's low table, with what stands on it: a candle, a
+ * seated stone figure, a small pile of pebbles and a stick of incense whose
+ * smoke rises along the wall. It stands on the floor line.
+ */
+export function drawAltar(): SceneImage {
+  const { width, height } = ALTAR_SIZE;
+  const c = new SceneCanvas(width, height);
+  // The table: a thick top on two short legs, lit from the left.
+  const top = height - 12;
+  c.fill(0, top, width, 4, 'tableTop');
+  c.fill(0, top, width, 1, 'tableLight');
+  c.fill(0, top + 3, width, 1, 'tableShade');
+  c.fill(3, top + 4, 4, 8, 'tableTop');
+  c.fill(width - 7, top + 4, 4, 8, 'tableShade');
+  c.fill(7, top + 4, width - 14, 1, 'tableShade');
+
+  // The candle, on a small dish, with its flame.
+  c.fill(3, top - 1, 7, 1, 'stoneShade');
+  c.fill(5, top - 7, 3, 6, 'wax');
+  c.fill(7, top - 7, 1, 6, 'waxShade');
+  c.fill(6, top - 8, 1, 1, 'trunk');
+  c.fill(6, top - 10, 1, 2, 'sun');
+  c.fill(5, top - 10, 1, 1, 'sun');
+  c.fill(6, top - 11, 1, 1, 'sunCore');
+
+  // The seated figure: a round head, shoulders, hands in the lap, crossed
+  // legs wider than the shoulders. One block of stone, lit from the left.
+  const x0 = 14;
+  const rows: [number, number][] = [
+    // [left, width], from the top of the head down to the base.
+    [7, 3],
+    [6, 5],
+    [6, 5],
+    [6, 5],
+    [7, 3],
+    [5, 7],
+    [4, 9],
+    [3, 11],
+    [3, 11],
+    [3, 11],
+    [3, 11],
+    [4, 9],
+    [4, 9],
+    [3, 11],
+    [1, 15],
+    [0, 17],
+    [0, 17],
+    [1, 15],
+  ];
+  const figureTop = top - rows.length - 1;
+  rows.forEach(([left, w], i) => {
+    const y = figureTop + i;
+    c.fill(x0 + left, y, w, 1, 'stone');
+    c.fill(x0 + left, y, Math.max(1, Math.floor(w / 4)), 1, 'stoneLight');
+    c.fill(
+      x0 + left + w - Math.max(1, Math.floor(w / 4)),
+      y,
+      Math.max(1, Math.floor(w / 4)),
+      1,
+      'stoneShade',
+    );
+  });
+  // The hands, resting, and the fold of the legs.
+  c.fill(x0 + 6, figureTop + 12, 5, 1, 'stoneShade');
+  c.fill(x0 + 3, figureTop + 16, 11, 1, 'stoneShade');
+  // Its base.
+  c.fill(x0 - 1, top - 1, 19, 1, 'stoneShade');
+
+  // Three pebbles, one on the other.
+  c.fill(33, top - 2, 7, 2, 'stone');
+  c.fill(33, top - 2, 2, 1, 'stoneLight');
+  c.fill(38, top - 1, 2, 1, 'stoneShade');
+  c.fill(34, top - 4, 5, 2, 'stoneShade');
+  c.fill(34, top - 4, 2, 1, 'stone');
+  c.fill(35, top - 6, 3, 2, 'stone');
+  c.fill(35, top - 6, 1, 1, 'stoneLight');
+
+  // The incense: a holder, a leaning stick, an ember, and the smoke.
+  c.fill(41, top - 1, 4, 1, 'stoneShade');
+  for (let i = 0; i < 9; i++) c.fill(43 - Math.floor(i / 4), top - 2 - i, 1, 1, 'trunk');
+  c.fill(41, top - 11, 1, 1, 'ember');
+  const smoke: [number, number][] = [
+    [41, 13],
+    [42, 15],
+    [42, 16],
+    [41, 18],
+    [40, 20],
+    [40, 21],
+    [41, 23],
+    [42, 25],
+    [43, 27],
+    [43, 28],
+    [42, 30],
+    [41, 32],
+    [41, 33],
+    [42, 35],
+    [43, 37],
+    [44, 39],
+    [44, 40],
+    [43, 42],
+    [42, 44],
+  ];
+  for (const [sx, up] of smoke) c.fill(sx, top - up, 1, 1, 'incense');
+  return c.toImage();
+}
+
+/**
+ * A hanging scroll: an ensō, the circle drawn in one breath, on paper
+ * between two wooden rods. It hangs on the wall of the meditation corner.
+ */
+export function drawScroll(): SceneImage {
+  const { width, height } = SCROLL_SIZE;
+  const c = new SceneCanvas(width, height);
+  const middle = Math.floor(width / 2);
+  // The cord and the nail.
+  c.fill(middle, 0, 1, 1, 'frameDark');
+  for (let i = 1; i <= 3; i++) {
+    c.fill(middle - i * 3, i, 3, 1, 'frameShade');
+    c.fill(middle + 1 + (i - 1) * 3, i, 3, 1, 'frameShade');
+  }
+  // The rods, wider than the paper, and the paper between them.
+  c.fill(0, 4, width, 2, 'frameDark');
+  c.fill(0, height - 2, width, 2, 'frameDark');
+  c.fill(2, 6, width - 4, height - 8, 'paintPaper');
+  c.fill(width - 3, 6, 1, height - 8, 'paperShade');
+
+  // The circle: thick where the brush pressed (bottom left), thin where it
+  // lifted, open at the top right.
+  const cx = middle;
+  const cy = 6 + Math.floor((height - 8) / 2) - 1;
+  const outer = 10;
+  for (let dy = -outer; dy <= outer; dy++) {
+    for (let dx = -outer; dx <= outer; dx++) {
+      const d2 = dx * dx + dy * dy;
+      // Thickness from 1 (top right) to 4 (bottom left).
+      const weight = (dy - dx + 2 * outer) / (4 * outer);
+      const inner = outer - 1 - Math.round(weight * 3);
+      if (d2 > outer * outer + outer || d2 < inner * inner + inner) continue;
+      // The gap where the stroke starts and ends.
+      if (dx > 3 && dy < -4 && dx - 3 < -dy - 2) continue;
+      c.fill(cx + dx, cy + dy, 1, 1, weight > 0.55 ? 'inkDeep' : 'ink');
+    }
+  }
+  // The seal.
+  c.fill(width - 8, height - 9, 3, 3, 'paintSeal');
+  return c.toImage();
+}
+
+/** Width of the lantern, row by row: a paper ball, flattened at both ends. */
+const LANTERN_ROWS = [5, 11, 15, 19, 21, 21, 21, 21, 21, 21, 21, 19, 15, 11, 5, 3];
+
+/**
+ * A paper lantern hanging from the ceiling at the end of a cord `cord` rows
+ * long: the room's ceiling is the top of the image.
+ */
+export function drawLantern(cord: number): SceneImage {
+  const { width, height } = LANTERN_SIZE;
+  const rope = Math.max(0, Math.round(cord));
+  const c = new SceneCanvas(width, rope + height);
+  const middle = Math.floor(width / 2);
+  c.fill(middle, 0, 1, rope, 'frameDark');
+  LANTERN_ROWS.forEach((w, i) => {
+    const y = rope + i;
+    const left = middle - Math.floor(w / 2);
+    // The paper, with a rib every third row and a lighter side, lit from within.
+    c.fill(left, y, w, 1, i % 3 === 1 ? 'lampShade' : 'lampLight');
+    if (w > 9) c.fill(left + w - 3, y, 3, 1, 'lampShade');
+  });
+  c.fill(middle - 2, rope, 5, 1, 'frameDark');
+  c.fill(middle - 1, rope + height - 1, 3, 1, 'frameDark');
   return c.toImage();
 }

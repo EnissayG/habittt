@@ -20,6 +20,7 @@ import {
   drawFloorBoards,
   drawFloorItems,
   gestureAt,
+  MEDITATION_PIECES,
   planRoom,
   PLANT_GRID,
   drawWindow,
@@ -61,6 +62,8 @@ const LABEL_GAP = 6;
 const LOGO_LINE = 32;
 const SUBTITLE_LINE = 16;
 const DOTS_HEIGHT = 24;
+/** The button of the meditation corner, on the wall above the armchair, in points. */
+const MEDITATE_BUTTON = { height: 30, gap: 10 } as const;
 /** On the shelf, a plant rests this many times longer between two gestures than on its own screen. */
 const SHELF_CALM = 3;
 
@@ -277,6 +280,9 @@ const WallPage = memo(function WallPage({
     [wall, shelf.view, frame, width, height],
   );
   const windowItem = wall.items.find((placed) => placed.content.kind === 'window');
+  const armchair = wall.items.find(
+    (placed) => placed.content.kind === 'decor' && placed.content.piece === 'armchair',
+  );
 
   return (
     <View style={{ width, height }}>
@@ -338,19 +344,48 @@ const WallPage = memo(function WallPage({
             />
           );
         }
-        if (placed.content.kind === 'decor' && placed.content.piece === 'armchair') {
+        if (placed.content.kind === 'decor' && MEDITATION_PIECES.includes(placed.content.piece)) {
+          // The whole corner opens the meditation; its button (below) is the
+          // one a screen reader finds.
           return (
             <Pressable
               key={`zone-${i}`}
               style={[styles.zone, zone]}
-              accessibilityRole="button"
-              accessibilityLabel="Le fauteuil : méditer"
+              accessible={false}
               onPress={onMeditate}
             />
           );
         }
         return null;
       })}
+
+      {armchair && (
+        // The way in, said plainly: a button on the wall above the armchair.
+        <View
+          style={[
+            styles.meditate,
+            {
+              left: toX(armchair.x),
+              top: toY(armchair.y) - MEDITATE_BUTTON.height - MEDITATE_BUTTON.gap,
+              width: armchair.content.image.width * cell,
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Méditer"
+            accessibilityHint="Ouvre le coin méditation"
+            hitSlop={8}
+            onPress={onMeditate}
+            style={({ pressed }) => [styles.meditateButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.meditateLabel} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+              Méditer
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {wall.items
         .filter((placed) => placed.labelled)
@@ -505,6 +540,17 @@ const styles = StyleSheet.create({
     color: colors.muted,
     textAlign: 'center',
   },
+  meditate: { position: 'absolute', alignItems: 'center' },
+  meditateButton: {
+    height: MEDITATE_BUTTON.height,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.line,
+  },
+  meditateLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+  pressed: { opacity: 0.6 },
   dots: {
     position: 'absolute',
     left: 0,

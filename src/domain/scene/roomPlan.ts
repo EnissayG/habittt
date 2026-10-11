@@ -8,7 +8,17 @@ import {
   type StandingSlot,
   type Wall,
 } from '../shelf';
-import { drawArmchair, drawFloorLamp, drawPainting, drawRug, FLOOR_LAMP_SIZE } from './drawDecor';
+import {
+  drawAltar,
+  drawArmchair,
+  drawFloorLamp,
+  drawLantern,
+  drawPainting,
+  drawRug,
+  drawScroll,
+  FLOOR_LAMP_SIZE,
+  LANTERN_SIZE,
+} from './drawDecor';
 import { drawSlot, type SlotKind } from './drawSlot';
 import { WINDOW_SIZE } from './drawWindow';
 import type { SceneImage, SceneLayer } from './sceneImage';
@@ -29,11 +39,14 @@ export type PlacedContent =
   | { kind: 'plant'; id: HabitId; image: PlantImage }
   | { kind: 'slot'; slot: SlotKind; image: SceneImage }
   | { kind: 'window'; image: SceneImage }
-  /** Furniture and paintings: opaque, never labelled; only the armchair is touched. */
+  /** Furniture and paintings: opaque, never labelled; the meditation corner is touched. */
   | { kind: 'decor'; piece: DecorPiece; image: SceneImage };
 
-/** What a piece of decor is: the armchair opens the meditation corner. */
-export type DecorPiece = 'armchair' | 'lamp' | 'painting';
+/** What a piece of decor is. */
+export type DecorPiece = 'armchair' | 'altar' | 'scroll' | 'lantern' | 'lamp' | 'painting';
+
+/** The pieces that make the meditation corner: touching any of them opens it. */
+export const MEDITATION_PIECES: readonly DecorPiece[] = ['armchair', 'altar', 'scroll'];
 
 export interface PlacedItem {
   /** Left edge, in cells from the room's left edge. */
@@ -99,21 +112,39 @@ const SLOTS: Record<'standing' | 'hanging', Record<SlotKind, SceneImage>> = {
 
 type Cell = Extract<PlacedContent, { kind: 'plant' | 'slot' }>;
 
-// The decor, placed like the third wall of the mockup's whole room
-// (drawPano), in cells from the wall's left edge or from the floor line.
+// The decor, in cells from the wall's left edge or from the floor line. The
+// last wall is the meditation corner: the armchair on its rug under a
+// painting, and beside it a low table with a stone figure, a candle and
+// incense, under a hanging scroll; a paper lantern hangs from the ceiling
+// between the two, and the floor lamp closes the wall.
 const DECOR = {
   /** The painting of a wall of shelves, in its top band. */
   wallPainting: { x: 8, y: 4 },
-  armchair: { x: 22 },
-  lamp: { x: 104 },
-  /** The decor wall's painting: its top this many rows above the floor line. */
-  painting: { x: 78, above: 130 },
+  armchair: { x: 14 },
+  altar: { x: 78 },
+  lamp: { x: 127 },
+  /**
+   * The painting over the armchair: its top this many rows above the floor
+   * line, and at least `gap` rows of bare wall under it, where the button
+   * of the meditation corner goes.
+   */
+  painting: { x: 22, above: 118, gap: 18 },
+  /** The scroll over the low table. */
+  scroll: { x: 86, above: 124, gap: 2 },
+  /**
+   * The paper lantern, hanging from the ceiling between the painting and
+   * the scroll: its bottom this many rows above the floor line. The taller
+   * the room, the longer its cord, so the top of the wall is never bare.
+   */
+  lantern: { x: 63, above: 134, minCord: 6 },
   /** The rug, in front of the armchair, a little below the baseboard. */
-  rug: { x: 8, y: 2 },
+  rug: { x: 0, y: 2 },
 } as const;
 
 const IMAGES = {
   armchair: drawArmchair(),
+  altar: drawAltar(),
+  scroll: drawScroll(),
   lamp: drawFloorLamp(),
   rug: drawRug(),
   peaks: drawPainting('peaks'),
@@ -257,20 +288,37 @@ function plantsWallDecor(wall: PlantsWall, left: number, top: number): PlacedIte
   return [placeDecor('painting', IMAGES[wall.painting], left + x, top + y)];
 }
 
-/** The decor wall, back to front: the painting, the armchair, the lamp beside it. */
+/** The decor wall, back to front: what hangs, then what stands, left to right. */
 function decorItems(left: number, floorLine: number): PlacedItem[] {
   const standing = (piece: DecorPiece, image: SceneImage, x: number) =>
     placeDecor(piece, image, left + x, floorLine - image.height);
-  // In a low room the painting comes down rather than being cut (the room
-  // is always taller than the lamp, so the furniture never is).
+  // In a low room (few plants, a small screen) what hangs comes down
+  // towards the furniture under it, keeping its gap; if it still does not
+  // fit under the ceiling, it is left out rather than cut or laid over the
+  // furniture.
+  const hanging = (
+    piece: DecorPiece,
+    image: SceneImage,
+    at: { x: number; above: number; gap: number },
+    under: SceneImage,
+  ): PlacedItem[] => {
+    const lowest = floorLine - under.height - at.gap - image.height;
+    const y = Math.max(0, floorLine - at.above);
+    return y <= lowest ? [placeDecor(piece, image, left + at.x, y)] : [];
+  };
+  // The lantern's cord takes whatever height is left; in a low room there
+  // is no place for it.
+  const cord = floorLine - DECOR.lantern.above - LANTERN_SIZE.height;
+  const lantern =
+    cord >= DECOR.lantern.minCord
+      ? [placeDecor('lantern', drawLantern(cord), left + DECOR.lantern.x, 0)]
+      : [];
   return [
-    placeDecor(
-      'painting',
-      IMAGES.peaks,
-      left + DECOR.painting.x,
-      Math.max(0, floorLine - DECOR.painting.above),
-    ),
+    ...hanging('painting', IMAGES.peaks, DECOR.painting, IMAGES.armchair),
+    ...hanging('scroll', IMAGES.scroll, DECOR.scroll, IMAGES.altar),
+    ...lantern,
     standing('armchair', IMAGES.armchair, DECOR.armchair.x),
+    standing('altar', IMAGES.altar, DECOR.altar.x),
     standing('lamp', IMAGES.lamp, DECOR.lamp.x),
   ];
 }

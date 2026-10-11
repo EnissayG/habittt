@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import {
   BREATH,
   BREATH_SECONDS,
+  BREATH_PULSES,
   breathAt,
-  breathLevel,
+  breathFullness,
   breathsDone,
   drawMeditationPlant,
   isOver,
@@ -18,6 +19,7 @@ import {
   PHRASE_SECONDS,
   plantDaysAfter,
   plantDaysAt,
+  pulsesBetween,
 } from './meditation';
 import { MAX_GROWTH_DAYS } from './plant/grid';
 import { SPECIES_IDS } from './plant/registry';
@@ -118,19 +120,100 @@ describe('the breath', () => {
     }
   });
 
-  it('fills the bar step by step while breathing in, and empties it while breathing out', () => {
-    expect(breathLevel(0, 12)).toBe(0);
-    expect(breathLevel(2, 12)).toBe(6);
-    expect(breathLevel(4, 12)).toBe(12);
-    expect(breathLevel(7, 12)).toBe(6);
-    expect(breathLevel(9.99, 12)).toBe(0);
-    expect(breathLevel(10, 12)).toBe(0);
-    for (let t = 0; t < 20; t += 0.05) {
-      const level = breathLevel(t, 12);
-      expect(Number.isInteger(level)).toBe(true);
-      expect(level).toBeGreaterThanOrEqual(0);
-      expect(level).toBeLessThanOrEqual(12);
+  it('is empty at the start, full at the top of the breath in, empty again at the end', () => {
+    expect(breathFullness(0)).toBe(0);
+    expect(breathFullness(2)).toBeCloseTo(0.5);
+    expect(breathFullness(BREATH.inhale)).toBe(1);
+    expect(breathFullness(BREATH.inhale + BREATH.exhale / 2)).toBeCloseTo(0.5);
+    expect(breathFullness(BREATH_SECONDS)).toBe(0);
+    expect(breathFullness(BREATH_SECONDS - 0.001)).toBeLessThan(0.001);
+  });
+
+  it('fills while breathing in and empties while breathing out, never jumping', () => {
+    const step = 0.05;
+    for (let t = step; t < 3 * BREATH_SECONDS; t += step) {
+      const now = breathFullness(t);
+      const before = breathFullness(t - step);
+      expect(now).toBeGreaterThanOrEqual(0);
+      expect(now).toBeLessThanOrEqual(1);
+      expect(Math.abs(now - before)).toBeLessThan(0.03);
+      const { phase } = breathAt(t - step / 2);
+      if (breathAt(t).number !== breathAt(t - step).number) continue;
+      if (phase === 'inhale') expect(now).toBeGreaterThanOrEqual(before);
+      else expect(now).toBeLessThanOrEqual(before);
     }
+  });
+
+  it('starts and stops gently: slower at both ends than in the middle', () => {
+    const speed = (t: number) => Math.abs(breathFullness(t + 0.1) - breathFullness(t));
+    expect(speed(0)).toBeLessThan(speed(1.9) / 3);
+    expect(speed(3.9)).toBeLessThan(speed(1.9) / 3);
+    expect(speed(4)).toBeLessThan(speed(6.9) / 3);
+  });
+});
+
+describe('the breath, for the hand', () => {
+  const gaps = (times: number[]) => times.slice(1).map((time, i) => time - times[i]!);
+  const inhale = BREATH_PULSES.filter((pulse) => pulse.at < BREATH.inhale);
+  const exhale = BREATH_PULSES.filter((pulse) => pulse.at >= BREATH.inhale);
+  const rank = { soft: 0, light: 1, medium: 2 };
+
+  it('taps closer and stronger while breathing in', () => {
+    expect(inhale[0]!.at).toBe(0);
+    const between = gaps(inhale.map((pulse) => pulse.at));
+    for (let i = 1; i < between.length; i++) expect(between[i]!).toBeLessThan(between[i - 1]!);
+    for (let i = 1; i < inhale.length; i++) {
+      expect(rank[inhale[i]!.strength]).toBeGreaterThanOrEqual(rank[inhale[i - 1]!.strength]);
+    }
+    expect(inhale[0]!.strength).toBe('soft');
+    expect(inhale[inhale.length - 1]!.strength).toBe('medium');
+  });
+
+  it('holds still at the top of the breath', () => {
+    expect(exhale[0]!.at - inhale[inhale.length - 1]!.at).toBeGreaterThan(0.7);
+    expect(exhale[0]!.at).toBeGreaterThan(BREATH.inhale);
+  });
+
+  it('spaces out and fades while breathing out, then keeps silent', () => {
+    const between = gaps(exhale.map((pulse) => pulse.at));
+    for (let i = 1; i < between.length; i++) expect(between[i]!).toBeGreaterThan(between[i - 1]!);
+    for (let i = 1; i < exhale.length; i++) {
+      expect(rank[exhale[i]!.strength]).toBeLessThanOrEqual(rank[exhale[i - 1]!.strength]);
+    }
+    expect(exhale[exhale.length - 1]!.strength).toBe('soft');
+    expect(BREATH_SECONDS - exhale[exhale.length - 1]!.at).toBeGreaterThanOrEqual(2);
+  });
+
+  it('gives every tap exactly once to a clock that beats ten times a second', () => {
+    const meditation = MEDITATIONS[5];
+    let count = 0;
+    let previous = 0;
+    for (let beat = 1; beat <= meditation.seconds * 10; beat++) {
+      const t = beat / 10;
+      count += pulsesBetween(meditation, previous, t).length;
+      previous = t;
+    }
+    expect(count).toBe((meditation.seconds / BREATH_SECONDS) * BREATH_PULSES.length);
+  });
+
+  it('gives them in order, whatever the beat', () => {
+    const meditation = MEDITATIONS[5];
+    expect(pulsesBetween(meditation, 0, 0.1)).toEqual([BREATH_PULSES[0]]);
+    expect(pulsesBetween(meditation, 0.1, 0.8)).toEqual([]);
+    expect(pulsesBetween(meditation, 0.8, 1.0)).toEqual([BREATH_PULSES[1]]);
+    expect(pulsesBetween(meditation, 9.95, 10.05)).toEqual([BREATH_PULSES[0]]);
+    expect(pulsesBetween(meditation, 12.6, 13.2)).toEqual([BREATH_PULSES[4], BREATH_PULSES[5]]);
+  });
+
+  it('does not catch up after a pause, and stops with the session', () => {
+    const meditation = MEDITATIONS[5];
+    expect(pulsesBetween(meditation, 3, 60)).toEqual([]);
+    expect(pulsesBetween(meditation, 5, 5)).toEqual([]);
+    expect(pulsesBetween(meditation, 5, 4)).toEqual([]);
+    expect(pulsesBetween(meditation, meditation.seconds - 0.05, meditation.seconds + 0.05)).toEqual(
+      [],
+    );
+    expect(pulsesBetween(meditation, meditation.seconds + 1, meditation.seconds + 1.1)).toEqual([]);
   });
 });
 
@@ -200,7 +283,7 @@ describe('phraseAt', () => {
     expect(phraseAt(meditation, 14)).toBeNull();
     expect(phraseAt(meditation, 24.9)).toBeNull();
     expect(phraseAt(meditation, 25)).toBe(
-      'Inspire quand la barre se remplit. Expire quand elle se vide.',
+      'Inspire quand la lumière grandit. Expire quand elle se retire.',
     );
   });
 

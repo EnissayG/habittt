@@ -21,8 +21,10 @@ et son nom n'est donné qu'à la fin.
 
 - **Rien à apprendre** : pas de posture, pas de vocabulaire, pas de
   technique. On respire et on regarde pousser.
-- **Elle marche les yeux fermés** : une vibration légère marque le début de
-  chaque inspiration. On peut poser le téléphone dans sa main ou sur sa
+- **Elle marche les yeux fermés** : la main sent le souffle. De petites
+  vibrations se rapprochent et se renforcent pendant l'inspiration,
+  s'arrêtent un instant en haut du souffle, puis s'espacent et s'effacent
+  pendant l'expiration. On peut poser le téléphone dans sa main ou sur sa
   cuisse et ne plus regarder l'écran ; la plante pousse quand même.
 - **Trois durées**, de la pause de cinq minutes à la demi-heure.
 - **Rien à réussir** : aucune série, aucun compteur de séances, aucun
@@ -37,27 +39,32 @@ n'y a rien à lire.
 
 ## Le parcours
 
-1. **Entrer** : toucher le fauteuil sur l'étagère (mur de décor). Libellé
-   d'accessibilité : « Le fauteuil : méditer ».
+1. **Entrer** : le dernier mur de la pièce est le coin méditation (le
+   fauteuil, une table basse avec une statue assise, une bougie et de
+   l'encens, un rouleau avec un cercle tracé d'un seul geste, une lanterne
+   de papier). Un bouton « Méditer » est posé sur le mur au-dessus du
+   fauteuil ; toucher le fauteuil, la table ou le rouleau ouvre aussi la
+   séance.
 2. **Choisir** (écran 12) : « Combien de temps ? » et trois boutons :
    5 minutes, 10 minutes, 30 minutes. Dessous : « Une plante va pousser
    pendant que tu respires. Tu peux arrêter quand tu veux. » Et un
-   interrupteur : « Vibrer à chaque inspiration », activé par défaut.
+   interrupteur : « Vibrer au rythme du souffle », activé par défaut.
 3. **La séance** :
    - Au centre, **le pot**, grand, d'abord vide. La plante est dessinée par
      le générateur de l'app, comme toutes les autres.
    - **Le souffle** dure dix secondes : quatre pour inspirer, six pour
-     expirer. Sous le pot, une barre en pixels se remplit pendant
-     l'inspiration et se vide pendant l'expiration, par paliers, sans coin
-     arrondi. Avec « Réduire les animations », la barre est remplacée par
-     les mots « inspire » et « expire ».
+     expirer. **Une lumière** en pixels, derrière la plante, grandit
+     pendant l'inspiration et se retire pendant l'expiration ; elle part et
+     s'arrête en douceur, comme un souffle. Le mot « inspire » ou
+     « expire » est écrit dessous. Avec « Réduire les animations », la
+     lumière garde une taille fixe et seuls les mots changent.
    - **La plante pousse à la fin de chaque expiration.** Elle va du pot
      vide à la plante adulte (120 jours) sur toute la séance, quelle que
      soit sa durée : quatre jours par souffle en 5 minutes, deux en 10
      minutes, deux jours tous les trois souffles en 30 minutes. Dans la
      séance longue, certains souffles ne montrent donc rien : c'est voulu,
      et une phrase le dit.
-   - Sous la barre, **la phrase du moment**. Elle reste affichée 14
+   - Dessous, **la phrase du moment**. Elle reste affichée 14
      secondes, puis s'efface.
    - En bas, discret : le temps restant en minutes (« encore 4 min ») et
      « Terminer ». Toucher l'écran masque ou montre ces deux éléments.
@@ -94,7 +101,7 @@ Chaque phrase a son moment, en minutes et secondes depuis le début.
 | Moment | Phrase                                                             |
 | ------ | ------------------------------------------------------------------ |
 | 0:00   | Installe-toi. Il n'y a rien à réussir ici.                         |
-| 0:25   | Inspire quand la barre se remplit. Expire quand elle se vide.      |
+| 0:25   | Inspire quand la lumière grandit. Expire quand elle se retire.     |
 | 0:55   | Regarde le pot. Quelque chose y pousse, sans que tu fasses rien.   |
 | 1:30   | Pose tes pieds. Relâche tes épaules.                               |
 | 2:05   | Si une pensée passe, laisse-la passer. Reviens au souffle.         |
@@ -109,7 +116,7 @@ Chaque phrase a son moment, en minutes et secondes depuis le début.
 | Moment | Phrase                                                                 |
 | ------ | ---------------------------------------------------------------------- |
 | 0:00   | Installe-toi. Il n'y a rien à réussir ici.                             |
-| 0:25   | Inspire quand la barre se remplit. Expire quand elle se vide.          |
+| 0:25   | Inspire quand la lumière grandit. Expire quand elle se retire.         |
 | 0:55   | Regarde le pot. Quelque chose y pousse, sans que tu fasses rien.       |
 | 1:35   | Pose tes pieds. Relâche tes épaules.                                   |
 | 2:15   | Relâche ta mâchoire. Ton front. Tes mains.                             |
@@ -129,7 +136,7 @@ Chaque phrase a son moment, en minutes et secondes depuis le début.
 | Moment | Phrase                                                                 |
 | ------ | ---------------------------------------------------------------------- |
 | 0:00   | Installe-toi. Il n'y a rien à réussir ici.                             |
-| 0:30   | Inspire quand la barre se remplit. Expire quand elle se vide.          |
+| 0:30   | Inspire quand la lumière grandit. Expire quand elle se retire.         |
 | 1:05   | Regarde le pot. Quelque chose y pousse, sans que tu fasses rien.       |
 | 2:00   | Pose tes pieds. Relâche tes épaules.                                   |
 | 3:00   | Relâche ta mâchoire. Ton front. Tes mains.                             |

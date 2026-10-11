@@ -3,15 +3,26 @@ import { PLANT_GRID, type PlantImage } from '../plant/grid';
 import { renderPlant } from '../plant/renderPlant';
 import { arrangeShelf, type ShelfItem } from '../shelf';
 import {
+  ALTAR_SIZE,
   ARMCHAIR_SIZE,
+  drawAltar,
   drawArmchair,
   drawFloorLamp,
+  drawLantern,
   drawPainting,
   drawRug,
+  drawScroll,
   FLOOR_LAMP_SIZE,
+  LANTERN_SIZE,
 } from './drawDecor';
 import { drawWindow, WINDOW_SIZE } from './drawWindow';
-import { composeRoom, planRoom, type PlacedItem, type RoomPlan } from './roomPlan';
+import {
+  composeRoom,
+  MEDITATION_PIECES,
+  planRoom,
+  type PlacedItem,
+  type RoomPlan,
+} from './roomPlan';
 
 const item = (id: string, species: string, day: number): ShelfItem => ({
   id,
@@ -161,40 +172,124 @@ describe('planRoom', () => {
     expect(room.walls[1]!.items.some((p) => p.content.kind === 'decor')).toBe(false);
   });
 
-  it('furnishes the last wall: armchair and lamp on the floor line, a painting, no shelf', () => {
-    const room = plan([], {});
+  /** A room as tall as a few grown plants make it. */
+  const tallRoom = () =>
+    plan(
+      ['monstera', 'ficus', 'bamboo', 'fern'].map((species, i) => item(`t${i}`, species, i + 1)),
+      Object.fromEntries(
+        ['monstera', 'ficus', 'bamboo', 'fern'].map((species, i) => [`t${i}`, grown(species)]),
+      ),
+    );
+
+  it('furnishes the last wall as the meditation corner, with no shelf', () => {
+    const room = tallRoom();
     const wall = room.walls[2]!;
     expect(wall.wall.kind).toBe('decor');
-    expect(wall.items.map((p) => p.content.kind)).toEqual(['decor', 'decor', 'decor']);
-    const [painting, armchair, lamp] = wall.items;
+    expect(wall.items.map((p) => p.content.kind)).toEqual(Array(6).fill('decor'));
+    const [painting, scroll, lantern, armchair, altar, lamp] = wall.items;
+    // What stands, on the floor line, left to right.
     expect(armchair!.content.image).toEqual(drawArmchair());
-    expect(armchair!.x).toBe(wall.left + 22);
+    expect(armchair!.x).toBe(wall.left + 14);
     expect(armchair!.y + ARMCHAIR_SIZE.height).toBe(room.height);
+    expect(altar!.content.image).toEqual(drawAltar());
+    expect(altar!.x).toBe(wall.left + 78);
+    expect(altar!.y + ALTAR_SIZE.height).toBe(room.height);
     expect(lamp!.content.image).toEqual(drawFloorLamp());
-    expect(lamp!.x).toBe(wall.left + 104);
+    expect(lamp!.x).toBe(wall.left + 127);
     expect(lamp!.y + FLOOR_LAMP_SIZE.height).toBe(room.height);
+    // What hangs: the painting over the armchair, the scroll over the table.
     expect(painting!.content.image).toEqual(drawPainting('peaks'));
-    expect(painting!.x).toBe(wall.left + 78);
-    expect(painting!.y).toBe(Math.max(0, room.height - 130));
+    expect(painting!.x).toBe(wall.left + 22);
+    expect(painting!.y).toBe(room.height - 118);
+    expect(scroll!.content.image).toEqual(drawScroll());
+    expect(scroll!.x).toBe(wall.left + 86);
+    expect(scroll!.y).toBe(room.height - 124);
+    // The lantern hangs from the ceiling down to above the two frames.
+    expect(lantern!.y).toBe(0);
+    expect(lantern!.x).toBe(wall.left + 63);
+    expect(lantern!.content.image).toEqual(drawLantern(room.height - 134 - LANTERN_SIZE.height));
+    expect(lantern!.content.image.height).toBe(room.height - 134);
     for (const placed of wall.items) {
       expect(placed.rows).toEqual({ from: 0, to: placed.content.image.height });
       expect(placed.labelled).toBe(false);
     }
   });
 
-  it('names each piece of decor, so the armchair can be touched', () => {
-    const room = plan([], {});
+  it.each([
+    ['a tall room', () => tallRoom()],
+    [
+      'the lowest room: no plant yet, small labels',
+      () => plan([], {}, { pageWidth: 150, labelRows: 6 }),
+    ],
+    ['a low room', () => plan([], {})],
+    [
+      'a room just under the height the scroll needs',
+      () => plan([], {}, { pageWidth: 150, labelRows: 13 }),
+    ],
+  ] as const)('%s: keeps every piece inside its wall, and none over another', (_, make) => {
+    const room = make();
+    const wall = room.walls[2]!;
+    const boxes = wall.items.map((p) => ({
+      piece: p.content.kind === 'decor' ? p.content.piece : '',
+      left: p.x,
+      right: p.x + p.content.image.width,
+      top: p.y,
+      bottom: p.y + p.content.image.height,
+    }));
+    for (const box of boxes) {
+      expect(box.left).toBeGreaterThanOrEqual(wall.left);
+      expect(box.right).toBeLessThanOrEqual(wall.left + 144);
+      expect(box.top).toBeGreaterThanOrEqual(0);
+      expect(box.bottom).toBeLessThanOrEqual(room.height);
+    }
+    boxes.forEach((a, i) =>
+      boxes.slice(i + 1).forEach((b) => {
+        const apart =
+          a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+        expect([a.piece, b.piece, apart]).toEqual([a.piece, b.piece, true]);
+      }),
+    );
+  });
+
+  it('leaves out what cannot hang in a low room, never the furniture', () => {
+    const pieces = (room: RoomPlan) =>
+      room.walls[2]!.items.flatMap((p) => (p.content.kind === 'decor' ? [p.content.piece] : []));
+    const low = plan([], {}, { pageWidth: 150, labelRows: 6 });
+    expect(low.height).toBeLessThan(ALTAR_SIZE.height + 2 + 46);
+    expect(pieces(low)).toEqual(expect.arrayContaining(['armchair', 'altar', 'lamp']));
+    expect(pieces(low)).not.toContain('scroll');
+    expect(pieces(low)).not.toContain('lantern');
+    expect(pieces(tallRoom())).toContain('scroll');
+    expect(pieces(low)).not.toContain('painting');
+    // A little taller: the painting hangs under the ceiling, and the wall
+    // stays free above the armchair for the button of the corner.
+    const medium = plan([], {}, { pageWidth: 150, labelRows: 16 });
+    const painting = medium.walls[2]!.items.find(
+      (p) => p.content.kind === 'decor' && p.content.piece === 'painting',
+    )!;
+    expect(medium.height).toBeLessThan(118);
+    expect(medium.height).toBeGreaterThanOrEqual(ARMCHAIR_SIZE.height + 18 + 30);
+    expect(painting.y).toBe(0);
+    expect(painting.y + painting.content.image.height).toBeLessThanOrEqual(
+      medium.height - ARMCHAIR_SIZE.height - 18,
+    );
+  });
+
+  it('names each piece of decor, so the meditation corner can be touched', () => {
+    const room = tallRoom();
     const pieces = (w: number) =>
       room.walls[w]!.items.flatMap((p) => (p.content.kind === 'decor' ? [p.content.piece] : []));
-    expect(pieces(2)).toEqual(['painting', 'armchair', 'lamp']);
-    expect(pieces(1)).toEqual(['painting']);
-    expect(room.walls.flatMap((_, w) => pieces(w)).filter((p) => p === 'armchair')).toHaveLength(1);
+    expect(pieces(2)).toEqual(['painting', 'scroll', 'lantern', 'armchair', 'altar', 'lamp']);
+    const all = room.walls.flatMap((_, w) => pieces(w));
+    for (const piece of MEDITATION_PIECES) {
+      expect(all.filter((p) => p === piece)).toHaveLength(1);
+    }
   });
 
   it('lays the rug on the floor in front of the armchair', () => {
     const room = plan([], {});
     const wall = room.walls[2]!;
-    expect(room.floorItems).toEqual([{ x: wall.left + 8, y: 2, image: drawRug() }]);
+    expect(room.floorItems).toEqual([{ x: wall.left, y: 2, image: drawRug() }]);
   });
 
   it('is always tall enough for the floor lamp', () => {
