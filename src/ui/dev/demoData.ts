@@ -1,4 +1,11 @@
-import { addDays, type HabitTracker, type Mood, type SpeciesId } from '../../domain';
+import {
+  addDays,
+  replantingIdFor,
+  type HabitTracker,
+  type Mood,
+  type ReplantingRepository,
+  type SpeciesId,
+} from '../../domain';
 
 // Demo habits for testing the shelf on a phone (development only): ages
 // from 3 to 400 days, relapses, every kind of plant, four hanging ones, and
@@ -49,6 +56,8 @@ const DEMO_NOTES: Record<string, readonly { daysAgo: number; text: string; mood:
     Soda: [{ daysAgo: 10, text: "De l'eau pétillante à la place. Ça marche.", mood: 'proud' }],
   };
 const DEMO_WATERED_TODAY = ['Fumer', 'Sucre', 'Café', 'Séries'];
+/** Not replanted after their last relapse: their plant is dead (ADR 0013). */
+export const DEMO_DEAD = ['Réseaux', 'Râler'];
 
 /** Fixed seeds, so the demo plants are the same every time. */
 export function demoSeeds(): () => number {
@@ -59,8 +68,16 @@ export function demoSeeds(): () => number {
   };
 }
 
-/** Fills an empty database with the demo habits, through the use cases. */
-export async function seedDemo(tracker: HabitTracker): Promise<void> {
+/**
+ * Fills an empty database with the demo habits, through the use cases.
+ * Replanting is only possible today in the app: the past replantings (the
+ * day of each relapse, but for the last one of DEMO_DEAD) are written
+ * straight to their repository.
+ */
+export async function seedDemo(
+  tracker: HabitTracker,
+  replantings: ReplantingRepository,
+): Promise<void> {
   const today = tracker.today();
   for (const demo of DEMO_HABITS) {
     const result = await tracker.addHabit({
@@ -69,8 +86,17 @@ export async function seedDemo(tracker: HabitTracker): Promise<void> {
       species: demo.species,
     });
     if (!result.ok) throw new Error(`Demo habit refused: ${demo.name} (${result.error})`);
-    for (const daysAgo of demo.relapses) {
-      await tracker.recordRelapse(result.value.id, addDays(today, -daysAgo));
+    const habitId = result.value.id;
+    for (const [i, daysAgo] of demo.relapses.entries()) {
+      const date = addDays(today, -daysAgo);
+      await tracker.recordRelapse(habitId, date);
+      if (DEMO_DEAD.includes(demo.name) && i === demo.relapses.length - 1) continue;
+      await replantings.save({
+        id: replantingIdFor(habitId, date),
+        habitId,
+        date,
+        updatedAt: `${date}T12:00:00.000Z`,
+      });
     }
     for (const { daysAgo, text, mood } of DEMO_NOTES[demo.name] ?? []) {
       await tracker.saveNote(result.value.id, addDays(today, -daysAgo), { text, mood });

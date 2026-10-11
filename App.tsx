@@ -7,6 +7,7 @@ import {
   SqliteHabitRepository,
   SqliteNoteRepository,
   SqliteRelapseRepository,
+  SqliteReplantingRepository,
   SqliteWateringRepository,
 } from './src/data/sqliteRepositories';
 import { generateId, generateSeed, systemClock } from './src/data/system';
@@ -26,6 +27,7 @@ function trackerOn(db: Database, seeds: () => number = generateSeed): HabitTrack
     relapses: new SqliteRelapseRepository(db),
     notes: new SqliteNoteRepository(db),
     waterings: new SqliteWateringRepository(db),
+    replantings: new SqliteReplantingRepository(db),
     clock: systemClock,
     generateId,
     generateSeed: seeds,
@@ -56,7 +58,7 @@ export default function App() {
       await demo?.db.closeAsync();
       const db = await openFreshDemoDatabase();
       const tracker = trackerOn(db, demoSeeds());
-      await seedDemo(tracker);
+      await seedDemo(tracker, new SqliteReplantingRepository(db));
       setDemo({ db, tracker });
       setSource('demo');
     },

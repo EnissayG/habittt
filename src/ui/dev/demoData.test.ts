@@ -7,21 +7,22 @@ import {
   InMemoryReplantingRepository,
   InMemoryWateringRepository,
 } from '../../domain/testSupport';
-import { DEMO_HABITS, demoSeeds, seedDemo } from './demoData';
+import { DEMO_DEAD, DEMO_HABITS, demoSeeds, seedDemo } from './demoData';
 
 async function demoShelf() {
   let next = 0;
+  const replantings = new InMemoryReplantingRepository();
   const tracker = createHabitTracker({
     habits: new InMemoryHabitRepository(),
     relapses: new InMemoryRelapseRepository(),
     notes: new InMemoryNoteRepository(),
     waterings: new InMemoryWateringRepository(),
-    replantings: new InMemoryReplantingRepository(),
+    replantings,
     clock: fixedClock(),
     generateId: () => `demo-${++next}`,
     generateSeed: demoSeeds(),
   });
-  await seedDemo(tracker);
+  await seedDemo(tracker, replantings);
   return tracker.getShelf();
 }
 
@@ -50,6 +51,13 @@ describe('demo data', () => {
       'plants',
       'decor',
     ]);
+  });
+
+  it('has two dead plants, and replanted all the others after each relapse', async () => {
+    const shelf = await demoShelf();
+    const dead = Object.values(shelf.habits).filter((s) => s.life.dead);
+    expect(dead.map((s) => s.habit.name).sort()).toEqual([...DEMO_DEAD].sort());
+    for (const summary of dead) expect(summary.plant.dead).toBe(true);
   });
 
   it('has a few notes and plants watered today', async () => {
