@@ -11,6 +11,7 @@ const planOf =
     height: rows + 3 * labelRows + 2 * rowGap,
     walls: [],
     floorItems: [],
+    animated: [],
   });
 
 const IPHONE: Omit<FitRoomParams, 'plan'> = {

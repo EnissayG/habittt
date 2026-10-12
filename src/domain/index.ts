@@ -36,24 +36,22 @@ export {
   breathAt,
   BREATH_PULSES,
   breathFullness,
+  breathWord,
+  sessionShare,
+  WORD_FADE,
   pulsesBetween,
   type BreathPulse,
   type PulseStrength,
   breathsDone,
   isOver,
-  MEDITATION_END,
   MEDITATION_LENGTHS,
   MEDITATIONS,
   minutesLeft,
-  phraseAt,
-  PHRASE_MAX_LENGTH,
-  PHRASE_SECONDS,
   plantDaysAfter,
   plantDaysAt,
   type Breath,
   type Meditation,
   type MeditationMinutes,
-  type MeditationPhrase,
 } from './meditation';
 export {
   replant,
@@ -111,11 +109,26 @@ export { buildTimeline, type DayEntry } from './timeline';
 export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';
 export { drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
 export { drawSlot, type SlotKind } from './scene/drawSlot';
-export { drawHalo, HALO_CENTER, HALO_RADIUS, haloRadius } from './scene/drawHalo';
+export { drawSun, SUN } from './scene/drawSun';
+export {
+  drawCushion,
+  drawFlame,
+  drawIncenseTimer,
+  drawLowTable,
+  drawMat,
+  drawSmoke,
+  drawVase,
+  drawWallpaper,
+  drawWallShelf,
+  FLAME_SIZE,
+  INCENSE_TIMER_SIZE,
+  SMOKE_SIZE,
+} from './scene/drawCorner';
 export {
   composeRoom,
   planRoom,
   MEDITATION_PIECES,
+  type AnimatedDecor,
   type DecorPiece,
   type FloorItem,
   type PlacedContent,

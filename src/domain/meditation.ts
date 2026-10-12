@@ -2,7 +2,7 @@ import { MAX_GROWTH_DAYS } from './plant/grid';
 import { SPECIES_IDS, type SpeciesId } from './plant/registry';
 import type { SeedGenerator } from './ports';
 
-// The meditation corner (docs/meditation.md, ADR 0017): a plant grows from
+// The meditation corner (docs/meditation.md, ADR 0017 and 0019): a plant grows from
 // an empty pot to a grown plant while one breathes, over the whole session.
 // Everything here is a function of the time spent in the session, in
 // seconds, given by the UI (which pauses it when the app is in the
@@ -12,16 +12,9 @@ export type MeditationMinutes = 5 | 10 | 30;
 
 export const MEDITATION_LENGTHS: readonly MeditationMinutes[] = [5, 10, 30];
 
-export interface MeditationPhrase {
-  /** Seconds from the start. */
-  at: number;
-  text: string;
-}
-
 export interface Meditation {
   minutes: MeditationMinutes;
   seconds: number;
-  phrases: readonly MeditationPhrase[];
   /** The plant grows `days` days every `every` breaths. */
   growth: { days: number; every: number };
 }
@@ -30,106 +23,14 @@ export interface Meditation {
 export const BREATH = { inhale: 4, exhale: 6 } as const;
 export const BREATH_SECONDS = BREATH.inhale + BREATH.exhale;
 
-/** How long a phrase stays on screen, in seconds. */
-export const PHRASE_SECONDS = 14;
-
-/** Two lines of the session screen, in characters. */
-export const PHRASE_MAX_LENGTH = 72;
-
-/** Shown at the end, before the plant's name. */
-export const MEDITATION_END = 'Elle a poussé pendant que tu respirais.';
-
-const INSTALL = "Installe-toi. Il n'y a rien à réussir ici.";
-const LIGHT = 'Inspire quand la lumière grandit. Expire quand elle se retire.';
-const POT = 'Regarde le pot. Quelque chose y pousse, sans que tu fasses rien.';
-const FEET = 'Pose tes pieds. Relâche tes épaules.';
-const JAW = 'Relâche ta mâchoire. Ton front. Tes mains.';
-const THOUGHT = 'Si une pensée passe, laisse-la passer. Reviens au souffle.';
-const UNKNOWN = "Tu ne sais pas encore quelle plante c'est. Ce n'est pas grave.";
-const WAVE = "Une envie, c'est comme une vague. Elle monte, puis elle redescend.";
-const WATCH_IT = 'Tu peux la regarder passer sans rien faire.';
-const EYES = 'Tu peux fermer les yeux. Elle pousse quand même.';
-const BACK = "Reviens au souffle, autant de fois qu'il le faut.";
-const NOT_FASTER = 'Elle ne pousse pas plus vite si tu la regardes.';
-const FEEL = 'Remarque comment tu te sens, sans chercher à changer quoi que ce soit.';
-const FEW_MORE = 'Encore quelques souffles, à ton rythme.';
-const RETURN = 'Reviens doucement. Regarde ce qui a poussé.';
-
-/** "4:42" -> 282 seconds. */
-function at(moment: string, text: string): MeditationPhrase {
-  const [minutes, seconds] = moment.split(':').map(Number);
-  return { at: minutes! * 60 + seconds!, text };
-}
-
+/**
+ * The three sessions. Nothing is written during a session but the word of
+ * the breath (see breathWord): no phrase, no advice (ADR 0019).
+ */
 export const MEDITATIONS: Record<MeditationMinutes, Meditation> = {
-  5: {
-    minutes: 5,
-    seconds: 5 * 60,
-    growth: { days: 4, every: 1 },
-    phrases: [
-      at('0:00', INSTALL),
-      at('0:25', LIGHT),
-      at('0:55', POT),
-      at('1:30', FEET),
-      at('2:05', THOUGHT),
-      at('2:40', UNKNOWN),
-      at('3:15', WAVE),
-      at('3:50', EYES),
-      at('4:20', FEW_MORE),
-      at('4:42', RETURN),
-    ],
-  },
-  10: {
-    minutes: 10,
-    seconds: 10 * 60,
-    growth: { days: 2, every: 1 },
-    phrases: [
-      at('0:00', INSTALL),
-      at('0:25', LIGHT),
-      at('0:55', POT),
-      at('1:35', FEET),
-      at('2:15', JAW),
-      at('3:00', THOUGHT),
-      at('3:50', UNKNOWN),
-      at('4:40', EYES),
-      at('5:30', WAVE),
-      at('6:20', WATCH_IT),
-      at('7:10', BACK),
-      at('8:00', NOT_FASTER),
-      at('8:50', FEEL),
-      at('9:22', FEW_MORE),
-      at('9:42', RETURN),
-    ],
-  },
-  30: {
-    minutes: 30,
-    seconds: 30 * 60,
-    growth: { days: 2, every: 3 },
-    phrases: [
-      at('0:00', INSTALL),
-      at('0:30', LIGHT),
-      at('1:05', POT),
-      at('2:00', FEET),
-      at('3:00', JAW),
-      at('4:15', 'Parfois, rien ne se voit. Ça pousse quand même.'),
-      at('5:30', 'Porte ton attention sur tes pieds, puis remonte lentement.'),
-      at('6:45', 'Tes jambes. Ton ventre. Ton dos contre le fauteuil.'),
-      at('8:00', 'Ta poitrine qui se soulève. Tes épaules. Ta nuque.'),
-      at('9:30', EYES),
-      at('11:30', THOUGHT),
-      at('13:30', 'Écoute les bruits de la pièce, sans les suivre.'),
-      at('15:00', 'Tu es à la moitié. Rien ne presse.'),
-      at('16:30', WAVE),
-      at('18:00', WATCH_IT),
-      at('20:00', BACK),
-      at('22:00', "Si tu t'es perdu dans tes pensées, ce n'est rien. Reviens."),
-      at('24:00', NOT_FASTER),
-      at('26:00', FEEL),
-      at('27:45', "Pense à une chose, même petite, qui t'a fait du bien aujourd'hui."),
-      at('29:00', FEW_MORE),
-      at('29:38', RETURN),
-    ],
-  },
+  5: { minutes: 5, seconds: 5 * 60, growth: { days: 4, every: 1 } },
+  10: { minutes: 10, seconds: 10 * 60, growth: { days: 2, every: 1 } },
+  30: { minutes: 30, seconds: 30 * 60, growth: { days: 2, every: 3 } },
 };
 
 export interface Breath {
@@ -149,10 +50,35 @@ export function breathAt(t: number): Breath {
     : { phase: 'exhale', progress: (within - BREATH.inhale) / BREATH.exhale, number };
 }
 
+/** Seconds a word of the breath takes to appear, and to fade away. */
+export const WORD_FADE = 0.8;
+
+/**
+ * The word written under the plant at time t, and how visible it is (0 to
+ * 1): "inspire" while breathing in, "expire" while breathing out. Each one
+ * appears softly as its part of the breath begins and fades away as it
+ * ends, so that one passes into the other with the breath.
+ */
+export function breathWord(t: number): { word: 'inspire' | 'expire'; opacity: number } {
+  const { phase, progress } = breathAt(t);
+  const length = phase === 'inhale' ? BREATH.inhale : BREATH.exhale;
+  const into = progress * length;
+  const left = length - into;
+  const opacity = Math.min(1, into / WORD_FADE, left / WORD_FADE);
+  // Smoothstep: the fades start and end gently.
+  const eased = opacity * opacity * (3 - 2 * opacity);
+  return { word: phase === 'inhale' ? 'inspire' : 'expire', opacity: eased };
+}
+
+/** How much of the session has passed, from 0 to 1: the incense burns with it. */
+export function sessionShare(meditation: Meditation, t: number): number {
+  return Math.min(1, Math.max(0, t) / meditation.seconds);
+}
+
 /**
  * How full the breath is at time t: 0 with the lungs empty, 1 at the top of
  * the breath in. It starts and stops gently, like a breath, not like a
- * machine: the light behind the plant follows it (see drawHalo).
+ * machine: the air around the sun follows it (see drawSun).
  */
 export function breathFullness(t: number): number {
   const { phase, progress } = breathAt(t);
@@ -226,16 +152,6 @@ export function plantDaysAfter(meditation: Meditation, breaths: number): number 
 
 export function plantDaysAt(meditation: Meditation, t: number): number {
   return plantDaysAfter(meditation, breathsDone(meditation, t));
-}
-
-/** The phrase on screen at time t, or null: between two phrases there is nothing to read. */
-export function phraseAt(meditation: Meditation, t: number): string | null {
-  if (t < 0 || t >= meditation.seconds) return null;
-  for (let i = meditation.phrases.length - 1; i >= 0; i--) {
-    const phrase = meditation.phrases[i]!;
-    if (phrase.at <= t) return t < phrase.at + PHRASE_SECONDS ? phrase.text : null;
-  }
-  return null;
 }
 
 /** "encore N min": the time left, rounded up to the minute. */

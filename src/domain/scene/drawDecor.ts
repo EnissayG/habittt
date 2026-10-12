@@ -1,19 +1,15 @@
 import { sin } from '../plant/trig';
 import { SceneCanvas, type SceneImage, type SceneTone } from './sceneImage';
 
-// The furniture and pictures of the room, ported from the "whole room" view
-// of the mockup (docs/prototypes/maquette-habittt.html, drawPano).
+// The pictures of the room and what hangs from its ceiling: the paintings,
+// the scroll and the paper lantern. The furniture of the meditation corner
+// is in drawCorner.ts.
 //
 // Everything is drawn at the scale of the plants: one cell here is one cell
-// of a plant. A pot is about 15 cells wide, so the armchair is as tall as two
-// shelves and the lamp stands a little taller than it. Like the window, these
-// images hold symbolic tones only; the UI theme gives the colors.
+// of a plant. Like the window, these images hold symbolic tones only; the UI
+// theme gives the colors.
 
-export const ARMCHAIR_SIZE = { width: 56, height: 52 } as const;
-export const FLOOR_LAMP_SIZE = { width: 17, height: 80 } as const;
 export const PAINTING_SIZE = { width: 40, height: 30 } as const;
-export const RUG_SIZE = { width: 84, height: 9 } as const;
-export const ALTAR_SIZE = { width: 46, height: 56 } as const;
 export const SCROLL_SIZE = { width: 30, height: 46 } as const;
 /** The paper lantern, without its cord. */
 export const LANTERN_SIZE = { width: 21, height: 16 } as const;
@@ -21,47 +17,6 @@ export const LANTERN_SIZE = { width: 21, height: 16 } as const;
 /** Dawn over misty ridges, dusk over the sea, and a bonsai print. */
 export const PAINTINGS = ['peaks', 'sea', 'bonsai'] as const;
 export type Painting = (typeof PAINTINGS)[number];
-
-/** An armchair seen from the front. It stands on the floor line (its last row). */
-export function drawArmchair(): SceneImage {
-  const c = new SceneCanvas(ARMCHAIR_SIZE.width, ARMCHAIR_SIZE.height);
-  // Backrest, with softened top corners.
-  c.fill(7, 0, 42, 1, 'chair');
-  c.fill(6, 1, 44, 29, 'chair');
-  c.fill(7, 0, 42, 2, 'chairLight');
-  c.fill(44, 2, 6, 28, 'chairShade');
-  // Armrests.
-  c.fill(0, 19, 10, 27, 'chairShade');
-  c.fill(1, 18, 8, 1, 'chairShade');
-  c.fill(46, 19, 10, 27, 'chairDark');
-  c.fill(47, 18, 8, 1, 'chairDark');
-  c.fill(0, 19, 10, 2, 'chair');
-  c.fill(46, 19, 10, 2, 'chair');
-  // Seat cushion and base.
-  c.fill(10, 26, 36, 10, 'chairLight');
-  c.fill(10, 34, 36, 2, 'chair');
-  c.fill(4, 36, 48, 10, 'chair');
-  c.fill(4, 44, 48, 2, 'chairShade');
-  // Legs.
-  c.fill(6, 46, 3, 6, 'trunk');
-  c.fill(47, 46, 3, 6, 'trunk');
-  return c.toImage();
-}
-
-/** A floor lamp: a wide shade on a thin pole. It stands on the floor line. */
-export function drawFloorLamp(): SceneImage {
-  const { width, height } = FLOOR_LAMP_SIZE;
-  const c = new SceneCanvas(width, height);
-  const middle = Math.floor(width / 2);
-  for (let row = 0; row < 10; row++) {
-    const half = 3 + Math.floor(row / 2);
-    const tone = row < 2 ? 'lampLight' : row === 9 ? 'frameLight' : 'lampShade';
-    c.fill(middle - half, row, half * 2 + 1, 1, tone);
-  }
-  c.fill(middle, 10, 1, height - 12, 'frameDark');
-  c.fill(middle - 4, height - 2, 9, 2, 'frameDark');
-  return c.toImage();
-}
 
 /** Width of the frame on each side: the canvas starts inside it. */
 const FRAME = 3;
@@ -272,124 +227,6 @@ function paintBonsai(paint: Paint, w: number, h: number) {
   }
   // The seal.
   paint(w - 5, h - 7, 2, 3, 'paintSeal');
-}
-
-/** A striped rug with rounded ends, seen almost from the side. It lies on the floor. */
-export function drawRug(): SceneImage {
-  const { width, height } = RUG_SIZE;
-  const c = new SceneCanvas(width, height);
-  for (let row = 0; row < height; row++) {
-    const inset = row === 0 || row === height - 1 ? 3 : row === 1 || row === height - 2 ? 1 : 0;
-    c.fill(inset, row, width - inset * 2, 1, row % 4 < 2 ? 'rugA' : 'rugB');
-  }
-  return c.toImage();
-}
-
-/**
- * The meditation corner's low table, with what stands on it: a candle, a
- * seated stone figure, a small pile of pebbles and a stick of incense whose
- * smoke rises along the wall. It stands on the floor line.
- */
-export function drawAltar(): SceneImage {
-  const { width, height } = ALTAR_SIZE;
-  const c = new SceneCanvas(width, height);
-  // The table: a thick top on two short legs, lit from the left.
-  const top = height - 12;
-  c.fill(0, top, width, 4, 'tableTop');
-  c.fill(0, top, width, 1, 'tableLight');
-  c.fill(0, top + 3, width, 1, 'tableShade');
-  c.fill(3, top + 4, 4, 8, 'tableTop');
-  c.fill(width - 7, top + 4, 4, 8, 'tableShade');
-  c.fill(7, top + 4, width - 14, 1, 'tableShade');
-
-  // The candle, on a small dish, with its flame.
-  c.fill(3, top - 1, 7, 1, 'stoneShade');
-  c.fill(5, top - 7, 3, 6, 'wax');
-  c.fill(7, top - 7, 1, 6, 'waxShade');
-  c.fill(6, top - 8, 1, 1, 'trunk');
-  c.fill(6, top - 10, 1, 2, 'sun');
-  c.fill(5, top - 10, 1, 1, 'sun');
-  c.fill(6, top - 11, 1, 1, 'sunCore');
-
-  // The seated figure: a round head, shoulders, hands in the lap, crossed
-  // legs wider than the shoulders. One block of stone, lit from the left.
-  const x0 = 14;
-  const rows: [number, number][] = [
-    // [left, width], from the top of the head down to the base.
-    [7, 3],
-    [6, 5],
-    [6, 5],
-    [6, 5],
-    [7, 3],
-    [5, 7],
-    [4, 9],
-    [3, 11],
-    [3, 11],
-    [3, 11],
-    [3, 11],
-    [4, 9],
-    [4, 9],
-    [3, 11],
-    [1, 15],
-    [0, 17],
-    [0, 17],
-    [1, 15],
-  ];
-  const figureTop = top - rows.length - 1;
-  rows.forEach(([left, w], i) => {
-    const y = figureTop + i;
-    c.fill(x0 + left, y, w, 1, 'stone');
-    c.fill(x0 + left, y, Math.max(1, Math.floor(w / 4)), 1, 'stoneLight');
-    c.fill(
-      x0 + left + w - Math.max(1, Math.floor(w / 4)),
-      y,
-      Math.max(1, Math.floor(w / 4)),
-      1,
-      'stoneShade',
-    );
-  });
-  // The hands, resting, and the fold of the legs.
-  c.fill(x0 + 6, figureTop + 12, 5, 1, 'stoneShade');
-  c.fill(x0 + 3, figureTop + 16, 11, 1, 'stoneShade');
-  // Its base.
-  c.fill(x0 - 1, top - 1, 19, 1, 'stoneShade');
-
-  // Three pebbles, one on the other.
-  c.fill(33, top - 2, 7, 2, 'stone');
-  c.fill(33, top - 2, 2, 1, 'stoneLight');
-  c.fill(38, top - 1, 2, 1, 'stoneShade');
-  c.fill(34, top - 4, 5, 2, 'stoneShade');
-  c.fill(34, top - 4, 2, 1, 'stone');
-  c.fill(35, top - 6, 3, 2, 'stone');
-  c.fill(35, top - 6, 1, 1, 'stoneLight');
-
-  // The incense: a holder, a leaning stick, an ember, and the smoke.
-  c.fill(41, top - 1, 4, 1, 'stoneShade');
-  for (let i = 0; i < 9; i++) c.fill(43 - Math.floor(i / 4), top - 2 - i, 1, 1, 'trunk');
-  c.fill(41, top - 11, 1, 1, 'ember');
-  const smoke: [number, number][] = [
-    [41, 13],
-    [42, 15],
-    [42, 16],
-    [41, 18],
-    [40, 20],
-    [40, 21],
-    [41, 23],
-    [42, 25],
-    [43, 27],
-    [43, 28],
-    [42, 30],
-    [41, 32],
-    [41, 33],
-    [42, 35],
-    [43, 37],
-    [44, 39],
-    [44, 40],
-    [43, 42],
-    [42, 44],
-  ];
-  for (const [sx, up] of smoke) c.fill(sx, top - up, 1, 1, 'incense');
-  return c.toImage();
 }
 
 /**

@@ -48,6 +48,8 @@ export interface FloorContext {
   boards: SceneImage;
   /** What lies on the floor: opaque, the reflection never shows through. */
   items: SceneImage;
+  /** The wallpaper of the room (see drawWallpaper): what shows where a part has left. */
+  wallpaper: SceneImage | null;
 }
 
 export function floorContext(
@@ -55,12 +57,14 @@ export function floorContext(
   rows: number,
   boards: SceneImage,
   items: SceneImage,
+  wallpaper: SceneImage | null = null,
 ): FloorContext {
   return {
     width: room.width,
     mirror: new Map(mirrorRows(room, rows).map((row) => [row.source, row])),
     boards,
     items,
+    wallpaper,
   };
 }
 
@@ -90,7 +94,13 @@ export function gesturePatch(
   view: WindowView,
 ): GesturePatch {
   const patch: GesturePatch = { walls: [], floor: [] };
-  const wall = colors.background.toUpperCase();
+  const bare = colors.background.toUpperCase();
+  // The wall as it is drawn behind the plants: the wallpaper, or the bare wall.
+  const wallAt = (x: number, y: number) => {
+    const paper = floor.wallpaper;
+    const pixel = paper && x >= 0 && x < paper.width ? paper.pixels[y * paper.width + x] : null;
+    return pixel ? sceneColor(pixel, view) : bare;
+  };
 
   for (const { placed, moved } of moves) {
     if (placed.content.kind !== 'plant') continue;
@@ -102,8 +112,9 @@ export function gesturePatch(
       for (let cx = 0; cx < rest.width; cx++) {
         const before = rest.pixels[cy * rest.width + cx] ?? null;
         const after = moved.pixels[cy * rest.width + cx] ?? null;
-        const now = after ? plantColor(after, moved.genome).toUpperCase() : wall;
-        const was = before ? plantColor(before, rest.genome).toUpperCase() : wall;
+        const behind = wallAt(placed.x + cx, placed.y + cy - from);
+        const now = after ? plantColor(after, moved.genome).toUpperCase() : behind;
+        const was = before ? plantColor(before, rest.genome).toUpperCase() : behind;
         if (now === was) continue;
         cells.push({ x: cx, y: cy - from, color: now });
 
@@ -115,7 +126,9 @@ export function gesturePatch(
         if (floor.items.pixels[index]) continue;
         const board = sceneColor(floor.boards.pixels[index]!, view);
         const alpha = (after ? REFLECTION.object : REFLECTION.wall) * row.fade;
-        patch.floor.push({ x: rx, y: row.y, color: reflected(board, now, alpha) });
+        // The wallpaper is not mirrored: an empty cell reflects the bare wall.
+        const source = after ? now : bare;
+        patch.floor.push({ x: rx, y: row.y, color: reflected(board, source, alpha) });
       }
     }
     if (cells.length > 0) patch.walls.push({ x: placed.x, y: placed.y, cells });

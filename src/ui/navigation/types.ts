@@ -13,7 +13,7 @@ export type RootStackParamList = {
   PlantChoice: { name: string; startDate: LocalDate };
   Settings: undefined;
   Herbarium: undefined;
-  /** Screen 12, the meditation corner: from the armchair. */
+  /** Screen 12, the meditation corner: from the cushion. */
   Meditation: undefined;
   Lab: undefined;
 };

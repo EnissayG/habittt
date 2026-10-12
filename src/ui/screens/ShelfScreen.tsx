@@ -19,12 +19,16 @@ import {
   drawFloor,
   drawFloorBoards,
   drawFloorItems,
+  drawFlame,
+  drawSmoke,
+  drawWallpaper,
   gestureAt,
   MEDITATION_PIECES,
   planRoom,
   PLANT_GRID,
   drawWindow,
   withGesture,
+  type AnimatedDecor,
   type PlacedItem,
   type RoomSource,
   type Shelf,
@@ -62,7 +66,7 @@ const LABEL_GAP = 6;
 const LOGO_LINE = 32;
 const SUBTITLE_LINE = 16;
 const DOTS_HEIGHT = 24;
-/** The button of the meditation corner, on the wall above the armchair, in points. */
+/** The button of the meditation corner, on the wall above the cushion, in points. */
 const MEDITATE_BUTTON = { height: 30, gap: 10 } as const;
 /** On the shelf, a plant rests this many times longer between two gestures than on its own screen. */
 const SHELF_CALM = 3;
@@ -110,7 +114,8 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
     const room = composeRoom(plan);
     const boards = drawFloorBoards(plan.width, rows);
     const items = drawFloorItems(plan.width, rows, plan.floorItems);
-    const context = floorContext(room, rows, boards, items);
+    const paper = drawWallpaper(plan.width, plan.height);
+    const context = floorContext(room, rows, boards, items, paper);
     const mirror = mirrorImage(
       floorMirror(room, rows, (source: RoomSource | null) => roomColor(source, view)),
     );
@@ -118,7 +123,7 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
     const picture = mirror
       ? floorPicture(boards, mirror, items, view, cell)
       : scenePicture(drawFloor({ room, rows, items: plan.floorItems }), view, cell);
-    return { picture, context };
+    return { picture, context, wallpaper: scenePicture(paper, view, cell) };
   }, [fit, view]);
 
   // Stable, so that the walls (memoized) do not redraw when the dots move.
@@ -223,6 +228,8 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
 interface Floor {
   picture: SkPicture;
   context: FloorContext;
+  /** The wallpaper of the whole room, behind everything (see drawWallpaper). */
+  wallpaper: SkPicture;
 }
 
 interface WallPageProps {
@@ -236,7 +243,7 @@ interface WallPageProps {
   onNew: () => void;
   /** A long press on a plant: take it off the shelf (never a swipe, kept for moving). */
   onRetire: (id: string) => void;
-  /** The armchair: the meditation corner (screen 12). */
+  /** The meditation corner (screen 12). */
   onMeditate: () => void;
 }
 
@@ -280,8 +287,13 @@ const WallPage = memo(function WallPage({
     [wall, shelf.view, frame, width, height],
   );
   const windowItem = wall.items.find((placed) => placed.content.kind === 'window');
-  const armchair = wall.items.find(
-    (placed) => placed.content.kind === 'decor' && placed.content.piece === 'armchair',
+  const cushion = wall.items.find(
+    (placed) => placed.content.kind === 'decor' && placed.content.piece === 'cushion',
+  );
+  // What moves on this wall: the incense's smoke, the candle's flame.
+  const wallRight = (wall.wall.index + 1) * fit.pageWidth;
+  const moving = fit.plan.animated.filter(
+    (a) => a.x >= wall.wall.index * fit.pageWidth && a.x < wallRight,
   );
 
   return (
@@ -303,6 +315,15 @@ const WallPage = memo(function WallPage({
           <AnimatedWindow view={shelf.view} cell={cell} />
         </View>
       )}
+      {moving.map((decor) => (
+        <View
+          key={decor.kind}
+          style={[styles.zone, { left: toX(decor.x), top: toY(decor.y) }]}
+          pointerEvents="none"
+        >
+          <AnimatedDecorView kind={decor.kind} view={shelf.view} cell={cell} />
+        </View>
+      ))}
 
       {wall.items.map((placed, i) => {
         const zone = {
@@ -359,15 +380,15 @@ const WallPage = memo(function WallPage({
         return null;
       })}
 
-      {armchair && (
-        // The way in, said plainly: a button on the wall above the armchair.
+      {cushion && (
+        // The way in, said plainly: a button on the wall above the cushion.
         <View
           style={[
             styles.meditate,
             {
-              left: toX(armchair.x),
-              top: toY(armchair.y) - MEDITATE_BUTTON.height - MEDITATE_BUTTON.gap,
-              width: armchair.content.image.width * cell,
+              left: toX(cushion.x),
+              top: toY(cushion.y) - MEDITATE_BUTTON.height - MEDITATE_BUTTON.gap,
+              width: cushion.content.image.width * cell,
             },
           ]}
           pointerEvents="box-none"
@@ -452,6 +473,9 @@ function WallCanvas({ wall, view, picture, floor, frame, width, height }: WallCa
 
   return (
     <Canvas style={{ width, height }} pointerEvents="none">
+      <Group transform={[{ translateX: -frame.pageLeft }, { translateY: frame.roomTop }]}>
+        <Picture picture={floor.wallpaper} />
+      </Group>
       <Group transform={[{ translateX: -frame.pageLeft }, { translateY: frame.floorTop }]}>
         <Picture picture={floor.picture} />
       </Group>
@@ -465,6 +489,30 @@ function WallCanvas({ wall, view, picture, floor, frame, width, height }: WallCa
  * The window in its own small canvas, so that only it redraws a few times
  * per second; it stops when the shelf is not shown.
  */
+/**
+ * The incense's smoke or the candle's flame, in its own small canvas: only
+ * it redraws a few times per second, and it stops when the shelf is not
+ * shown (and with "reduce motion").
+ */
+function AnimatedDecorView({
+  kind,
+  view,
+  cell,
+}: {
+  kind: AnimatedDecor['kind'];
+  view: WindowView;
+  cell: number;
+}) {
+  const t = useWindowClock(useIsFocused());
+  const image = useMemo(() => (kind === 'smoke' ? drawSmoke(t) : drawFlame(t)), [kind, t]);
+  const picture = useMemo(() => scenePicture(image, view, cell), [image, view, cell]);
+  return (
+    <Canvas style={{ width: image.width * cell, height: image.height * cell }}>
+      <Picture picture={picture} />
+    </Canvas>
+  );
+}
+
 function AnimatedWindow({ view, cell }: { view: WindowView; cell: number }) {
   const t = useWindowClock(useIsFocused());
   const image = useMemo(() => drawWindow(view, t), [view, t]);

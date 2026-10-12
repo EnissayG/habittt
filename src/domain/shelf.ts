@@ -42,7 +42,7 @@ export interface PlantsWall {
   shelves: StandingSlot[][];
 }
 
-/** The last wall: no shelves, an armchair, a floor lamp, a rug and a painting. */
+/** The last wall: no shelves, the meditation corner (cushion, low table, scroll) and its decor. */
 export interface DecorWall {
   index: number;
   kind: 'decor';

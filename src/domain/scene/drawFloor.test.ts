@@ -1,4 +1,4 @@
-import { drawRug } from './drawDecor';
+import { drawMat } from './drawCorner';
 import {
   drawFloor,
   drawFloorBoards,
@@ -166,8 +166,8 @@ describe('drawFloor', () => {
     expect(floor.pixels[FLOOR_TOP * 170 + 50]!.layers.at(-1)!.source).toBe(plant);
   });
 
-  it('lays the rug over the planks, the reflection and the seams, opaque', () => {
-    const rug = drawRug();
+  it('lays the mat over the planks, the reflection and the seams, opaque', () => {
+    const mat = drawMat();
     const full = room(
       170,
       60,
@@ -179,34 +179,34 @@ describe('drawFloor', () => {
     const floor = drawFloor({
       room: full,
       rows: FLOOR_ROWS.min,
-      items: [{ x: 20, y: 2, image: rug }],
+      items: [{ x: 20, y: 2, image: mat }],
     });
-    for (let y = 0; y < rug.height; y++) {
-      for (let x = 0; x < rug.width; x++) {
+    for (let y = 0; y < mat.height; y++) {
+      for (let x = 0; x < mat.width; x++) {
         const below = floor.pixels[(2 + y) * 170 + 20 + x]!;
-        const pixel = rug.pixels[y * rug.width + x];
+        const pixel = mat.pixels[y * mat.width + x];
         if (pixel) expect(below).toEqual(pixel);
-        else expect(below.tone).not.toMatch(/^rug/);
+        else expect(below.tone).not.toMatch(/^mat/);
       }
     }
   });
 
   it('cuts what lies past the edges of the floor', () => {
-    const rug = drawRug();
-    const floor = drawFloor({ room: room(50, 10), rows: 8, items: [{ x: 10, y: 4, image: rug }] });
+    const mat = drawMat();
+    const floor = drawFloor({ room: room(50, 10), rows: 8, items: [{ x: 10, y: 4, image: mat }] });
     expect(floor.width).toBe(50);
     expect(floor.height).toBe(8);
-    expect(floor.pixels.some((p) => p?.tone === 'rugA' || p?.tone === 'rugB')).toBe(true);
+    expect(floor.pixels.some((p) => p?.tone === 'mat' || p?.tone === 'matDark')).toBe(true);
   });
 
-  it('draws the rug alone exactly where the whole floor has it', () => {
-    const rug = drawRug();
-    const items = [{ x: 20, y: 2, image: rug }];
+  it('draws the mat alone exactly where the whole floor has it', () => {
+    const mat = drawMat();
+    const items = [{ x: 20, y: 2, image: mat }];
     const alone = drawFloorItems(170, FLOOR_ROWS.min, items);
     const whole = drawFloor({ room: room(170, 60), rows: FLOOR_ROWS.min, items });
     const boards = drawFloorBoards(170, FLOOR_ROWS.min);
     expect(alone.pixels.filter((p) => p !== null)).toHaveLength(
-      rug.pixels.filter((p) => p !== null).length,
+      mat.pixels.filter((p) => p !== null).length,
     );
     whole.pixels.forEach((pixel, i) => expect(pixel).toEqual(alone.pixels[i] ?? boards.pixels[i]));
   });

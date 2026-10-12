@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
-/** Beats per second: enough for the breath bar to move step by step. */
-const BEATS = 10;
+/** Beats per second: enough for the air around the sun and the word to fade smoothly. */
+const BEATS = 20;
 
 /**
  * Seconds spent in the session. They advance only while `running` and the

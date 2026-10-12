@@ -12,21 +12,22 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  breathAt,
   breathFullness,
-  drawHalo,
-  haloRadius,
+  breathWord,
+  drawIncenseTimer,
+  drawSun,
+  INCENSE_TIMER_SIZE,
   isOver,
   MAX_GROWTH_DAYS,
-  MEDITATION_END,
   MEDITATION_LENGTHS,
   MEDITATIONS,
   minutesLeft,
-  phraseAt,
   PLANT_GRID,
   plantDaysAt,
   pulsesBetween,
   renderPlant,
+  sessionShare,
+  SUN,
   type Meditation,
   type MeditationMinutes,
   type ScenePixel,
@@ -48,11 +49,17 @@ import { colors, fonts, spacing } from '../theme/tokens';
 import { useTracker } from '../TrackerContext';
 import { useReduceMotion } from '../useReduceMotion';
 
-/** With "reduce motion", the light keeps this size: half a breath. */
+/** With "reduce motion", the air around the sun keeps this reach: half a breath. */
 const STILL_FULLNESS = 0.5;
-/** Room for two lines of a phrase, so that nothing moves when one appears. */
-const PHRASE_LINES = 2;
-const PHRASE_LINE = 23;
+/**
+ * The scene of a session, in grid cells: the sun above the pot, the incense
+ * beside it. The incense has an empty twin on the other side, so that the
+ * plant stays in the middle of the screen.
+ */
+const SCENE = {
+  width: PLANT_GRID.width + 2 * INCENSE_TIMER_SIZE.width,
+  height: SUN.height + PLANT_GRID.height,
+} as const;
 
 interface SessionPlant {
   species: SpeciesId;
@@ -65,10 +72,11 @@ type Stage =
   | { kind: 'end'; plant: SessionPlant };
 
 /**
- * Screen 12: the meditation corner (docs/meditation.md, ADR 0017). Choose a
- * length, then a plant grows in its pot while one breathes, from an empty
- * pot to a grown plant. Leaving (Terminer or back) returns to the room
- * without a word. Nothing is saved.
+ * Screen 12: the meditation corner (docs/meditation.md, ADR 0017, 0019).
+ * Choose a length, then a plant grows in its pot while one breathes, under a
+ * sun whose air follows the breath, beside a stick of incense that burns
+ * down with the session. The only words are "inspire" and "expire". Leaving
+ * (Terminer or back) returns to the room. Nothing is saved.
  */
 export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
   const tracker = useTracker();
@@ -111,9 +119,6 @@ export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
           </Pressable>
         ))}
       </View>
-      <Text style={styles.body}>
-        Une plante va pousser pendant que tu respires. Tu peux arrêter quand tu veux.
-      </Text>
       <View style={styles.row}>
         <Text style={styles.rowLabel}>Vibrer au rythme du souffle</Text>
         <Switch
@@ -133,10 +138,10 @@ function sessionPlant(plant: SessionPlant, days: number) {
   return renderPlant({ ...plant, elapsedDays: days, relapseDays: [] });
 }
 
-/** The scale of the big pot: half the screen, in whole device pixels. */
-function usePotScale() {
+/** The scale of the session scene: most of the screen, in whole device pixels. */
+function useSceneScale() {
   const { width, height } = useWindowDimensions();
-  return pixelScale(PLANT_GRID, { width: width - 28, height: height * 0.5 }, PixelRatio.get());
+  return pixelScale(SCENE, { width: width - 28, height: height * 0.62 }, PixelRatio.get());
 }
 
 interface SessionProps {
@@ -151,7 +156,7 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
   useKeepAwake();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const scale = usePotScale();
+  const scale = useSceneScale();
   const [controls, setControls] = useState(true);
   const t = useSessionClock(true);
   const over = isOver(meditation, t);
@@ -166,7 +171,6 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
 
   const days = plantDaysAt(meditation, t);
   const image = useMemo(() => sessionPlant(plant, days), [plant, days]);
-  const breath = breathAt(t);
   // The breath, for the hand: the taps due since the last beat of the clock
   // (closer and stronger breathing in, fading breathing out).
   const felt = useRef(0);
@@ -176,11 +180,20 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
     const last = due[due.length - 1];
     if (last) tapBreath(last.strength);
   }, [vibrate, meditation, t]);
-  // The light behind the plant grows with the breath in, withdraws with the
-  // breath out; it changes size a few times a second, not at every beat.
-  const radius = haloRadius(reduceMotion ? STILL_FULLNESS : breathFullness(t));
-  const halo = useMemo(() => drawHalo(radius), [radius]);
-  const phrase = phraseAt(meditation, t);
+  // The sun: its heart stays the same, the air around it spreads out with the
+  // breath in and comes back with the breath out, in waves. With "reduce
+  // motion" it stays still, half way.
+  const sun = useMemo(
+    () => (reduceMotion ? drawSun(STILL_FULLNESS) : drawSun(breathFullness(t), t)),
+    [reduceMotion, t],
+  );
+  // Time passing: the stick burns down from the start to the end of the session.
+  const incense = useMemo(
+    () => drawIncenseTimer(sessionShare(meditation, t), reduceMotion ? 0 : t),
+    [meditation, reduceMotion, t],
+  );
+  // The only word: it appears and fades away with each half of the breath.
+  const word = breathWord(t);
   const left = minutesLeft(meditation, t);
 
   return (
@@ -190,19 +203,17 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
       accessible={false}
     >
       <View style={styles.center}>
-        <View>
-          <View style={styles.halo}>
-            <PixelCanvas grid={halo} colorOf={haloColor} cellSize={scale.cellSize} />
-          </View>
+        <PixelCanvas grid={sun} colorOf={dayColor} cellSize={scale.cellSize} />
+        <View style={styles.pot}>
+          <View style={{ width: INCENSE_TIMER_SIZE.width * scale.cellSize }} />
           <PlantPixels image={image} cellSize={scale.cellSize} />
+          <PixelCanvas grid={incense} colorOf={dayColor} cellSize={scale.cellSize} />
         </View>
-        <View style={styles.breath}>
-          <Text style={styles.breathWord} accessibilityLiveRegion="polite">
-            {breath.phase === 'inhale' ? 'inspire' : 'expire'}
-          </Text>
-        </View>
-        <Text style={styles.phrase} accessibilityLiveRegion="polite">
-          {phrase ?? ''}
+        <Text
+          style={[styles.word, { opacity: reduceMotion ? 1 : word.opacity }]}
+          accessibilityLiveRegion="polite"
+        >
+          {word.word}
         </Text>
       </View>
       <View style={styles.controls}>
@@ -217,19 +228,16 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
   );
 }
 
-/** The light has the same colors whatever the hour: the view does not matter. */
-const haloColor = (pixel: ScenePixel) => sceneColor(pixel, 'day');
+/** The sun and the incense have the same colors whatever the hour. */
+const dayColor = (pixel: ScenePixel) => sceneColor(pixel, 'day');
 
 function End({ plant, onBack }: { plant: SessionPlant; onBack: () => void }) {
-  const scale = usePotScale();
+  const scale = useSceneScale();
   const image = useMemo(() => sessionPlant(plant, MAX_GROWTH_DAYS), [plant]);
   return (
     <Screen footer={<Button label="Revenir à la pièce" onPress={onBack} />}>
       <View style={styles.center}>
         <PlantPixels image={image} cellSize={scale.cellSize} />
-        <Text style={styles.phrase} accessibilityLiveRegion="polite">
-          {MEDITATION_END}
-        </Text>
         <Text style={styles.name}>{plantName(image)}</Text>
       </View>
     </Screen>
@@ -248,7 +256,6 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.6 },
   lengthLabel: { fontFamily: fonts.display, fontSize: 17, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: 15, color: colors.text, lineHeight: 21 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -259,14 +266,11 @@ const styles = StyleSheet.create({
   rowLabel: { flex: 1, fontFamily: fonts.display, fontSize: 15, color: colors.text },
   session: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 14 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
-  breath: { minHeight: 28, justifyContent: 'center' },
-  halo: { position: 'absolute', left: 0, top: 0 },
-  breathWord: { fontFamily: fonts.display, fontSize: 17, color: colors.muted },
-  phrase: {
-    fontFamily: fonts.body,
-    fontSize: 17,
-    lineHeight: PHRASE_LINE,
-    minHeight: PHRASE_LINE * PHRASE_LINES,
+  pot: { flexDirection: 'row', alignItems: 'flex-end' },
+  word: {
+    fontFamily: fonts.display,
+    fontSize: 40,
+    lineHeight: 48,
     color: colors.text,
     textAlign: 'center',
   },

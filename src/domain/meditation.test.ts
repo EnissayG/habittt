@@ -1,47 +1,24 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
 import {
   BREATH,
   BREATH_SECONDS,
   BREATH_PULSES,
   breathAt,
   breathFullness,
+  breathWord,
+  sessionShare,
+  WORD_FADE,
   breathsDone,
   drawMeditationPlant,
   isOver,
-  MEDITATION_END,
   MEDITATION_LENGTHS,
   MEDITATIONS,
   minutesLeft,
-  phraseAt,
-  PHRASE_MAX_LENGTH,
-  PHRASE_SECONDS,
   plantDaysAfter,
   plantDaysAt,
   pulsesBetween,
 } from './meditation';
 import { MAX_GROWTH_DAYS } from './plant/grid';
 import { SPECIES_IDS } from './plant/registry';
-
-/** The tables of docs/meditation.md, the reference for the texts: minutes -> [seconds, text]. */
-function specTables(): Map<number, [number, string][]> {
-  const text = readFileSync(join(__dirname, '../../docs/meditation.md'), 'utf8');
-  const tables = new Map<number, [number, string][]>();
-  let current: [number, string][] | null = null;
-  for (const line of text.split('\n')) {
-    const title = /^### (\d+) minutes/.exec(line);
-    if (title) {
-      current = [];
-      tables.set(Number(title[1]), current);
-      continue;
-    }
-    if (line.startsWith('#')) current = null;
-    const row = /^\|\s*(\d+):(\d\d)\s*\|\s*(.+?)\s*\|$/.exec(line);
-    if (row && current) current.push([Number(row[1]) * 60 + Number(row[2]), row[3]!]);
-  }
-  return tables;
-}
 
 const ALL = MEDITATION_LENGTHS.map((minutes) => MEDITATIONS[minutes]);
 
@@ -54,41 +31,10 @@ describe('the three meditations', () => {
     }
   });
 
-  it('take their phrases word for word from docs/meditation.md', () => {
-    const tables = specTables();
-    expect([...tables.keys()]).toEqual([5, 10, 30]);
+  it('write nothing during a session: no phrase, no advice', () => {
     for (const meditation of ALL) {
-      expect(meditation.phrases.map(({ at, text }) => [at, text])).toEqual(
-        tables.get(meditation.minutes),
-      );
+      expect(Object.keys(meditation).sort()).toEqual(['growth', 'minutes', 'seconds']);
     }
-  });
-
-  it('start at 0:00, with phrases in increasing order', () => {
-    for (const { phrases } of ALL) {
-      expect(phrases[0]!.at).toBe(0);
-      phrases.slice(1).forEach((phrase, i) => expect(phrase.at).toBeGreaterThan(phrases[i]!.at));
-    }
-  });
-
-  it('show each phrase in full before the next one and before the end', () => {
-    for (const { phrases, seconds } of ALL) {
-      phrases.forEach((phrase, i) => {
-        const next = phrases[i + 1]?.at ?? seconds;
-        expect(phrase.at + PHRASE_SECONDS).toBeLessThanOrEqual(next);
-      });
-    }
-  });
-
-  it('never write a phrase longer than two lines', () => {
-    for (const { phrases } of ALL) {
-      for (const { text } of phrases) expect(text.length).toBeLessThanOrEqual(PHRASE_MAX_LENGTH);
-    }
-    expect(MEDITATION_END.length).toBeLessThanOrEqual(PHRASE_MAX_LENGTH);
-  });
-
-  it('end with the words of the spec', () => {
-    expect(MEDITATION_END).toBe('Elle a poussé pendant que tu respirais.');
   });
 });
 
@@ -274,22 +220,47 @@ describe('the plant of a meditation', () => {
   });
 });
 
-describe('phraseAt', () => {
-  const meditation = MEDITATIONS[5];
-
-  it('shows a phrase for fourteen seconds, then nothing until the next one', () => {
-    expect(phraseAt(meditation, 0)).toBe("Installe-toi. Il n'y a rien à réussir ici.");
-    expect(phraseAt(meditation, 13.9)).toBe(phraseAt(meditation, 0));
-    expect(phraseAt(meditation, 14)).toBeNull();
-    expect(phraseAt(meditation, 24.9)).toBeNull();
-    expect(phraseAt(meditation, 25)).toBe(
-      'Inspire quand la lumière grandit. Expire quand elle se retire.',
-    );
+describe('the word of the breath', () => {
+  it('says inspire while breathing in, expire while breathing out', () => {
+    for (let t = 0.05; t < 30; t += 0.1) {
+      expect(breathWord(t).word).toBe(breathAt(t).phase === 'inhale' ? 'inspire' : 'expire');
+    }
   });
 
-  it('shows the last phrase until the end, then nothing', () => {
-    expect(phraseAt(meditation, 4 * 60 + 42)).toBe('Reviens doucement. Regarde ce qui a poussé.');
-    expect(phraseAt(meditation, meditation.seconds)).toBeNull();
+  it('appears softly as its part of the breath begins, and fades as it ends', () => {
+    expect(breathWord(0).opacity).toBe(0);
+    expect(breathWord(WORD_FADE / 2).opacity).toBeCloseTo(0.5);
+    expect(breathWord(WORD_FADE).opacity).toBe(1);
+    expect(breathWord(2).opacity).toBe(1);
+    expect(breathWord(BREATH.inhale - 0.001).opacity).toBeLessThan(0.01);
+    expect(breathWord(BREATH.inhale).opacity).toBe(0);
+    expect(breathWord(BREATH.inhale + 3).opacity).toBe(1);
+    expect(breathWord(BREATH_SECONDS - 0.001).opacity).toBeLessThan(0.01);
+  });
+
+  it('never jumps: the two words pass into each other with the breath', () => {
+    const step = 0.02;
+    for (let t = step; t < 3 * BREATH_SECONDS; t += step) {
+      const now = breathWord(t);
+      const before = breathWord(t - step);
+      expect(now.opacity).toBeGreaterThanOrEqual(0);
+      expect(now.opacity).toBeLessThanOrEqual(1);
+      // A word only changes when it is invisible.
+      if (now.word !== before.word)
+        expect(Math.max(now.opacity, before.opacity)).toBeLessThan(0.02);
+      else expect(Math.abs(now.opacity - before.opacity)).toBeLessThan(0.05);
+    }
+  });
+});
+
+describe('the time of the session', () => {
+  it('goes from 0 to 1, and stays there', () => {
+    const meditation = MEDITATIONS[10];
+    expect(sessionShare(meditation, -4)).toBe(0);
+    expect(sessionShare(meditation, 0)).toBe(0);
+    expect(sessionShare(meditation, 300)).toBe(0.5);
+    expect(sessionShare(meditation, 600)).toBe(1);
+    expect(sessionShare(meditation, 900)).toBe(1);
   });
 });
 

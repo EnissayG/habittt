@@ -123,13 +123,17 @@ const POTS: Record<PotColorId, readonly [string, string]> = {
   grey: [solarized.base1, '#768181'],
 };
 
-/** Shelf and soil colors, also used for the shelf's empty slots. */
+/**
+ * Shelf and soil colors, also used for the shelf's empty slots. The shelves
+ * are part of the room: their wood follows the room's style (ADR 0019), not
+ * the prototype's yellow.
+ */
 export const SCENERY = {
   soil: '#5B4636',
   potPattern: solarized.base2,
   potPatternShade: '#C9C2AC',
-  shelf: solarized.yellow,
-  shelfShade: '#93710A',
+  shelf: '#A0703F',
+  shelfShade: '#6E4A2A',
 } as const;
 
 /**

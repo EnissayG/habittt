@@ -9,16 +9,18 @@ import {
   type Wall,
 } from '../shelf';
 import {
-  drawAltar,
-  drawArmchair,
-  drawFloorLamp,
-  drawLantern,
-  drawPainting,
-  drawRug,
-  drawScroll,
-  FLOOR_LAMP_SIZE,
-  LANTERN_SIZE,
-} from './drawDecor';
+  drawCushion,
+  drawLowTable,
+  drawMat,
+  drawVase,
+  drawWallShelf,
+  EMBER,
+  FLAME,
+  LOW_TABLE_SIZE,
+  SMOKE_SIZE,
+  VASE_SIZE,
+} from './drawCorner';
+import { drawLantern, drawPainting, drawScroll, LANTERN_SIZE } from './drawDecor';
 import { drawSlot, type SlotKind } from './drawSlot';
 import { WINDOW_SIZE } from './drawWindow';
 import type { SceneImage, SceneLayer } from './sceneImage';
@@ -43,10 +45,19 @@ export type PlacedContent =
   | { kind: 'decor'; piece: DecorPiece; image: SceneImage };
 
 /** What a piece of decor is. */
-export type DecorPiece = 'armchair' | 'altar' | 'scroll' | 'lantern' | 'lamp' | 'painting';
+export type DecorPiece =
+  'cushion' | 'lowTable' | 'scroll' | 'wallShelf' | 'vase' | 'lantern' | 'painting';
 
 /** The pieces that make the meditation corner: touching any of them opens it. */
-export const MEDITATION_PIECES: readonly DecorPiece[] = ['armchair', 'altar', 'scroll'];
+export const MEDITATION_PIECES: readonly DecorPiece[] = ['cushion', 'lowTable', 'scroll'];
+
+/** Something of the decor that moves, drawn apart over the wall (see drawCorner). */
+export interface AnimatedDecor {
+  kind: 'smoke' | 'flame';
+  /** Top left, in room cells. */
+  x: number;
+  y: number;
+}
 
 export interface PlacedItem {
   /** Left edge, in cells from the room's left edge. */
@@ -86,6 +97,8 @@ export interface RoomPlan {
   height: number;
   walls: WallPlan[];
   floorItems: FloorItem[];
+  /** The incense's smoke and the candle's flame, drawn apart because they move. */
+  animated: AnimatedDecor[];
 }
 
 export interface PlanRoomParams {
@@ -113,40 +126,37 @@ const SLOTS: Record<'standing' | 'hanging', Record<SlotKind, SceneImage>> = {
 type Cell = Extract<PlacedContent, { kind: 'plant' | 'slot' }>;
 
 // The decor, in cells from the wall's left edge or from the floor line. The
-// last wall is the meditation corner: the armchair on its rug under a
-// painting, and beside it a low table with a stone figure, a candle and
-// incense, under a hanging scroll; a paper lantern hangs from the ceiling
-// between the two, and the floor lamp closes the wall.
+// last wall is the meditation corner: a round cushion on a woven mat under a
+// small wall shelf and a painting; a low table with a stone figure, a
+// candle and incense under a hanging scroll; a vase of dried grasses at the
+// end of the wall; a paper lantern hanging from the ceiling.
+//
+// What hangs has a preferred height (`above`: its top, from the floor line)
+// and keeps `clear` rows above the floor free for what stands under it (and
+// for the corner's button, over the cushion). In a low room it comes down,
+// still keeping them free; if it cannot, it is left out.
 const DECOR = {
   /** The painting of a wall of shelves, in its top band. */
   wallPainting: { x: 8, y: 4 },
-  armchair: { x: 14 },
-  altar: { x: 78 },
-  lamp: { x: 127 },
-  /**
-   * The painting over the armchair: its top this many rows above the floor
-   * line, and at least `gap` rows of bare wall under it, where the button
-   * of the meditation corner goes.
-   */
-  painting: { x: 22, above: 118, gap: 18 },
-  /** The scroll over the low table. */
-  scroll: { x: 86, above: 124, gap: 2 },
-  /**
-   * The paper lantern, hanging from the ceiling between the painting and
-   * the scroll: its bottom this many rows above the floor line. The taller
-   * the room, the longer its cord, so the top of the wall is never bare.
-   */
-  lantern: { x: 63, above: 134, minCord: 6 },
-  /** The rug, in front of the armchair, a little below the baseboard. */
-  rug: { x: 0, y: 2 },
+  cushion: { x: 20 },
+  lowTable: { x: 70 },
+  vase: { x: 122 },
+  wallShelf: { x: 14, above: 48, clear: 14 + 18 },
+  painting: { x: 15, above: 90, clear: 48 + 6 },
+  scroll: { x: 78, above: 104, clear: 56 },
+  /** The lantern: its bottom this many rows above the floor line; its cord takes the rest. */
+  lantern: { x: 55, above: 120, minCord: 6 },
+  /** The mat, centered under the cushion, a little below the baseboard. */
+  mat: { x: 3, y: 2 },
 } as const;
 
 const IMAGES = {
-  armchair: drawArmchair(),
-  altar: drawAltar(),
+  cushion: drawCushion(),
+  lowTable: drawLowTable(),
+  wallShelf: drawWallShelf(),
+  vase: drawVase(),
   scroll: drawScroll(),
-  lamp: drawFloorLamp(),
-  rug: drawRug(),
+  mat: drawMat(),
   peaks: drawPainting('peaks'),
   sea: drawPainting('sea'),
   bonsai: drawPainting('bonsai'),
@@ -215,14 +225,16 @@ export function planRoom({
     rowTops.push(y);
     y += height(band) + labelRows;
   });
-  // The floor lamp stands on the floor line: the room is never lower than it.
-  const roomHeight = Math.max(y, FLOOR_LAMP_SIZE.height);
+  // The vase stands on the floor line: the room is never lower than it.
+  const roomHeight = Math.max(y, VASE_SIZE.height);
   const floorItems: FloorItem[] = [];
+  const animated: AnimatedDecor[] = [];
 
   const walls = layout.walls.map((wall, w): WallPlan => {
     const left = Math.round(wall.index * pageWidth + (pageWidth - WALL_WIDTH) / 2);
     if (wall.kind === 'decor') {
-      floorItems.push({ x: left + DECOR.rug.x, y: DECOR.rug.y, image: IMAGES.rug });
+      floorItems.push({ x: left + DECOR.mat.x, y: DECOR.mat.y, image: IMAGES.mat });
+      animated.push(...cornerAnimations(left, roomHeight));
       return { wall, left, height: roomHeight, items: decorItems(left, roomHeight) };
     }
     const items: PlacedItem[] = plantsWallDecor(wall, left, rowTops[0]!);
@@ -267,6 +279,7 @@ export function planRoom({
     height: roomHeight,
     walls,
     floorItems,
+    animated,
   };
 }
 
@@ -292,34 +305,42 @@ function plantsWallDecor(wall: PlantsWall, left: number, top: number): PlacedIte
 function decorItems(left: number, floorLine: number): PlacedItem[] {
   const standing = (piece: DecorPiece, image: SceneImage, x: number) =>
     placeDecor(piece, image, left + x, floorLine - image.height);
-  // In a low room (few plants, a small screen) what hangs comes down
-  // towards the furniture under it, keeping its gap; if it still does not
-  // fit under the ceiling, it is left out rather than cut or laid over the
-  // furniture.
   const hanging = (
     piece: DecorPiece,
     image: SceneImage,
-    at: { x: number; above: number; gap: number },
-    under: SceneImage,
+    at: { x: number; above: number; clear: number },
   ): PlacedItem[] => {
-    const lowest = floorLine - under.height - at.gap - image.height;
+    const lowest = floorLine - at.clear - image.height;
     const y = Math.max(0, floorLine - at.above);
     return y <= lowest ? [placeDecor(piece, image, left + at.x, y)] : [];
   };
-  // The lantern's cord takes whatever height is left; in a low room there
-  // is no place for it.
   const cord = floorLine - DECOR.lantern.above - LANTERN_SIZE.height;
   const lantern =
     cord >= DECOR.lantern.minCord
       ? [placeDecor('lantern', drawLantern(cord), left + DECOR.lantern.x, 0)]
       : [];
   return [
-    ...hanging('painting', IMAGES.peaks, DECOR.painting, IMAGES.armchair),
-    ...hanging('scroll', IMAGES.scroll, DECOR.scroll, IMAGES.altar),
+    ...hanging('painting', IMAGES.peaks, DECOR.painting),
+    ...hanging('wallShelf', IMAGES.wallShelf, DECOR.wallShelf),
+    ...hanging('scroll', IMAGES.scroll, DECOR.scroll),
     ...lantern,
-    standing('armchair', IMAGES.armchair, DECOR.armchair.x),
-    standing('altar', IMAGES.altar, DECOR.altar.x),
-    standing('lamp', IMAGES.lamp, DECOR.lamp.x),
+    standing('cushion', IMAGES.cushion, DECOR.cushion.x),
+    standing('lowTable', IMAGES.lowTable, DECOR.lowTable.x),
+    standing('vase', IMAGES.vase, DECOR.vase.x),
+  ];
+}
+
+/** Where the smoke rises and the flame burns, over the low table. */
+function cornerAnimations(left: number, floorLine: number): AnimatedDecor[] {
+  const tableX = left + DECOR.lowTable.x;
+  const tableTop = floorLine - LOW_TABLE_SIZE.height;
+  return [
+    {
+      kind: 'smoke',
+      x: tableX + EMBER.x - Math.floor(SMOKE_SIZE.width / 2),
+      y: tableTop + EMBER.y - SMOKE_SIZE.height,
+    },
+    { kind: 'flame', x: tableX + FLAME.x, y: tableTop + FLAME.y },
   ];
 }
 

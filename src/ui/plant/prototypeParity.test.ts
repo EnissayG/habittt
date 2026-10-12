@@ -1,5 +1,5 @@
 import { MAX_GROWTH_DAYS, renderPlant, SPECIES_IDS } from '../../domain';
-import { plantColor } from '../theme/plantPalette';
+import { plantColor, SCENERY } from '../theme/plantPalette';
 import { FOLIAGE_LABELS, isRare, potLabel, TRAIT_LABELS, varietyLabel } from './labels';
 
 // Parity with the reference prototype (docs/prototypes/plants.js): for every
@@ -75,6 +75,15 @@ interface Gap {
   app: string;
 }
 
+/**
+ * The prototype draws its shelves in yellow; the app draws them in the wood
+ * of the room (ADR 0019). Everything else must be the same.
+ */
+const ROOM_STYLE: Record<string, string> = {
+  '#B58900@0': `${SCENERY.shelf.toUpperCase()}@0`,
+  '#93710A@0': `${SCENERY.shelfShade.toUpperCase()}@0`,
+};
+
 function compare(species: string): Gap[] {
   const gaps: Gap[] = [];
   for (const seed of seedsFor(species)) {
@@ -83,7 +92,8 @@ function compare(species: string): Gap[] {
         const reference = prototype.render(species, seed, days, relapses);
         const image = renderPlant({ species, seed, elapsedDays: days, relapseDays: relapses });
         image.pixels.forEach((pixel, i) => {
-          const expected = `${reference.grid[i]?.toUpperCase() ?? 'empty'}@${reference.dayAt[i]}`;
+          const drawn = `${reference.grid[i]?.toUpperCase() ?? 'empty'}@${reference.dayAt[i]}`;
+          const expected = ROOM_STYLE[drawn] ?? drawn;
           const actual = pixel
             ? `${plantColor(pixel, image.genome).toUpperCase()}@${pixel.day}`
             : 'empty@0';

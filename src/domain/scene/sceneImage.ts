@@ -57,10 +57,6 @@ export type RoomTone =
 
 /** Furniture and pictures (drawDecor). */
 export type DecorTone =
-  | 'chair'
-  | 'chairLight'
-  | 'chairShade'
-  | 'chairDark'
   | 'lampShade'
   | 'lampLight'
   // The paintings (drawPainting): dawn over the ridges...
@@ -98,8 +94,6 @@ export type DecorTone =
   | 'paintLeafLight'
   | 'paintLeafDark'
   | 'paintSeal'
-  | 'rugA'
-  | 'rugB'
   // The meditation corner (drawAltar, drawScroll).
   | 'tableTop'
   | 'tableLight'
@@ -114,9 +108,36 @@ export type DecorTone =
   | 'paperShade'
   | 'ink'
   | 'inkDeep'
-  // The light of a meditation (drawHalo).
-  | 'halo'
-  | 'haloHeart';
+  // The new corner (drawCorner).
+  | 'cushion'
+  | 'cushionLight'
+  | 'cushionShade'
+  | 'mat'
+  | 'matDark'
+  | 'incenseFaint'
+  | 'bookA'
+  | 'bookB'
+  | 'bookC'
+  | 'bookShade'
+  | 'brass'
+  | 'brassLight'
+  | 'brassShade'
+  | 'vase'
+  | 'vaseLight'
+  | 'vaseShade'
+  | 'grass'
+  | 'grassPlume'
+  | 'wallpaper'
+  | 'moulding'
+  | 'mouldingShade'
+  | 'garland'
+  | 'bulb'
+  | 'bulbGlow'
+  | 'sunHeart'
+  | 'sunGlow'
+  | 'airA'
+  | 'airB'
+  | 'airC';
 
 /** Tones only ever used as translucent layers. */
 export type LightTone = 'glare' | 'shine' | 'shadow';
