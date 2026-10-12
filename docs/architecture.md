@@ -527,8 +527,11 @@ et [l'ADR 0010](decisions/0010-la-piece-en-entier.md).
   la première place debout libre.
 - **La pièce existe toujours en entier** : au moins deux murs de tablettes
   (tablettes vides dessinées), puis le mur de décor, toujours le dernier
-  (le coin méditation : fauteuil, tapis, table basse avec sa statue,
-  rouleau, lanterne, tableau, lampe sur pied, `drawDecor`, ADR 0018). Un
+  (le coin méditation : coussin sur sa natte, table basse avec sa statue,
+  vase, étagère murale, rouleau, lanterne, tableau, `drawCorner` et
+  `drawDecor`, ADR 0019). Le papier peint (`drawWallpaper`) est dessiné
+  derrière tous les murs ; la fumée de l'encens et la flamme de la bougie
+  (`RoomPlan.animated`) sont de petits canevas animés posés par-dessus. Un
   tableau occupe la bande du haut des autres murs de tablettes tant
   qu'aucune plante n'y pend.
 - **Plan** (`planRoom`, domaine) : chaque élément placé en cellules, tous
@@ -676,21 +679,26 @@ Décisions détaillées dans [l'ADR 0014](decisions/0014-reglages-rappel-export.
 
 ## Le coin méditation (phase 4a, fait)
 
-Décisions détaillées dans [l'ADR 0017](decisions/0017-le-coin-meditation.md),
-textes dans [meditation.md](meditation.md).
+Décisions dans les ADR [0017](decisions/0017-le-coin-meditation.md),
+[0018](decisions/0018-le-coin-meditation-revu.md) et
+[0019](decisions/0019-la-piece-refaite-et-la-seance-sans-mots.md) ;
+spécification dans [meditation.md](meditation.md).
 
 - **Domaine** (`meditation.ts`) : tout se calcule à partir des secondes
-  passées dans la séance : le souffle (`breathAt`, `breathLevel`), les
-  jours de la plante (`plantDaysAt` : 0 au début, 120 au dernier souffle),
-  la phrase du moment (`phraseAt`), le temps restant (`minutesLeft`). La
-  plante est tirée avec le générateur de graines injecté.
+  passées dans la séance : le souffle (`breathAt`), le mot et son opacité
+  (`breathWord`), les jours de la plante (`plantDaysAt` : 0 au début, 120
+  au dernier souffle), la part écoulée (`sessionShare`), le temps restant
+  (`minutesLeft`). Aucune phrase. La plante est tirée avec le générateur
+  de graines injecté.
 - **Entrée** : le décor du plan de la pièce porte son nom
   (`PlacedContent.piece`) ; l'étagère pose un bouton « Méditer » au-dessus
-  du fauteuil et une zone tactile sur les pièces du coin
+  du coussin et une zone tactile sur les pièces du coin
   (`MEDITATION_PIECES`).
 - **Le souffle à l'écran et dans la main** (ADR 0018) : `breathFullness`
-  donne le remplissage du souffle, adouci aux deux bouts ; `drawHalo`
-  dessine la lumière derrière la plante ; `BREATH_PULSES` et
+  donne le remplissage du souffle, adouci aux deux bouts ; `drawSun`
+  dessine le soleil au-dessus de la plante (cœur fixe, air en vagues qui
+  suit le souffle) ; `drawIncenseTimer` le bâton d'encens qui se consume
+  avec la séance ; `BREATH_PULSES` et
   `pulsesBetween` donnent les vibrations dues entre deux battements de
   l'horloge.
 - **UI** (`MeditationScreen`, `ui/meditation/`) : l'horloge de la séance

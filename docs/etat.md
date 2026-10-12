@@ -1,7 +1,7 @@
 # État du projet
 
-Point de reprise entre deux sessions. À jour au **11 octobre 2026**, après la
-phase 4a (le coin méditation). À lire en premier avec `CLAUDE.md`, puis
+Point de reprise entre deux sessions. À jour au **12 octobre 2026**, après la
+phase 4c (la pièce refaite, la séance sans phrases). À lire en premier avec `CLAUDE.md`, puis
 [architecture.md](architecture.md) et les [ADR](decisions/).
 
 ## Où on en est
@@ -28,8 +28,9 @@ phase 4a (le coin méditation). À lire en premier avec `CLAUDE.md`, puis
 | Phase 3h         | Gestes des plantes, un par espèce (habitude, Labo, étagère et son reflet)            | fait (ADR 0016), **à tester sur téléphone** |
 | Phase 4a         | Le coin méditation : une plante pousse à chaque souffle (écran 12)                   | fait (ADR 0017), **à tester sur téléphone** |
 | Phase 4b         | Le coin méditation revu : décor, bouton, lumière du souffle, vibrations rythmées     | fait (ADR 0018), **à tester sur téléphone** |
+| Phase 4c         | La pièce refaite (coin, papier peint, fumée), soleil en vagues, encens, sans phrases | fait (ADR 0019), **à tester sur téléphone** |
 
-Chiffres au dernier commit : 1222 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 1235 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -43,6 +44,36 @@ faite. Reste à la tester sur téléphone (ci-dessous), avec les phases 3, puis
 La phase 3g (ADR 0015) a été écrite hors de Claude Code, sans téléphone :
 les tests, le typecheck et le lint passent, mais **le bundle n'a pas été
 recompilé et rien n'a été vu dans Expo Go**.
+
+### À vérifier sur téléphone (phase 4c, la pièce refaite)
+
+Écrit hors de Claude Code, sans téléphone : tests, typecheck et lint
+passent, le bundle n'a pas été recompilé. Remplace, pour le décor, la
+lumière et les phrases, les listes des phases 4a et 4b ci-dessous.
+
+- **Le mur** : papier peint clair à fins brins sur tous les murs, moulure
+  sous le plafond, guirlande d'ampoules en festons. Les tablettes en bois.
+  Les plantes restent lisibles devant.
+- **Le coin** : coussin indigo sur la natte, table basse (bougie, statue,
+  galets, encens), vase d'herbes sèches ; au mur l'étagère, le tableau, le
+  rouleau, la lanterne. Plus de fauteuil, de lampe ni de tapis. Tout se
+  reflète dans le plancher.
+- **Ce qui bouge** : la flamme de la bougie vacille, la fumée de l'encens
+  monte en ondulant. La fluidité du glissement entre les murs n'en souffre
+  pas.
+- **Le bouton « Méditer »** au-dessus du coussin ; toucher le coussin, la
+  table ou le rouleau ouvre aussi l'écran 12.
+- **Avec très peu de plantes** : ce qui ne tient pas au mur manque ; rien
+  ne se chevauche.
+- **Le choix** : « Combien de temps ? », les trois durées, l'interrupteur.
+  Plus de phrase.
+- **La séance** : le soleil en haut, cœur fixe, air qui s'étend 4 s et
+  revient 6 s en vagues ; le pot dessous ; l'encens à côté, qui raccourcit
+  jusqu'à la fin ; « inspire » / « expire » en gros, qui apparaît et
+  s'efface avec le souffle. Aucune autre phrase.
+- **La fin** : la plante et son nom, « Revenir à la pièce ».
+- **« Réduire les animations »** : le soleil immobile, la fumée figée, le
+  mot toujours visible ; la plante pousse et l'encens raccourcit.
 
 ### À vérifier sur téléphone (phase 4b, le coin méditation revu)
 

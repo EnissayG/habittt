@@ -52,6 +52,9 @@ updatedAt, deletedAt }`, `Relapse { id, habitId, date, deletedAt, updatedAt }`,
 - Gestes (`plant/gesture.ts`, ADR 0016) : une plante vivante est immobile et fait de
   temps en temps un petit geste propre à son espèce. Chaque espèce désigne ses parties
   mobiles (`plan.part`, `plan.mark`) sans changer ses traits, et donne son repos (`rest`).
+- Coin méditation (`meditation.ts`, ADR 0017 à 0019) : la plante pousse à chaque souffle,
+  sous un soleil dont l'air suit le souffle, à côté d'un encens qui se consume. Aucune
+  phrase : seulement « inspire » / « expire ». Rien n'est enregistré.
 
 ## Expo Go
 
