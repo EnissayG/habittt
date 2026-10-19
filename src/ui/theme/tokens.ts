@@ -76,6 +76,9 @@ export const colors = {
   /** The word on the wooden sign of the meditation corner (on the low table's wood). */
   onWood: solarized.base3,
   wood: '#8A5A32',
+  /** The plaques under the plants (ADR 0023): their wood, and the quiet text of a plant that did not hold. */
+  plaqueWood: '#5A3920',
+  onWoodMuted: '#CFC6B0',
   mutedInDark: solarized.base1,
 } as const;
 
@@ -136,6 +139,8 @@ export const ROOM_TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
   ['textInDark', 'darkRoom'],
   ['mutedInDark', 'darkRoom'],
   ['onWood', 'wood'],
+  ['onWood', 'plaqueWood'],
+  ['onWoodMuted', 'plaqueWood'],
 ];
 
 /** Marks drawn on the floor planks; checked against every plank tone (at least 3:1). */

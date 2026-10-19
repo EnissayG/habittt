@@ -2,16 +2,20 @@
 import type { Habit, HabitId } from './habit';
 import type { LocalDate } from './localDate';
 import type { Clock } from './ports';
+import type { MeditationDay } from './meditationLog';
 import type { Note } from './note';
 import type { Relapse } from './relapse';
 import type { Replanting } from './replanting';
 import type {
   HabitRepository,
+  MeditationRepository,
   NoteRepository,
   RelapseRepository,
   ReplantingRepository,
+  SettingsRepository,
   WateringRepository,
 } from './repositories';
+import type { SettingKey } from './settings';
 import type { Watering } from './watering';
 
 export const TODAY = '2026-10-03' as LocalDate;
@@ -108,6 +112,29 @@ export class InMemoryWateringRepository
 export class InMemoryReplantingRepository
   extends InMemoryDailyRepository<Replanting>
   implements ReplantingRepository {}
+
+export class InMemoryMeditationRepository implements MeditationRepository {
+  readonly rows = new Map<string, MeditationDay>();
+  async list() {
+    return [...this.rows.values()];
+  }
+  async findByDate(date: LocalDate) {
+    return [...this.rows.values()].find((row) => row.date === date);
+  }
+  async save(day: MeditationDay) {
+    this.rows.set(day.id, day);
+  }
+}
+
+export class InMemorySettingsRepository implements SettingsRepository {
+  readonly rows = new Map<SettingKey, string>();
+  async readAll() {
+    return Object.fromEntries(this.rows) as Partial<Record<SettingKey, string>>;
+  }
+  async write(key: SettingKey, value: string) {
+    this.rows.set(key, value);
+  }
+}
 
 export function makeRelapse(date: LocalDate, overrides: Partial<Relapse> = {}): Relapse {
   return {

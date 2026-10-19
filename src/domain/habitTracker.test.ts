@@ -8,7 +8,9 @@ import {
   InMemoryHabitRepository,
   InMemoryNoteRepository,
   InMemoryRelapseRepository,
+  InMemoryMeditationRepository,
   InMemoryReplantingRepository,
+  InMemorySettingsRepository,
   InMemoryWateringRepository,
   NOW,
   TODAY,
@@ -21,6 +23,8 @@ function setup(hour = 10) {
   const notes = new InMemoryNoteRepository();
   const waterings = new InMemoryWateringRepository();
   const replantings = new InMemoryReplantingRepository();
+  const meditations = new InMemoryMeditationRepository();
+  const settings = new InMemorySettingsRepository();
   const habits = new InMemoryHabitRepository([relapses, notes, waterings, replantings]);
   let nextId = 0;
   const tracker = createHabitTracker({
@@ -29,11 +33,13 @@ function setup(hour = 10) {
     notes,
     waterings,
     replantings,
+    meditations,
+    settings,
     clock: fixedClock(undefined, undefined, hour),
     generateId: () => `habit-${++nextId}`,
     generateSeed: () => 7,
   });
-  return { tracker, habits, relapses, notes, waterings, replantings };
+  return { tracker, habits, relapses, notes, waterings, replantings, meditations, settings };
 }
 
 async function withHabit(startOffset = -9) {
@@ -531,6 +537,51 @@ describe('habit tracker use cases', () => {
           { start: day(-9), end: day(-2), days: 7 },
           { start: TODAY, end: null, days: 0 },
         ],
+      });
+    });
+  });
+
+  describe('meditation (ADR 0022)', () => {
+    it('keeps today from one minute, adds the sessions, and grows the plant', async () => {
+      const { tracker, meditations } = setup();
+      expect((await tracker.getMeditation()).summary.days).toBe(0);
+      expect(await tracker.recordMeditation(30)).toEqual({ ok: false, error: 'TOO_SHORT' });
+      expect(meditations.rows.size).toBe(0);
+      expect(await tracker.recordMeditation(300)).toEqual({ ok: true, value: undefined });
+      expect(await tracker.recordMeditation(600)).toEqual({ ok: true, value: undefined });
+      const overview = await tracker.getMeditation();
+      expect(overview.days).toEqual([
+        expect.objectContaining({ date: TODAY, minutes: 15, sessions: 2 }),
+      ]);
+      expect(overview.summary).toMatchObject({ days: 1, plantDays: 1, run: 1 });
+      expect(overview.plant).toEqual(
+        renderPlant({ species: 'jade', seed: 21, elapsedDays: 1, relapseDays: [] }),
+      );
+      expect(overview.today).toBe(TODAY);
+    });
+
+    it('keeps the goal, the vibration and the lights from one opening to the next', async () => {
+      const { tracker, settings } = setup();
+      expect(await tracker.getSettings()).toEqual({
+        meditationGoal: 5,
+        meditationVibrate: true,
+        lightsOff: false,
+        cat: 'tabby',
+      });
+      await tracker.saveSetting('meditationGoal', 3);
+      await tracker.saveSetting('lightsOff', true);
+      expect(settings.rows.get('meditationGoal')).toBe('3');
+      expect(await tracker.getSettings()).toMatchObject({ meditationGoal: 3, lightsOff: true });
+      expect((await tracker.getMeditation()).summary.week.goal).toBe(3);
+    });
+
+    it('exports the days meditated and the goal', async () => {
+      const { tracker } = setup();
+      await tracker.recordMeditation(120);
+      await tracker.saveSetting('meditationGoal', 4);
+      expect((await tracker.exportData()).meditation).toEqual({
+        goal: 4,
+        days: [{ date: TODAY, minutes: 2, sessions: 1 }],
       });
     });
   });

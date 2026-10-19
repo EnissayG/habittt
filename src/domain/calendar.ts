@@ -41,6 +41,33 @@ export function journalMonths(start: LocalDate, end: LocalDate): MonthId[] {
 
 /**
  * The weeks of a month, Monday first; null pads the first and last weeks.
+ * `entryOf` says what each day holds (null: nothing).
+ */
+export function monthWeeks<T>(
+  month: MonthId,
+  today: LocalDate,
+  entryOf: (date: LocalDate) => T | null,
+): ({ date: LocalDate; dayOfMonth: number; entry: T | null; today: boolean } | null)[][] {
+  const first = firstDay(month);
+  const length = daysBetween(first, firstDay(nextMonth(month)));
+  const lead = mondayIndex(first);
+  const cells: ({ date: LocalDate; dayOfMonth: number; entry: T | null; today: boolean } | null)[] =
+    Array.from({ length: lead }, () => null);
+  for (let i = 0; i < length; i++) {
+    const date = addDays(first, i);
+    cells.push({ date, dayOfMonth: i + 1, entry: entryOf(date), today: date === today });
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+  return Array.from({ length: cells.length / 7 }, (_, week) => cells.slice(week * 7, week * 7 + 7));
+}
+
+/** 0 for a Monday, 6 for a Sunday. */
+export function mondayIndex(date: LocalDate): number {
+  return ((daysBetween(A_MONDAY, date) % 7) + 7) % 7;
+}
+
+/**
+ * The weeks of a month, Monday first; null pads the first and last weeks.
  * `days` are the habit's days (buildTimeline), oldest first.
  */
 export function monthCalendar(
@@ -48,20 +75,20 @@ export function monthCalendar(
   days: readonly DayEntry[],
   today: LocalDate,
 ): (CalendarDay | null)[][] {
-  const first = firstDay(month);
-  const length = daysBetween(first, firstDay(nextMonth(month)));
-  const lead = ((daysBetween(A_MONDAY, first) % 7) + 7) % 7;
   const start = days[0]?.date;
-
-  const cells: (CalendarDay | null)[] = Array.from({ length: lead }, () => null);
-  for (let i = 0; i < length; i++) {
-    const date = addDays(first, i);
-    const index = start === undefined ? -1 : daysBetween(start, date);
-    cells.push({ date, dayOfMonth: i + 1, entry: days[index] ?? null, today: date === today });
-  }
-  while (cells.length % 7 !== 0) cells.push(null);
-  return Array.from({ length: cells.length / 7 }, (_, week) => cells.slice(week * 7, week * 7 + 7));
+  return monthWeeks(month, today, (date) =>
+    start === undefined ? null : (days[daysBetween(start, date)] ?? null),
+  );
 }
+
+/** The month before. */
+export function previousMonth(month: MonthId): MonthId {
+  const [year, number] = month.split('-').map(Number) as [number, number];
+  return number === 1 ? `${year - 1}-12` : `${year}-${String(number - 1).padStart(2, '0')}`;
+}
+
+/** The month after. */
+export { nextMonth };
 
 /** The days of the month with a note or a relapse, newest first. */
 export function monthEntries(month: MonthId, days: readonly DayEntry[]): DayEntry[] {

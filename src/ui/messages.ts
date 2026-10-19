@@ -8,6 +8,11 @@ import type {
 } from '../domain';
 import { HABIT_NAME_MAX_LENGTH, NOTE_MAX_LENGTH } from '../domain';
 
+/** An action threw (the database, the phone): said plainly, nothing is lost (ADR 0024). */
+export const FAILED = "Ça n'a pas fonctionné. Réessaie dans un instant.";
+/** A screen could not load its data. */
+export const LOAD_FAILED = "Impossible d'afficher ça pour l'instant. Réessaie dans un instant.";
+
 export const createHabitErrorMessage: Record<CreateHabitError, string> = {
   NAME_EMPTY: 'Donne un nom à ton habitude.',
   NAME_TOO_LONG: `Le nom ne peut pas dépasser ${HABIT_NAME_MAX_LENGTH} caractères.`,

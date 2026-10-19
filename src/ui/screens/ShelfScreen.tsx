@@ -37,10 +37,13 @@ import {
   gestureAt,
   lightLevel,
   MEDITATION_PIECES,
+  PLAQUE_HOOK_ROWS,
+  PLAQUE_MIN,
+  plaqueTier,
+  type PlaqueTier,
   reflectLights,
   roomLights,
   SIGN_PLANK,
-  usedRows,
   planRoom,
   PLANT_GRID,
   drawWindow,
@@ -60,6 +63,8 @@ import type { ScreenProps } from '../navigation/types';
 import { fitRoom, type RoomFit } from '../shelf/fitRoom';
 import { floorMirror } from '../shelf/floorMirror';
 import { floorContext, gesturePatch, type FloorContext } from '../shelf/gesturePatch';
+import { CatView } from '../shelf/CatView';
+import { Plaque } from '../shelf/Plaque';
 import {
   floorPicture,
   mirrorImage,
@@ -85,10 +90,10 @@ import { useWindowClock } from '../useWindowClock';
 // Text sizes are fixed so the room can be planned in whole cells; large
 // accessibility sizes are allowed up to this factor.
 const MAX_FONT_SCALE = 1.3;
-const COUNT_LINE = 22;
-const NAME_LINE = 15;
-const LABEL_TOP = 3;
-const LABEL_GAP = 6;
+const COUNT_LINE = 24;
+const NAME_LINE = 17;
+const LABEL_TOP = 14;
+const LABEL_GAP = 12;
 const LOGO_LINE = 32;
 const SUBTITLE_LINE = 16;
 const DOTS_HEIGHT = 24;
@@ -96,6 +101,18 @@ const DOTS_HEIGHT = 24;
 const SHELF_CALM = 3;
 /** Frames per second of the lights of the dark room: enough for a candle to flicker. */
 const LIGHTS_FPS = 15;
+/** Cells between the side of a plant's place and its plaque. */
+const PLAQUE_INSET = 2;
+/** The metal of a plaque, said by a screen reader. */
+const METAL_NAMES: Record<PlaqueTier, string> = {
+  bronze: 'de bronze',
+  silver: "d'argent",
+  gold: "d'or",
+  platinum: 'de platine',
+  opal: "d'opale",
+  tarnished: 'ternie',
+  wood: 'de bois',
+};
 
 /**
  * Screen 2: the shelf, a room seen one wall at a time. It fills the screen
@@ -110,6 +127,10 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
   const { width, height } = useWindowDimensions();
   const load = useCallback(() => tracker.getShelf(), [tracker]);
   const { data: shelf } = useScreenData(load);
+  // The cat of the room (ADR 0025), as chosen in the settings.
+  const loadSettings = useCallback(() => tracker.getSettings(), [tracker]);
+  const { data: settings } = useScreenData(loadSettings);
+  const cat = settings?.cat ?? 'none';
   const [page, setPage] = useState(0);
   // The lights of the room (ADR 0020, 0021): off, the room goes dark, what
   // gives light shines, and every other screen goes dark too.
@@ -213,12 +234,22 @@ export function ShelfScreen({ navigation }: ScreenProps<'Shelf'>) {
             floor={floor}
             dark={look}
             awake={lightsOff && i === current}
+            inView={i === current}
             onOpen={onOpen}
             onNew={onNew}
             onRetire={onRetire}
             onMeditate={onMeditate}
           />
         ))}
+        {cat !== 'none' && (
+          <CatView
+            breed={cat}
+            roomWidth={fit.plan.width}
+            cell={fit.devicePixelsPerCell / PixelRatio.get()}
+            floorY={fit.floorTop}
+            dark={look}
+          />
+        )}
       </ScrollView>
 
       {look && focused && <StatusBar style={look.statusBar} />}
@@ -313,6 +344,8 @@ interface WallPageProps {
   dark: LightsOffLook | null;
   /** The glows of this wall move (only the wall in view, lights off). */
   awake: boolean;
+  /** This wall is the one shown: its plaques shine. */
+  inView: boolean;
   onOpen: (id: string) => void;
   onNew: () => void;
   /** A long press on a plant: take it off the shelf (never a swipe, kept for moving). */
@@ -335,6 +368,7 @@ const WallPage = memo(function WallPage({
   floor,
   dark,
   awake,
+  inView,
   onOpen,
   onNew,
   onRetire,
@@ -347,13 +381,20 @@ const WallPage = memo(function WallPage({
   const toX = (x: number) => (x * fit.devicePixelsPerCell) / pixelRatio - pageLeft;
   const toY = (y: number) => fit.roomTop + (y * fit.devicePixelsPerCell) / pixelRatio;
   const bandHeight = (placed: PlacedItem) => placed.rows.to - placed.rows.from;
-  // A label sits just under what it names: under the pot on a shelf, under
-  // the lowest vine of a hanging plant (its band can be much taller, beside
-  // the window), never below its band.
-  const labelRow = (placed: PlacedItem) =>
-    placed.content.kind === 'plant'
-      ? Math.min(bandHeight(placed), usedRows(placed.content.image).bottom + 1 - placed.rows.from)
-      : bandHeight(placed);
+  // The plaque under each plant (ADR 0023): its metal by the days of the life.
+  const plaqueWidth = PLANT_GRID.width - 2 * PLAQUE_INSET;
+  // One free cell above and below: a tall plant of the row under it never touches it.
+  const plaqueHeight = Math.max(PLAQUE_MIN.height, fit.labelRows - 2);
+  const tierOf = (placed: PlacedItem): PlaqueTier => {
+    const plant = placed.content.kind === 'plant' ? shelf.habits[placed.content.id] : undefined;
+    return plant ? plaqueTier(plant.life.days, plant.life.dead) : 'wood';
+  };
+  // Where each plaque hangs: under its shelf, or, for the hanging plants,
+  // in one row under the longest vine of the room (see planRoom).
+  const labelRow = (placed: PlacedItem) => placed.label?.row ?? bandHeight(placed);
+  const hooked = (placed: PlacedItem) => !(placed.label?.hanging ?? false);
+  // The plaques of this wall, in order: they take turns to shine.
+  const plaques = wall.items.filter((placed) => placed.labelled);
 
   const frame = useMemo(
     () => ({
@@ -439,7 +480,7 @@ const WallPage = memo(function WallPage({
               accessibilityLabel={
                 summary.life.dead
                   ? `${summary.habit.name}, n'a pas tenu cette fois, ${days(summary.life.days)} tenus`
-                  : `${summary.habit.name}, ${days(summary.life.days)}`
+                  : `${summary.habit.name}, ${days(summary.life.days)}, plaque ${METAL_NAMES[plaqueTier(summary.life.days, false)]}`
               }
               onPress={() => onOpen(id)}
               onLongPress={() => onRetire(id)}
@@ -506,24 +547,42 @@ const WallPage = memo(function WallPage({
         return null;
       })}
 
-      {wall.items
-        .filter((placed) => placed.labelled)
-        .map((placed, i) => (
-          <View
-            key={`label-${i}`}
-            style={[
-              styles.label,
-              {
-                left: toX(placed.x),
-                top: toY(placed.y + labelRow(placed)),
-                width: PLANT_GRID.width * cell,
-              },
-            ]}
-            pointerEvents="none"
-          >
-            <Label placed={placed} shelf={shelf} dark={dark} />
+      {plaques.map((placed, i) => (
+        <View
+          key={`label-${i}`}
+          style={[
+            styles.label,
+            {
+              left: toX(placed.x) + PLAQUE_INSET * cell,
+              top: toY(placed.y + labelRow(placed)) + cell,
+              width: plaqueWidth * cell,
+              height: plaqueHeight * cell,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <View style={styles.plaque}>
+            <Plaque
+              hooks={hooked(placed)}
+              tier={tierOf(placed)}
+              width={plaqueWidth}
+              height={plaqueHeight}
+              cell={cell}
+              turn={{ index: i, count: plaques.length }}
+              awake={inView}
+              dark={dark}
+            />
           </View>
-        ))}
+          <View
+            style={[
+              styles.plaqueText,
+              { paddingTop: hooked(placed) ? PLAQUE_HOOK_ROWS * cell : 0 },
+            ]}
+          >
+            <Label placed={placed} shelf={shelf} />
+          </View>
+        </View>
+      ))}
     </View>
   );
 });
@@ -749,33 +808,21 @@ function Lights({
  * Under a plant: its days first, large, then its name, quieter. A dead
  * plant keeps the days it held, quiet too: they no longer run.
  */
-function Label({
-  placed,
-  shelf,
-  dark,
-}: {
-  placed: PlacedItem;
-  shelf: Shelf;
-  dark: LightsOffLook | null;
-}) {
+function Label({ placed, shelf }: { placed: PlacedItem; shelf: Shelf }) {
   const styles = useThemedStyles(makeStyles);
   const plant = placed.content.kind === 'plant' ? shelf.habits[placed.content.id] : undefined;
-  const quiet = !plant || plant.life.dead;
+  const dead = plant?.life.dead ?? false;
   return (
     <>
       <NumberText
-        style={[
-          styles.count,
-          quiet && styles.newCount,
-          dark && { color: quiet ? dark.muted : dark.text },
-        ]}
+        style={[styles.count, dead && styles.quiet]}
         numberOfLines={1}
         maxFontSizeMultiplier={MAX_FONT_SCALE}
       >
         {plant ? days(plant.life.days) : 'Nouvelle'}
       </NumberText>
       <NumberText
-        style={[styles.name, dark && { color: dark.muted }]}
+        style={[styles.name, dead && styles.quiet]}
         numberOfLines={1}
         maxFontSizeMultiplier={MAX_FONT_SCALE}
       >
@@ -813,27 +860,25 @@ const makeStyles = (colors: Palette) =>
     },
     zone: { position: 'absolute' },
     lights: { position: 'absolute', left: 0, top: 0 },
-    label: {
-      position: 'absolute',
-      alignItems: 'center',
-      paddingTop: LABEL_TOP,
-      paddingHorizontal: 2,
-    },
+    label: { position: 'absolute', paddingHorizontal: 10 },
+    plaque: { position: 'absolute', left: 0, top: 0 },
+    plaqueText: { flex: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+    // Written on the plaque's wood, whatever the lights.
     count: {
       fontFamily: fonts.display,
-      fontSize: 15,
+      fontSize: 17,
       lineHeight: COUNT_LINE,
-      color: colors.text,
+      color: colors.onWood,
       textAlign: 'center',
     },
-    newCount: { color: colors.muted },
     name: {
       fontFamily: fonts.display,
-      fontSize: 12,
+      fontSize: 13,
       lineHeight: NAME_LINE,
-      color: colors.muted,
+      color: colors.onWood,
       textAlign: 'center',
     },
+    quiet: { color: colors.onWoodMuted },
     signWord: { position: 'absolute', left: 0, right: 0, justifyContent: 'center' },
     signLabel: { fontFamily: fonts.display, color: colors.onWood, textAlign: 'center' },
     pressed: { opacity: 0.6 },

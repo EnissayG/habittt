@@ -1,6 +1,7 @@
 import type { Habit, HabitStatus } from './habit';
 import { splitLives } from './lives';
 import type { LocalDate } from './localDate';
+import type { MeditationDay } from './meditationLog';
 import { isActiveNote, type Mood, type Note } from './note';
 import { isActive, type Relapse } from './relapse';
 import type { Replanting } from './replanting';
@@ -13,7 +14,7 @@ import type { Watering } from './watering';
 // relapses and deleted notes are left out too.
 
 /** Raise it whenever the shape below changes. */
-export const EXPORT_FORMAT = 1;
+export const EXPORT_FORMAT = 2;
 
 export interface ExportedHabit {
   id: string;
@@ -36,6 +37,8 @@ export interface ExportData {
   format: number;
   exportedAt: string;
   habits: ExportedHabit[];
+  /** Format 2: the days meditated and the weekly goal (ADR 0022). */
+  meditation: { goal: number; days: { date: LocalDate; minutes: number; sessions: number }[] };
 }
 
 export interface HabitRows {
@@ -52,6 +55,7 @@ export function buildExport(params: {
   exportedAt: string;
   today: LocalDate;
   habits: readonly HabitRows[];
+  meditation: { goal: number; days: readonly MeditationDay[] };
 }): ExportData {
   return {
     app: 'habittt',
@@ -82,5 +86,11 @@ export function buildExport(params: {
           today: growthEnd(habit, params.today),
         }).map(({ start, end, days }) => ({ start, end, days })),
       })),
+    meditation: {
+      goal: params.meditation.goal,
+      days: [...params.meditation.days]
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .map(({ date, minutes, sessions }) => ({ date, minutes, sessions })),
+    },
   };
 }

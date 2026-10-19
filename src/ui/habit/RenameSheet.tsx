@@ -3,11 +3,13 @@ import { StyleSheet, Text, TextInput } from 'react-native';
 
 import { HABIT_NAME_MAX_LENGTH, type HabitId } from '../../domain';
 import { Button } from '../components/Button';
+import { TextLimit } from '../components/TextLimit';
 import { Sheet } from '../components/Sheet';
 import { renameErrorMessage } from '../messages';
 import { fonts, type Palette } from '../theme/tokens';
 import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
+import { useSafeAction } from '../useSafeAction';
 
 interface RenameSheetProps {
   habitId: HabitId;
@@ -20,6 +22,7 @@ interface RenameSheetProps {
 export function RenameSheet({ habitId, name, onClose, onDone }: RenameSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
+  const safely = useSafeAction();
   const [value, setValue] = useState(name);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,7 +30,8 @@ export function RenameSheet({ habitId, name, onClose, onDone }: RenameSheetProps
   async function save() {
     setBusy(true);
     try {
-      const result = await tracker.renameHabit(habitId, value);
+      const result = await safely(() => tracker.renameHabit(habitId, value));
+      if (!result) return;
       if (!result.ok) {
         setError(renameErrorMessage[result.error]);
         return;
@@ -43,14 +47,18 @@ export function RenameSheet({ habitId, name, onClose, onDone }: RenameSheetProps
       <Text style={styles.title}>Renommer</Text>
       <TextInput
         value={value}
-        onChangeText={setValue}
-        maxLength={HABIT_NAME_MAX_LENGTH * 2}
+        onChangeText={(text) => {
+          setValue(text);
+          setError(null);
+        }}
+        maxLength={HABIT_NAME_MAX_LENGTH}
         autoFocus
         returnKeyType="done"
         onSubmitEditing={() => void save()}
         style={styles.field}
         accessibilityLabel="Nom de l'habitude"
       />
+      <TextLimit length={value.length} max={HABIT_NAME_MAX_LENGTH} />
       {error && <Text style={styles.body}>{error}</Text>}
       <Button label="Enregistrer" disabled={busy} onPress={() => void save()} />
       <Button label="Annuler" variant="quiet" onPress={onClose} />

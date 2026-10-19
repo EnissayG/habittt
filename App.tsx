@@ -1,13 +1,15 @@
 // Composition root: the only place allowed to wire ui/, domain/ and data/ together.
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { openFreshDemoDatabase, openHabitDatabase } from './src/data/database';
 import {
   SqliteHabitRepository,
+  SqliteMeditationRepository,
   SqliteNoteRepository,
   SqliteRelapseRepository,
   SqliteReplantingRepository,
+  SqliteSettingsRepository,
   SqliteWateringRepository,
 } from './src/data/sqliteRepositories';
 import { generateId, generateSeed, systemClock } from './src/data/system';
@@ -28,6 +30,8 @@ function trackerOn(db: Database, seeds: () => number = generateSeed): HabitTrack
     notes: new SqliteNoteRepository(db),
     waterings: new SqliteWateringRepository(db),
     replantings: new SqliteReplantingRepository(db),
+    meditations: new SqliteMeditationRepository(db),
+    settings: new SqliteSettingsRepository(db, systemClock.now),
     clock: systemClock,
     generateId,
     generateSeed: seeds,
@@ -45,11 +49,15 @@ export default function App() {
   const [source, setSource] = useState<DataSource>('real');
   const [failure, setFailure] = useState<string | null>(null);
 
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     createTracker()
-      .then(setRealTracker)
+      .then((tracker) => {
+        setRealTracker(tracker);
+        setFailure(null);
+      })
       .catch((e: unknown) => setFailure(String(e)));
-  }, []);
+  }, [attempt]);
 
   // Development only: a demo database to test several walls.
   const devData: DevData = {
@@ -69,7 +77,17 @@ export default function App() {
   if (failure) {
     return (
       <View style={styles.splash}>
-        <Text style={styles.error}>{`Erreur au démarrage :\n${failure}`}</Text>
+        <Text style={styles.error}>
+          habittt n&apos;a pas pu s&apos;ouvrir. Tes plantes sont bien gardées : réessaie.
+        </Text>
+        {__DEV__ && <Text style={styles.detail}>{failure}</Text>}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setAttempt((n) => n + 1)}
+          style={styles.retry}
+        >
+          <Text style={styles.retryLabel}>Réessayer</Text>
+        </Pressable>
       </View>
     );
   }
@@ -104,4 +122,14 @@ const styles = StyleSheet.create({
   },
   text: { fontFamily: fonts.displayBold, fontSize: 44, color: colors.text, textAlign: 'center' },
   error: { fontFamily: fonts.body, fontSize: 16, color: colors.text, textAlign: 'center' },
+  detail: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
+  retry: {
+    marginTop: 16,
+    backgroundColor: colors.accent,
+    borderBottomWidth: 4,
+    borderBottomColor: colors.accentEdge,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  retryLabel: { fontFamily: fonts.display, fontSize: 15, color: colors.onAccent },
 });

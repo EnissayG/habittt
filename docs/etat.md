@@ -1,7 +1,7 @@
 # État du projet
 
-Point de reprise entre deux sessions. À jour au **12 octobre 2026**, après la
-phase 4d (le bonsaï de la séance, la lumière éteinte). À lire en premier avec `CLAUDE.md`, puis
+Point de reprise entre deux sessions. À jour au **19 octobre 2026**, après la
+phase 4g (les erreurs, le chat). À lire en premier avec `CLAUDE.md`, puis
 [architecture.md](architecture.md) et les [ADR](decisions/).
 
 ## Où on en est
@@ -30,8 +30,11 @@ phase 4d (le bonsaï de la séance, la lumière éteinte). À lire en premier av
 | Phase 4b         | Le coin méditation revu : décor, bouton, lumière du souffle, vibrations rythmées     | fait (ADR 0018), **à tester sur téléphone** |
 | Phase 4c         | La pièce refaite (coin, papier peint, fumée), soleil en vagues, encens, sans phrases | fait (ADR 0019), testé                      |
 | Phase 4d         | Bonsaï de la séance, vibration façon poumon, « Bravo », lumière éteinte, plafond     | fait (ADR 0020, 0021), **à tester**         |
+| Phase 4e         | Plante de méditation, objectif par semaine, calendrier, rappel, réglages gardés      | fait (ADR 0022), **à tester sur téléphone** |
+| Phase 4f         | Plaques de bois et de métal sous les plantes, le métal suit les jours                | fait (ADR 0023), **à tester sur téléphone** |
+| Phase 4g         | Rien n'échoue en silence ; le chat de la pièce, cinq pelages                         | fait (ADR 0024, 0025), **à tester**         |
 
-Chiffres au dernier commit : 1251 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 1293 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -45,6 +48,76 @@ faite. Reste à la tester sur téléphone (ci-dessous), avec les phases 3, puis
 La phase 3g (ADR 0015) a été écrite hors de Claude Code, sans téléphone :
 les tests, le typecheck et le lint passent, mais **le bundle n'a pas été
 recompilé et rien n'a été vu dans Expo Go**.
+
+### À vérifier sur téléphone (phase 4g, les erreurs et le chat)
+
+- **Les champs** (nouvelle habitude, renommer, note) : « 42 / 50 » en
+  approchant de la limite, puis « 50 caractères au maximum. » ; on ne peut
+  plus dépasser. Le message d'erreur d'un champ disparaît dès qu'on écrit.
+- **Le bandeau** : pour le voir, couper l'app pendant une action n'est pas
+  simple ; au moins vérifier qu'il n'apparaît jamais sans raison.
+- **Le chat** (ADR 0027) : le chat de la référence, image par image ; sa
+  taille à côté des pots. Dans la pièce, il dort d'abord, se réveille
+  couché, s'assoit (la queue balaie le sol), se lève, part en bonds d'un
+  mur à l'autre (on le retrouve en glissant), se recouche, se rendort. Sa
+  queue posée sur le plancher, son reflet dessous. Lumière éteinte : il s'assombrit. « Réduire les animations » :
+  il dort. **Avant la publication** : vérifier la licence de l'image et
+  créditer son auteur si demandé.
+- **L'icône et le lancement** (`docs/construire-l-app.md`) : le bonsaï de
+  l'ouverture sur fond crème ; l'icône ronde d'Android ; l'écran de
+  lancement (seulement dans une build, pas dans Expo Go).
+- **Toucher le chat** (ADR 0028) : un toucher bref (debout il saute, assis
+  ou couché sa queue bouge, endormi il se réveille un instant), un cœur
+  monte ; le doigt gardé dessus, il s'installe, ferme les yeux, les cœurs
+  montent et le téléphone ronronne (à sentir : la force du ronronnement).
+  Le glissement entre les murs en partant du chat.
+- **Le choix du chat** dans les réglages : les cinq pelages et « Pas de
+  chat » ; le choix reste après avoir fermé l'app.
+- La fluidité du glissement avec le chat.
+
+### À vérifier sur téléphone (phase 4f, les plaques)
+
+- Les plaques des plantes suspendues sur une seule rangée, sous la tige la
+  plus longue ; celles des étagères pendues à deux chaînes ; aucune plante
+  ne touche une plaque.
+- Sous chaque plante, une plaque de bois cerclée de métal : bronze avant
+  30 jours, argent, or dès 90, platine dès 180, opale dès 365. Les jours et
+  le nom lisibles, en crème, sans déborder du bois.
+- Une plante qui n'a pas tenu : plaque ternie, texte plus discret. La place
+  « Nouvelle habitude » : une planche sans métal.
+- Chaque métal brille à sa façon (bronze : un rivet qui se réchauffe ;
+  argent : une fine ligne ; or et platine : une bande et une petite étoile ;
+  opale : une vague de couleurs). Les plaques d'un mur prennent leur tour :
+  jamais deux à la fois, pas plus d'un reflet toutes les 8 secondes sur un
+  mur plein. Dis si c'est trop calme ou encore trop. Rien sur les autres
+  murs ; rien avec « Réduire les animations ».
+- Lumière éteinte : les plaques s'assombrissent avec la pièce, le texte
+  reste lisible.
+- Le glissement entre les murs reste fluide ; sur un petit écran, les
+  plantes n'ont pas trop rapetissé.
+- VoiceOver : « Fumer, 122 jours, plaque d'or ».
+
+### À vérifier sur téléphone (phase 4e, la plante de méditation)
+
+Écrit hors de Claude Code, sans téléphone : tests, typecheck et lint
+passent, le bundle n'a pas été recompilé.
+
+- **La migration n° 6** sur ta vraie base : tes habitudes restent.
+- **L'écran 12** : la plante (un pot vide au début), « Pas encore de jour
+  médité », les durées, la vibration, la semaine (sept cases), l'objectif
+  avec − et +, le calendrier du mois, le rappel.
+- **Une séance d'une minute au moins**, finie ou quittée (« Terminer » ou
+  glisser-retour) : en revenant, « 1 jour médité », la case du jour verte
+  dans la semaine et le calendrier, la plante a une pousse. Moins d'une
+  minute : rien ne change.
+- **Deux séances le même jour** : toujours un seul jour.
+- **L'objectif** : le changer, fermer l'app, le retrouver.
+- **Les jours d'affilée** : la ligne n'apparaît qu'à partir de 2 jours.
+- **Le rappel** : l'activer (l'autorisation est demandée), choisir une
+  heure, le recevoir ; le désactiver.
+- **La lumière éteinte et la vibration** restent comme on les a laissées
+  après avoir fermé l'app.
+- **L'export** contient la méditation.
 
 ### À vérifier sur téléphone (phase 4d)
 

@@ -15,6 +15,8 @@ import { PlantChoiceScreen } from '../screens/PlantChoiceScreen';
 import { RetireScreen } from '../screens/RetireScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ShelfScreen } from '../screens/ShelfScreen';
+import { CrashBoundary } from '../components/CrashScreen';
+import { NoticeProvider } from '../components/Notice';
 import { LightsProvider, useLights, usePalette } from '../theme/ThemeContext';
 import type { Palette } from '../theme/tokens';
 import type { RootStackParamList } from './types';
@@ -32,9 +34,11 @@ const themeOf = (colors: Palette): Theme => ({
  */
 export function AppNavigator() {
   return (
-    <LightsProvider>
-      <Navigator />
-    </LightsProvider>
+    <CrashBoundary>
+      <LightsProvider>
+        <Navigator />
+      </LightsProvider>
+    </CrashBoundary>
   );
 }
 
@@ -45,27 +49,33 @@ function Navigator() {
   const theme = useMemo(() => themeOf(colors), [colors]);
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={theme}>
-        <Stack.Navigator
-          initialRouteName="Opening"
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        >
-          <Stack.Screen name="Opening" component={OpeningScreen} options={{ animation: 'fade' }} />
-          <Stack.Screen name="Shelf" component={ShelfScreen} options={{ animation: 'fade' }} />
-          <Stack.Screen name="Habit" component={HabitScreen} />
-          <Stack.Screen name="Journal" component={JournalScreen} />
-          <Stack.Screen name="Retire" component={RetireScreen} />
-          <Stack.Screen name="NewHabitName" component={NewHabitNameScreen} />
-          <Stack.Screen name="PlantChoice" component={PlantChoiceScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
-          <Stack.Screen name="Herbarium" component={HerbariumScreen} />
-          <Stack.Screen name="Meditation" component={MeditationScreen} />
-          {__DEV__ && <Stack.Screen name="Lab" component={LabScreen} />}
-        </Stack.Navigator>
-      </NavigationContainer>
+      <NoticeProvider>
+        <NavigationContainer theme={theme}>
+          <Stack.Navigator
+            initialRouteName="Opening"
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <Stack.Screen
+              name="Opening"
+              component={OpeningScreen}
+              options={{ animation: 'fade' }}
+            />
+            <Stack.Screen name="Shelf" component={ShelfScreen} options={{ animation: 'fade' }} />
+            <Stack.Screen name="Habit" component={HabitScreen} />
+            <Stack.Screen name="Journal" component={JournalScreen} />
+            <Stack.Screen name="Retire" component={RetireScreen} />
+            <Stack.Screen name="NewHabitName" component={NewHabitNameScreen} />
+            <Stack.Screen name="PlantChoice" component={PlantChoiceScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Herbarium" component={HerbariumScreen} />
+            <Stack.Screen name="Meditation" component={MeditationScreen} />
+            {__DEV__ && <Stack.Screen name="Lab" component={LabScreen} />}
+          </Stack.Navigator>
+        </NavigationContainer>
+      </NoticeProvider>
       <StatusBar style={lights.off ? 'light' : 'dark'} />
     </SafeAreaProvider>
   );

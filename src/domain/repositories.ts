@@ -1,8 +1,10 @@
 import type { Habit, HabitId } from './habit';
 import type { LocalDate } from './localDate';
+import type { MeditationDay } from './meditationLog';
 import type { Note } from './note';
 import type { Relapse } from './relapse';
 import type { Replanting } from './replanting';
+import type { SettingKey } from './settings';
 import type { Watering } from './watering';
 
 /**
@@ -46,4 +48,17 @@ export interface ReplantingRepository {
   listByHabit(habitId: HabitId): Promise<Replanting[]>;
   findByHabitAndDate(habitId: HabitId, date: LocalDate): Promise<Replanting | undefined>;
   save(replanting: Replanting): Promise<void>;
+}
+
+/** The days one meditated (ADR 0022): one row per day. */
+export interface MeditationRepository {
+  list(): Promise<MeditationDay[]>;
+  findByDate(date: LocalDate): Promise<MeditationDay | undefined>;
+  save(day: MeditationDay): Promise<void>;
+}
+
+/** The choices kept from one opening to the next, as text by key (see settings.ts). */
+export interface SettingsRepository {
+  readAll(): Promise<Partial<Record<SettingKey, string>>>;
+  write(key: SettingKey, value: string): Promise<void>;
 }

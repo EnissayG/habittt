@@ -8,12 +8,15 @@ import { Screen } from '../components/Screen';
 import { Sheet } from '../components/Sheet';
 import { TopBar } from '../components/TopBar';
 import type { ScreenProps } from '../navigation/types';
+import { CAT_NAMES, CatChoice } from '../settings/CatChoice';
 import { isReminderOn, turnReminderOff, turnReminderOn } from '../settings/reminder';
 import { shareExport } from '../settings/shareExport';
 import { fonts, spacing, type Palette } from '../theme/tokens';
 import { usePalette, useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
+import { useSafeAction } from '../useSafeAction';
+import type { CatBreed } from '../../domain';
 
 /**
  * Screen 11: the settings. Music and accounts are announced, not built yet;
@@ -28,6 +31,14 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
   const [reminder, setReminder] = useState<boolean | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [about, setAbout] = useState(false);
+  const safely = useSafeAction();
+  const loadSettings = useCallback(() => tracker.getSettings(), [tracker]);
+  const { data: settings, reload: reloadSettings } = useScreenData(loadSettings);
+
+  async function chooseCat(cat: CatBreed | 'none') {
+    await safely(() => tracker.saveSetting('cat', cat));
+    await safely(reloadSettings);
+  }
 
   useEffect(() => {
     isReminderOn().then(setReminder, () => setReminder(false));
@@ -100,6 +111,8 @@ export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
             />
           }
         />
+        <Row label="Le chat de la pièce" value={settings ? CAT_NAMES[settings.cat] : ''} />
+        {settings && <CatChoice value={settings.cat} onChange={(cat) => void chooseCat(cat)} />}
         <Row
           label="L'herbier"
           value={lives === undefined ? '' : `${lives} ${lives > 1 ? 'vies' : 'vie'} ›`}

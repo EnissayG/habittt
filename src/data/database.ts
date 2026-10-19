@@ -95,6 +95,22 @@ const MIGRATIONS: readonly Migration[] = [
       );
     }
   },
+  // 6: the days meditated, one row per day, and the settings kept from one
+  // opening to the next (ADR 0022).
+  `
+  CREATE TABLE meditation_days (
+    id TEXT PRIMARY KEY NOT NULL,
+    date TEXT NOT NULL UNIQUE,
+    minutes INTEGER NOT NULL,
+    sessions INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE settings (
+    key TEXT PRIMARY KEY NOT NULL,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  `,
 ];
 
 export async function openHabitDatabase(name: string = DATABASE_NAME): Promise<SQLiteDatabase> {
@@ -109,7 +125,7 @@ export async function openFreshDemoDatabase(): Promise<SQLiteDatabase> {
   const db = await openHabitDatabase(DEMO_DATABASE_NAME);
   await db.withTransactionAsync(async () => {
     await db.execAsync(
-      'DELETE FROM notes; DELETE FROM waterings; DELETE FROM replantings; DELETE FROM relapses; DELETE FROM habits;',
+      'DELETE FROM notes; DELETE FROM waterings; DELETE FROM replantings; DELETE FROM relapses; DELETE FROM habits; DELETE FROM meditation_days; DELETE FROM settings;',
     );
   });
   return db;

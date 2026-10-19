@@ -5,30 +5,39 @@ import type {
   HabitId,
   HabitRepository,
   LocalDate,
+  MeditationDay,
+  MeditationRepository,
   Note,
   NoteRepository,
   Relapse,
   RelapseRepository,
   Replanting,
   ReplantingRepository,
+  SettingKey,
+  SettingsRepository,
   Watering,
   WateringRepository,
 } from '../domain';
 import {
   habitFromRow,
   habitToRow,
+  meditationDayFromRow,
+  meditationDayToRow,
   noteFromRow,
   noteToRow,
   relapseFromRow,
   relapseToRow,
   replantingFromRow,
   replantingToRow,
+  settingsFromRows,
   wateringFromRow,
   wateringToRow,
   type HabitRow,
+  type MeditationDayRow,
   type NoteRow,
   type RelapseRow,
   type ReplantingRow,
+  type SettingRow,
   type WateringRow,
 } from './rows';
 
@@ -227,6 +236,65 @@ export class SqliteReplantingRepository implements ReplantingRepository {
        VALUES ($id, $habit_id, $date, $updated_at)
        ON CONFLICT(id) DO UPDATE SET updated_at = excluded.updated_at`,
       { $id: row.id, $habit_id: row.habit_id, $date: row.date, $updated_at: row.updated_at },
+    );
+  }
+}
+
+export class SqliteMeditationRepository implements MeditationRepository {
+  constructor(private readonly db: SQLiteDatabase) {}
+
+  async list(): Promise<MeditationDay[]> {
+    const rows = await this.db.getAllAsync<MeditationDayRow>(
+      'SELECT * FROM meditation_days ORDER BY date',
+    );
+    return rows.map(meditationDayFromRow);
+  }
+
+  async findByDate(date: LocalDate): Promise<MeditationDay | undefined> {
+    const row = await this.db.getFirstAsync<MeditationDayRow>(
+      'SELECT * FROM meditation_days WHERE date = ?',
+      date,
+    );
+    return row ? meditationDayFromRow(row) : undefined;
+  }
+
+  async save(day: MeditationDay): Promise<void> {
+    const row = meditationDayToRow(day);
+    await this.db.runAsync(
+      `INSERT INTO meditation_days (id, date, minutes, sessions, updated_at)
+       VALUES ($id, $date, $minutes, $sessions, $updated_at)
+       ON CONFLICT(id) DO UPDATE SET
+         minutes = excluded.minutes,
+         sessions = excluded.sessions,
+         updated_at = excluded.updated_at`,
+      {
+        $id: row.id,
+        $date: row.date,
+        $minutes: row.minutes,
+        $sessions: row.sessions,
+        $updated_at: row.updated_at,
+      },
+    );
+  }
+}
+
+export class SqliteSettingsRepository implements SettingsRepository {
+  constructor(
+    private readonly db: SQLiteDatabase,
+    private readonly now: () => string,
+  ) {}
+
+  async readAll(): Promise<Partial<Record<SettingKey, string>>> {
+    return settingsFromRows(
+      await this.db.getAllAsync<SettingRow>('SELECT key, value FROM settings'),
+    );
+  }
+
+  async write(key: SettingKey, value: string): Promise<void> {
+    await this.db.runAsync(
+      `INSERT INTO settings (key, value, updated_at) VALUES ($key, $value, $updated_at)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+      { $key: key, $value: value, $updated_at: this.now() },
     );
   }
 }

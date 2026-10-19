@@ -37,6 +37,7 @@ describe('buildExport', () => {
           replantings: [{ id: 'p', habitId: 'h1', date: day(-5), updatedAt: NOW }],
         },
       ],
+      meditation: { goal: 5, days: [] },
     });
     expect(data).toEqual({
       app: 'habittt',
@@ -62,6 +63,7 @@ describe('buildExport', () => {
           ],
         },
       ],
+      meditation: { goal: 5, days: [] },
     });
   });
 
@@ -75,10 +77,34 @@ describe('buildExport', () => {
         { habit: makeHabit({ id: 'b', status: 'given', retiredOn: day(-1) }), ...rows },
         { habit: makeHabit({ id: 'c', status: 'garden', retiredOn: day(-2) }), ...rows },
       ],
+      meditation: { goal: 5, days: [] },
     });
     expect(data.habits.map((h) => [h.id, h.status, h.retiredOn])).toEqual([
       ['b', 'given', day(-1)],
       ['c', 'garden', day(-2)],
     ]);
+  });
+
+  it('writes the days meditated, oldest first, and the weekly goal (format 2)', () => {
+    const data = buildExport({
+      exportedAt: LATER,
+      today: TODAY,
+      habits: [],
+      meditation: {
+        goal: 4,
+        days: [
+          { id: 'b', date: day(-1), minutes: 10, sessions: 1, updatedAt: NOW },
+          { id: 'a', date: day(-3), minutes: 35, sessions: 2, updatedAt: NOW },
+        ],
+      },
+    });
+    expect(data.format).toBe(2);
+    expect(data.meditation).toEqual({
+      goal: 4,
+      days: [
+        { date: day(-3), minutes: 35, sessions: 2 },
+        { date: day(-1), minutes: 10, sessions: 1 },
+      ],
+    });
   });
 });

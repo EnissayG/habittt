@@ -12,6 +12,7 @@ import { toggleRelapseErrorMessage } from '../messages';
 import { fonts, type Palette } from '../theme/tokens';
 import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
+import { useSafeAction } from '../useSafeAction';
 
 interface RelapseSheetProps {
   habitId: HabitId;
@@ -34,6 +35,7 @@ export function RelapseSheet({
 }: RelapseSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
+  const safely = useSafeAction();
   const today = tracker.today();
   const yesterday = addDays(today, -1);
   const [when, setWhen] = useState<When>('today');
@@ -56,7 +58,8 @@ export function RelapseSheet({
   }
 
   async function record() {
-    const result = await tracker.recordRelapse(habitId, date);
+    const result = await safely(() => tracker.recordRelapse(habitId, date));
+    if (!result) return;
     if (!result.ok) {
       setError(toggleRelapseErrorMessage[result.error]);
       return;
@@ -70,7 +73,8 @@ export function RelapseSheet({
   }
 
   async function cancelExisting() {
-    const result = await tracker.toggleRelapse(habitId, date);
+    const result = await safely(() => tracker.toggleRelapse(habitId, date));
+    if (!result) return;
     if (!result.ok) {
       setError(toggleRelapseErrorMessage[result.error]);
       return;

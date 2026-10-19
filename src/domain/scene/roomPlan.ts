@@ -71,6 +71,13 @@ export interface PlacedItem {
   content: PlacedContent;
   /** True when a name and a counter go under it (plants and the dotted pot). */
   labelled: boolean;
+  /**
+   * Labelled only: where its plaque hangs (ADR 0023), in rows below `y`, and
+   * whether it is a hanging plant's. The plaques of the hanging plants line
+   * up in one row, just under the longest vine of the room; the others hang
+   * from their shelf.
+   */
+  label?: { row: number; hanging: boolean };
 }
 
 export interface WallPlan {
@@ -223,6 +230,9 @@ export function planRoom({
       bottomBand(shelves.flatMap((wall) => wall[row] ?? [])),
     ),
   ];
+  // The plaques of the hanging plants, in one row under the longest vine
+  // (the window may make the band taller: they stay under the vines).
+  const hangingLabelRow = Math.min(height(bands[0]!), topBand(topCells, 0).to - bands[0]!.from);
   const rowTops: number[] = [];
   // Under the ceiling, the moulding and the string of lights: nothing hangs over them.
   let y = CEILING_ROWS;
@@ -262,6 +272,7 @@ export function planRoom({
         rows: bands[0]!,
         content: cell,
         labelled,
+        ...(labelled && { label: { row: hangingLabelRow, hanging: true } }),
       });
     });
     shelves[w]!.forEach((cells, row) => {
@@ -274,6 +285,7 @@ export function planRoom({
           rows: band,
           content: cell,
           labelled,
+          ...(labelled && { label: { row: height(band), hanging: false } }),
         });
       });
     });

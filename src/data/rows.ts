@@ -3,12 +3,15 @@ import {
   MOODS,
   parseLocalDate,
   replantingIdFor,
+  SETTING_KEYS,
   type Habit,
   type HabitStatus,
+  type MeditationDay,
   type Mood,
   type Note,
   type Relapse,
   type Replanting,
+  type SettingKey,
   type Watering,
 } from '../domain';
 
@@ -173,6 +176,48 @@ export function replantingToRow(replanting: Replanting): ReplantingRow {
     date: replanting.date,
     updated_at: replanting.updatedAt,
   };
+}
+
+export interface MeditationDayRow {
+  id: string;
+  date: string;
+  minutes: number;
+  sessions: number;
+  updated_at: string;
+}
+
+export function meditationDayFromRow(row: MeditationDayRow): MeditationDay {
+  return {
+    id: row.id,
+    date: parseLocalDate(row.date),
+    minutes: row.minutes,
+    sessions: row.sessions,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function meditationDayToRow(day: MeditationDay): MeditationDayRow {
+  return {
+    id: day.id,
+    date: day.date,
+    minutes: day.minutes,
+    sessions: day.sessions,
+    updated_at: day.updatedAt,
+  };
+}
+
+/** A stored setting: its key, its value as text (see the domain's settings.ts). */
+export interface SettingRow {
+  key: string;
+  value: string;
+}
+
+/** Only the keys the app knows: a key written by a newer app is ignored. */
+export function settingsFromRows(rows: readonly SettingRow[]): Partial<Record<SettingKey, string>> {
+  const known: readonly string[] = SETTING_KEYS;
+  return Object.fromEntries(
+    rows.filter((row) => known.includes(row.key)).map((r) => [r.key, r.value]),
+  );
 }
 
 /**

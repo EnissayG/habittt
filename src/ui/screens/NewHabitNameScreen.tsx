@@ -5,6 +5,7 @@ import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { addDays, checkHabitName, HABIT_NAME_MAX_LENGTH, type LocalDate } from '../../domain';
 import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
+import { TextLimit } from '../components/TextLimit';
 import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
 import { dayMonth, fromPickerDate, toPickerDate } from '../format';
@@ -52,12 +53,13 @@ export function NewHabitNameScreen({ navigation }: ScreenProps<'NewHabitName'>) 
         }}
         placeholder="ex. Fumer"
         placeholderTextColor={colors.muted}
-        maxLength={HABIT_NAME_MAX_LENGTH + 10}
+        maxLength={HABIT_NAME_MAX_LENGTH}
         autoFocus
         returnKeyType="next"
         onSubmitEditing={next}
         style={styles.field}
       />
+      <TextLimit length={name.length} max={HABIT_NAME_MAX_LENGTH} />
       {error && <Text style={styles.error}>{error}</Text>}
 
       <Text style={styles.label}>Depuis quand ?</Text>

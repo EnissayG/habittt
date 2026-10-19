@@ -188,6 +188,20 @@ describe('planRoom', () => {
     }
   });
 
+  it('lines up the plaques of the hanging plants under the longest vine; the others under their shelf', () => {
+    const items = [item('short', 'pearls', 1), item('long', 'pothos', 2), item('s1', 'cactus', 3)];
+    const pearls = renderPlant({ species: 'pearls', seed: 7, elapsedDays: 10, relapseDays: [] });
+    const pothos = grown('pothos');
+    const room = plan(items, { short: pearls, long: pothos, s1: grown('cactus') });
+    const short = byId(room, 'short');
+    const long = byId(room, 'long');
+    expect(short.label).toEqual({ row: long.label!.row, hanging: true });
+    expect(long.label!.row).toBe(usedRows(pothos).bottom + 1 - long.rows.from);
+    expect(long.label!.row).toBeLessThanOrEqual(long.rows.to - long.rows.from);
+    const standing = byId(room, 's1');
+    expect(standing.label).toEqual({ row: standing.rows.to - standing.rows.from, hanging: false });
+  });
+
   it('takes the painting down as soon as a plant hangs on that wall', () => {
     const items = [item('h1', 'pothos', 1), item('h2', 'pearls', 2)];
     const room = plan(items, { h1: grown('pothos'), h2: grown('pearls') });

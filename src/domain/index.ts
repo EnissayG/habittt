@@ -17,7 +17,9 @@ export {
   monthCalendar,
   monthEntries,
   monthOf,
+  nextMonth,
   noteMonth,
+  previousMonth,
   type CalendarDay,
   type MonthId,
 } from './calendar';
@@ -110,6 +112,45 @@ export { DAYLIGHT, drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
 export { drawSlot, type SlotKind } from './scene/drawSlot';
 export { drawSparkles, drawSun, SPARKLE_CYCLE, SUN } from './scene/drawSun';
 export {
+  CAT_BREEDS,
+  CAT_BEAT,
+  CAT_FEET,
+  CAT_FRAME_COUNT,
+  CAT_FRAMES,
+  CAT_SIZE,
+  CAT_HOP,
+  CAT_SPEED,
+  catAt,
+  drawCat,
+  type CatBreed,
+  type CatImage,
+  type CatPose,
+  type CatState,
+  type CatTone,
+} from './scene/cat';
+export {
+  CAT_HEART,
+  catReaction,
+  HEART_LIFE,
+  type CatHeart,
+  type CatReaction,
+  type CatTouch,
+  type CatTouchKind,
+} from './scene/catTouch';
+export {
+  drawPlaque,
+  PLAQUE_HOOK_ROWS,
+  PLAQUE_METALS,
+  PLAQUE_MIN,
+  glintAt,
+  PLAQUE_TURN,
+  plaqueShine,
+  type PlaqueTurn,
+  plaqueTier,
+  type PlaqueMetal,
+  type PlaqueTier,
+} from './scene/plaque';
+export {
   LIGHT_TONES,
   lightLevel,
   reflectLights,
@@ -190,11 +231,35 @@ export {
 } from './relapse';
 export type {
   HabitRepository,
+  MeditationRepository,
   NoteRepository,
   RelapseRepository,
+  SettingsRepository,
   ReplantingRepository,
   WateringRepository,
 } from './repositories';
 export { err, ok, type Result } from './result';
 export { water, wateringIdFor, type WaterError, type Watering } from './watering';
 export { computeStats, type ComputeStatsParams, type HabitStats } from './stats';
+export {
+  clampGoal,
+  MEDITATION_GOAL,
+  MEDITATION_PLANT,
+  meditationDayIdFor,
+  meditationMonth,
+  meditationSummary,
+  MIN_MINUTES,
+  recordMeditation,
+  type MeditationCalendarDay,
+  type MeditationDay,
+  type MeditationSummary,
+  type RecordMeditationError,
+} from './meditationLog';
+export {
+  DEFAULT_SETTINGS,
+  readSettings,
+  SETTING_KEYS,
+  writeSetting,
+  type SettingKey,
+  type Settings,
+} from './settings';

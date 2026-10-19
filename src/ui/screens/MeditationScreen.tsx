@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   PixelRatio,
   Pressable,
@@ -19,11 +19,16 @@ import {
   drawSun,
   INCENSE_TIMER_SIZE,
   isOver,
+  MEDITATION_GOAL,
   MAX_GROWTH_DAYS,
   MEDITATION_BONSAI,
   MEDITATION_LENGTHS,
   MEDITATIONS,
+  meditationMonth,
   minutesLeft,
+  monthOf,
+  nextMonth,
+  previousMonth,
   PLANT_GRID,
   pulsesBetween,
   renderPlant,
@@ -31,22 +36,37 @@ import {
   SUN,
   type Meditation,
   type MeditationMinutes,
+  type MonthId,
   type ScenePixel,
 } from '../../domain';
+import { Chip } from '../components/Chip';
 import { Button } from '../components/Button';
 import { NumberText } from '../components/NumberText';
 import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
 import { tapBreath, tapEnd } from '../meditation/haptics';
+import { MeditationCalendar } from '../meditation/MeditationCalendar';
+import {
+  clearMeditationReminder,
+  MEDITATION_TIMES,
+  meditationReminder,
+  setMeditationReminder,
+  timeLabel,
+  type ReminderTime,
+} from '../meditation/reminder';
 import { useSessionClock } from '../meditation/useSessionClock';
 import type { ScreenProps } from '../navigation/types';
 import { LivingPlant } from '../plant/LivingPlant';
+import { PlantPixels } from '../plant/PlantCanvas';
 import { PixelCanvas } from '../plant/PixelCanvas';
 import { pixelScale } from '../plant/pixelScale';
 import { sceneColor, sunOnDark } from '../theme/scenePalette';
 import { fonts, spacing, type Palette } from '../theme/tokens';
 import { useLights, usePalette, useThemedStyles } from '../theme/ThemeContext';
+import { useTracker } from '../TrackerContext';
+import { useLoader } from '../useLoader';
 import { useReduceMotion } from '../useReduceMotion';
+import { useSafeAction } from '../useSafeAction';
 
 /** With "reduce motion", the air around the sun keeps this reach: half a breath. */
 const STILL_FULLNESS = 0.5;
@@ -72,43 +92,160 @@ type Stage =
   | { kind: 'end'; meditation: Meditation };
 
 /**
- * Screen 12: the meditation corner (docs/meditation.md, ADR 0017 to 0020).
- * Choose a length, then breathe with the sun, beside the grown bonsai and a
- * stick of incense that burns down with the session. The only words are
- * "inspire" and "expire"; the end says well done. Leaving (Terminer or
- * back) returns to the room. Nothing is saved.
+ * Screen 12: the meditation corner (docs/meditation.md, ADR 0017 to 0022).
+ * Before a session: the meditation plant, this week against a gentle goal,
+ * the calendar and the reminder. Choose a length, then breathe with the
+ * sun, beside the grown bonsai and a stick of incense that burns down with
+ * the session. The only words are "inspire" and "expire"; the end says well
+ * done. From one whole minute, the day counts as meditated, finished or not.
  */
 export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
-  const colors = usePalette();
-  const styles = useThemedStyles(makeStyles);
+  const tracker = useTracker();
+  const safely = useSafeAction();
   const [stage, setStage] = useState<Stage>({ kind: 'choose' });
   const [vibrate, setVibrate] = useState(true);
+  useEffect(() => {
+    tracker.getSettings().then(
+      (settings) => setVibrate(settings.meditationVibrate),
+      () => undefined,
+    );
+  }, [tracker]);
+  const changeVibrate = (on: boolean) => {
+    setVibrate(on);
+    void safely(() => tracker.saveSetting('meditationVibrate', on));
+  };
+  // The day counts from one whole minute; shorter, nothing is kept.
+  const keep = useCallback(
+    (seconds: number) =>
+      void safely(
+        () => tracker.recordMeditation(seconds),
+        "Ta séance n'a pas pu être notée. Ce n'est pas grave : respire quand même.",
+      ),
+    [tracker, safely],
+  );
 
   if (stage.kind === 'session') {
+    const { meditation } = stage;
     return (
       <Session
-        meditation={stage.meditation}
+        meditation={meditation}
         vibrate={vibrate}
-        onEnd={() => setStage({ kind: 'end', meditation: stage.meditation })}
+        onEnd={() => {
+          keep(meditation.seconds);
+          setStage({ kind: 'end', meditation });
+        }}
+        onLeave={keep}
         onQuit={navigation.goBack}
       />
     );
   }
   if (stage.kind === 'end') return <End meditation={stage.meditation} onBack={navigation.goBack} />;
 
-  const start = (minutes: MeditationMinutes) =>
-    setStage({ kind: 'session', meditation: MEDITATIONS[minutes] });
+  return (
+    <Choose
+      vibrate={vibrate}
+      onVibrate={changeVibrate}
+      onStart={(minutes) => setStage({ kind: 'session', meditation: MEDITATIONS[minutes] })}
+      onBack={navigation.goBack}
+    />
+  );
+}
+
+/**
+ * Before a session (ADR 0022): the meditation plant, which grows one day
+ * for every day meditated and never dies; this week against the goal; the
+ * lengths; the calendar; the reminder.
+ */
+function Choose({
+  vibrate,
+  onVibrate,
+  onStart,
+  onBack,
+}: {
+  vibrate: boolean;
+  onVibrate: (on: boolean) => void;
+  onStart: (minutes: MeditationMinutes) => void;
+  onBack: () => void;
+}) {
+  const colors = usePalette();
+  const styles = useThemedStyles(makeStyles);
+  const tracker = useTracker();
+  const safely = useSafeAction();
+  const { width } = useWindowDimensions();
+  const load = useCallback(() => tracker.getMeditation(), [tracker]);
+  const { data, reload } = useLoader(load);
+  const [month, setMonth] = useState<MonthId | null>(null);
+  const [reminder, setReminder] = useState<ReminderTime | null | undefined>(undefined);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    meditationReminder().then(setReminder, () => setReminder(null));
+  }, []);
+
+  const plantScale = pixelScale(PLANT_GRID, { width: width * 0.42, height: 150 }, PixelRatio.get());
+  const contentWidth = width - 28;
+
+  async function changeGoal(goal: number) {
+    await safely(() => tracker.saveSetting('meditationGoal', goal));
+    await safely(reload);
+  }
+
+  async function changeReminder(time: ReminderTime | null) {
+    try {
+      if (!time) {
+        await clearMeditationReminder();
+        setReminder(null);
+        setNotice(null);
+        return;
+      }
+      const result = await setMeditationReminder(time);
+      setReminder(result === 'on' ? time : null);
+      setNotice(
+        result === 'on'
+          ? `Un rappel doux chaque jour à ${timeLabel(time)}.`
+          : 'Les notifications sont refusées : tu peux les autoriser dans les réglages du téléphone.',
+      );
+    } catch {
+      setNotice("Le rappel n'a pas pu être réglé.");
+    }
+  }
+
+  if (!data) {
+    return (
+      <Screen>
+        <TopBar backLabel="étagère" onBack={onBack} />
+      </Screen>
+    );
+  }
+
+  const { summary, days, today, plant } = data;
+  const shown = month ?? monthOf(today);
+  const first = days[0] ? monthOf(days[0].date) : monthOf(today);
+  const goal = summary.week.goal;
 
   return (
-    <Screen>
-      <TopBar backLabel="étagère" onBack={navigation.goBack} />
+    <Screen scroll>
+      <TopBar backLabel="étagère" onBack={onBack} />
+
+      <View style={styles.plant}>
+        <PlantPixels image={plant} cellSize={plantScale.cellSize} />
+        <NumberText style={styles.count}>
+          {summary.days === 0
+            ? 'Pas encore de jour médité'
+            : `${summary.days} ${summary.days > 1 ? 'jours médités' : 'jour médité'}`}
+        </NumberText>
+        {summary.run >= 2 && (
+          <NumberText style={styles.fact}>{`${summary.run} jours d'affilée`}</NumberText>
+        )}
+      </View>
+
       <Text style={styles.title}>Combien de temps ?</Text>
       <View style={styles.lengths}>
         {MEDITATION_LENGTHS.map((minutes) => (
           <Pressable
             key={minutes}
             accessibilityRole="button"
-            onPress={() => start(minutes)}
+            onPress={() => onStart(minutes)}
             style={({ pressed }) => [styles.length, pressed && styles.pressed]}
           >
             <NumberText style={styles.lengthLabel}>{`${minutes} minutes`}</NumberText>
@@ -119,15 +256,89 @@ export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
         <Text style={styles.rowLabel}>Vibrer au rythme du souffle</Text>
         <Switch
           value={vibrate}
-          onValueChange={setVibrate}
+          onValueChange={onVibrate}
           trackColor={{ false: colors.line, true: colors.accent }}
           thumbColor={colors.background}
           accessibilityLabel="Vibrer au rythme du souffle"
         />
       </View>
+
+      <Text style={styles.title}>Cette semaine</Text>
+      <View
+        style={styles.week}
+        accessible
+        accessibilityLabel={`${summary.week.done} jours sur ${goal} cette semaine`}
+      >
+        {summary.week.meditated.map((done, i) => (
+          <View key={i} style={[styles.weekDay, done && styles.weekDone]}>
+            <Text style={[styles.weekLetter, done && styles.weekLetterDone]}>
+              {WEEK_LETTERS[i]}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <NumberText style={styles.fact}>
+        {summary.week.done >= goal
+          ? `${summary.week.done} jours sur ${goal} : objectif atteint`
+          : `${summary.week.done} ${summary.week.done > 1 ? 'jours' : 'jour'} sur ${goal}`}
+      </NumberText>
+      <View style={styles.row}>
+        <Text style={styles.rowLabel}>Objectif par semaine</Text>
+        <View style={styles.stepper}>
+          <Chip
+            big
+            label="−"
+            disabled={goal <= MEDITATION_GOAL.min}
+            onPress={() => void changeGoal(goal - 1)}
+          />
+          <NumberText style={styles.goal}>{`${goal} ${goal > 1 ? 'jours' : 'jour'}`}</NumberText>
+          <Chip
+            big
+            label="+"
+            disabled={goal >= MEDITATION_GOAL.max}
+            onPress={() => void changeGoal(goal + 1)}
+          />
+        </View>
+      </View>
+
+      <MeditationCalendar
+        month={shown}
+        weeks={meditationMonth(shown, days, today)}
+        width={contentWidth}
+        onPrevious={shown > first ? () => setMonth(previousMonth(shown)) : null}
+        onNext={shown < monthOf(today) ? () => setMonth(nextMonth(shown)) : null}
+      />
+
+      <View style={styles.row}>
+        <Text style={styles.rowLabel}>Rappel pour méditer</Text>
+        <Switch
+          value={!!reminder}
+          disabled={reminder === undefined}
+          onValueChange={(on) => void changeReminder(on ? MEDITATION_TIMES[2] : null)}
+          trackColor={{ false: colors.line, true: colors.accent }}
+          thumbColor={colors.background}
+          accessibilityLabel="Rappel pour méditer, une fois par jour"
+        />
+      </View>
+      {reminder && (
+        <View style={styles.times}>
+          {MEDITATION_TIMES.map((time) => (
+            <Chip
+              key={timeLabel(time)}
+              big
+              label={timeLabel(time)}
+              selected={time.hour === reminder.hour && time.minute === reminder.minute}
+              onPress={() => void changeReminder(time)}
+            />
+          ))}
+        </View>
+      )}
+      {notice && <Text style={styles.notice}>{notice}</Text>}
     </Screen>
   );
 }
+
+const WEEK_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 /** The scale of the session scene: most of the screen, in whole device pixels. */
 function useSceneScale() {
@@ -181,10 +392,12 @@ interface SessionProps {
   meditation: Meditation;
   vibrate: boolean;
   onEnd: () => void;
+  /** Left before the end (Terminer, back): the seconds spent. */
+  onLeave: (seconds: number) => void;
   onQuit: () => void;
 }
 
-function Session({ meditation, vibrate, onEnd, onQuit }: SessionProps) {
+function Session({ meditation, vibrate, onEnd, onLeave, onQuit }: SessionProps) {
   const styles = useThemedStyles(makeStyles);
   useKeepAwake();
   const insets = useSafeAreaInsets();
@@ -195,6 +408,18 @@ function Session({ meditation, vibrate, onEnd, onQuit }: SessionProps) {
   const over = isOver(meditation, t);
 
   const ended = useRef(false);
+  // Leaving before the end, whatever the way (Terminer, swipe back, the
+  // back button): the time spent is kept when the session goes away.
+  const spent = useRef({ t: 0, onLeave });
+  useEffect(() => {
+    spent.current = { t, onLeave };
+  }, [t, onLeave]);
+  useEffect(
+    () => () => {
+      if (!ended.current) spent.current.onLeave(spent.current.t);
+    },
+    [],
+  );
   useEffect(() => {
     if (!over || ended.current) return;
     ended.current = true;
@@ -291,6 +516,30 @@ function End({ meditation, onBack }: { meditation: Meditation; onBack: () => voi
 const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+    plant: { alignItems: 'center', gap: 4, paddingVertical: spacing.sm },
+    count: { fontFamily: fonts.display, fontSize: 17, color: colors.text, textAlign: 'center' },
+    fact: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textAlign: 'center' },
+    week: { flexDirection: 'row', gap: 6, justifyContent: 'center' },
+    weekDay: {
+      width: 34,
+      height: 34,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+    },
+    weekDone: { backgroundColor: colors.clean },
+    weekLetter: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
+    weekLetterDone: { color: colors.onAccent },
+    stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    goal: {
+      fontFamily: fonts.display,
+      fontSize: 15,
+      color: colors.text,
+      minWidth: 64,
+      textAlign: 'center',
+    },
+    times: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    notice: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
     lengths: { gap: spacing.sm },
     length: {
       backgroundColor: colors.surface,

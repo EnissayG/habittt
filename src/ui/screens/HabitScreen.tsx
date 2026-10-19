@@ -23,6 +23,7 @@ import { fonts, type Palette } from '../theme/tokens';
 import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
+import { useSafeAction } from '../useSafeAction';
 
 /** Height the counter needs (big number and its label), in points. */
 const COUNTER_HEIGHT = 84;
@@ -48,6 +49,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
   const styles = useThemedStyles(makeStyles);
   const { id } = route.params;
   const tracker = useTracker();
+  const safely = useSafeAction();
   const { width, height } = useWindowDimensions();
   const load = useCallback(() => tracker.getHabit(id), [tracker, id]);
   const { data: detail, reload } = useScreenData(load);
@@ -65,9 +67,13 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
   if (!detail) return <Screen>{null}</Screen>;
 
   async function replantPlant() {
-    const result = await tracker.replantHabit(id);
-    setNotice(result.ok ? 'Une nouvelle plante est en terre.' : replantErrorMessage[result.error]);
-    await reload();
+    const result = await safely(() => tracker.replantHabit(id));
+    if (result) {
+      setNotice(
+        result.ok ? 'Une nouvelle plante est en terre.' : replantErrorMessage[result.error],
+      );
+    }
+    await safely(reload);
   }
 
   const { habit, stats, plant, life } = detail;

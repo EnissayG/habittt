@@ -19,6 +19,9 @@ import {
   replantingToRow,
   wateringFromRow,
   wateringToRow,
+  meditationDayFromRow,
+  meditationDayToRow,
+  settingsFromRows,
 } from './rows';
 
 const habit: Habit = {
@@ -131,5 +134,29 @@ describe('replantingsForRelapses (migration 5)', () => {
         updated_at: relapse.updatedAt,
       },
     ]);
+  });
+});
+
+describe('meditation days and settings', () => {
+  it('maps a meditation day both ways', () => {
+    const row = { id: 'm', date: '2026-10-03', minutes: 15, sessions: 2, updated_at: 'now' };
+    const day = meditationDayFromRow(row);
+    expect(day).toEqual({
+      id: 'm',
+      date: '2026-10-03',
+      minutes: 15,
+      sessions: 2,
+      updatedAt: 'now',
+    });
+    expect(meditationDayToRow(day)).toEqual(row);
+  });
+
+  it('reads only the settings the app knows', () => {
+    expect(
+      settingsFromRows([
+        { key: 'meditationGoal', value: '4' },
+        { key: 'fromTheFuture', value: 'x' },
+      ]),
+    ).toEqual({ meditationGoal: '4' });
   });
 });

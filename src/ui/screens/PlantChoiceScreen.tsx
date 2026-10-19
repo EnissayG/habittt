@@ -21,6 +21,7 @@ import { diceArt } from '../plant/slotArt';
 import { fonts, type Palette } from '../theme/tokens';
 import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
+import { useSafeAction } from '../useSafeAction';
 
 /** Order of the tiles (the mockup's first, then the others). */
 const TILE_ORDER: readonly SpeciesId[] = [
@@ -59,6 +60,7 @@ const GAP = 6;
 export function PlantChoiceScreen({ navigation, route }: ScreenProps<'PlantChoice'>) {
   const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
+  const safely = useSafeAction();
   const { width } = useWindowDimensions();
   const [choice, setChoice] = useState<Choice>('bonsai');
   const [error, setError] = useState<string | null>(null);
@@ -96,12 +98,15 @@ export function PlantChoiceScreen({ navigation, route }: ScreenProps<'PlantChoic
 
   async function plant() {
     setPlanting(true);
-    const result = await tracker.addHabit({
-      name: route.params.name,
-      startDate: route.params.startDate,
-      species: choice === 'surprise' ? undefined : choice,
-    });
+    const result = await safely(() =>
+      tracker.addHabit({
+        name: route.params.name,
+        startDate: route.params.startDate,
+        species: choice === 'surprise' ? undefined : choice,
+      }),
+    );
     setPlanting(false);
+    if (!result) return;
     if (!result.ok) {
       setError(createHabitErrorMessage[result.error]);
       return;

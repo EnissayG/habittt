@@ -38,7 +38,8 @@ Voir `docs/architecture.md`, `docs/decisions/` et **`docs/etat.md`** (où on en 
   Appliquée par ESLint, ne pas la contourner.
 - Modèle : `Habit { id, name, seed, species, startDate, createdAt, status, retiredOn,
 updatedAt, deletedAt }`, `Relapse { id, habitId, date, deletedAt, updatedAt }`,
-  `Replanting { id, habitId, date, updatedAt }`, plus `Note` et `Watering`. UUID, dates
+  `Replanting { id, habitId, date, updatedAt }`, plus `Note`, `Watering`, `MeditationDay`
+  et les réglages (`settings.ts`). UUID, dates
   `YYYY-MM-DD` locales. Rechute : une max par jour, `startDate <= date <= aujourd'hui`,
   suppression logique.
 - **Vies** (`lives.ts`) : chaque rechute termine la vie en cours, la plante de cette
@@ -54,7 +55,19 @@ updatedAt, deletedAt }`, `Relapse { id, habitId, date, deletedAt, updatedAt }`,
   mobiles (`plan.part`, `plan.mark`) sans changer ses traits, et donne son repos (`rest`).
 - Coin méditation (`meditation.ts`, ADR 0017 à 0020) : un bonsaï adulte, sous un soleil dont
   l'air suit le souffle, à côté d'un encens qui se consume ; la vibration imite les poumons.
-  Aucune phrase : seulement « inspire » / « expire », puis « Bravo ». Rien n'est enregistré.
+  Aucune phrase : seulement « inspire » / « expire », puis « Bravo ».
+- Suivi de la méditation (`meditationLog.ts`, ADR 0022) : un jour médité dès une minute ; une
+  plante de méditation qui ne meurt jamais ; un objectif doux par semaine ; les jours
+  d'affilée affichés seulement à partir de 2 ; calendrier et rappel.
+- Plaques (`scene/plaque.ts`, ADR 0023) : sous chaque plante, une plaque de bois cerclée de
+  métal ; bronze, argent (30 j), or (90), platine (180), opale (365) ; ternie si la plante
+  n'a pas tenu ; un reflet passe de temps en temps.
+- Chat (`scene/cat.ts`, ADR 0025, 0027) : les 20 images d'un chat en pixel art gratuit, reprises
+  cellule par cellule (`catSprites.ts`) ; il vit le long du plancher, d'un mur à l'autre (dort, se
+  couche, s'assoit, se lève, avance par bonds) ; cinq pelages repeints sur le même dessin.
+  On le touche, il répond ; on le caresse, il s'installe et ronronne (`catTouch.ts`, ADR 0028).
+- Erreurs (ADR 0024) : rien n'échoue en silence. Les actions passent par `useSafeAction`
+  (bandeau `Notice`), les champs ont `TextLimit`, `CrashBoundary` rattrape le reste.
 - Lumière éteinte (`scene/lights.ts`, ADR 0020, 0021) : la pièce s'assombrit, chaque source
   de lumière brille et s'anime à sa façon ; tous les écrans passent en sombre.
 

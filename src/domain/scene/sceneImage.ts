@@ -137,7 +137,33 @@ export type DecorTone =
   | 'sunGlow'
   | 'airA'
   | 'airB'
-  | 'airC';
+  | 'airC'
+  // The plaques under the plants (plaque.ts).
+  | 'plaqueWood'
+  | 'plaqueWoodLight'
+  | 'plaqueWoodShade'
+  | 'plaqueWoodGrain'
+  | 'plaqueIron'
+  | 'plaqueIronShade'
+  | 'bronze'
+  | 'bronzeLight'
+  | 'bronzeShade'
+  | 'silver'
+  | 'silverLight'
+  | 'silverShade'
+  | 'gold'
+  | 'goldLight'
+  | 'goldShade'
+  | 'platinum'
+  | 'platinumLight'
+  | 'platinumShade'
+  | 'opalA'
+  | 'opalB'
+  | 'opalC'
+  | 'patina'
+  | 'patinaLight'
+  | 'patinaShade'
+  | 'metalShine';
 
 /** Tones only ever used as translucent layers. */
 export type LightTone = 'glare' | 'shine' | 'shadow';

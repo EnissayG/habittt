@@ -1,4 +1,12 @@
-import type { LightKind, RoomSource, ScenePixel, SceneTone, WindowView } from '../../domain';
+import type {
+  CatBreed,
+  CatTone,
+  LightKind,
+  RoomSource,
+  ScenePixel,
+  SceneTone,
+  WindowView,
+} from '../../domain';
 import { plantColor, SCENERY } from './plantPalette';
 import { colors, solarized } from './tokens';
 
@@ -196,6 +204,31 @@ const FIXED: Record<Exclude<SceneTone, ViewTone>, string> = {
   airA: '#F7DE97',
   airB: '#F9E7B2',
   airC: '#FAEDC8',
+  plaqueWood: '#5A3920',
+  plaqueWoodLight: '#6E4729',
+  plaqueWoodShade: '#432914',
+  plaqueWoodGrain: '#50331C',
+  plaqueIron: '#6C6A66',
+  plaqueIronShade: '#4A4845',
+  bronze: '#B0713A',
+  bronzeLight: '#D0945A',
+  bronzeShade: '#7E4C24',
+  silver: '#A9B3B8',
+  silverLight: '#D6DDE0',
+  silverShade: '#77838A',
+  gold: '#D9A92E',
+  goldLight: '#F5D46A',
+  goldShade: '#9C7414',
+  platinum: '#C9D3DA',
+  platinumLight: '#F2F6F8',
+  platinumShade: '#8D9AA3',
+  opalA: '#BFE3E0',
+  opalB: '#E8C9E6',
+  opalC: '#F3E3B5',
+  patina: '#6F7F6A',
+  patinaLight: '#83927C',
+  patinaShade: '#55624F',
+  metalShine: '#FFFFFF',
   glare: '#FFFFFF',
   shine: '#FFFFFF',
   shadow: solarized.base02,
@@ -334,4 +367,89 @@ export function sunOnDark(background: string): (pixel: ScenePixel) => string {
     }
     return sceneColor(pixel, 'day');
   };
+}
+
+/** The coats of the cat (ADR 0025), tone by tone. */
+/**
+ * The coats of the cat (ADR 0027). The tabby is the drawing's own colors;
+ * the others recolor it. Eyes are the outline color, but on the black cat.
+ */
+export const CAT_COLORS: Record<CatBreed, Record<CatTone, string>> = {
+  tabby: {
+    outline: '#3A2802',
+    fur: '#FFAD63',
+    furLight: '#FFC999',
+    furShade: '#F09647',
+    stripe: '#DA7C2B',
+    patchA: '#FFAD63',
+    patchB: '#FFAD63',
+    point: '#FFAD63',
+    eye: '#3A2802',
+    nose: '#FF8584',
+  },
+  black: {
+    outline: '#0B0B0E',
+    fur: '#34343F',
+    furLight: '#4A4A57',
+    furShade: '#2A2A33',
+    stripe: '#24242C',
+    patchA: '#34343F',
+    patchB: '#34343F',
+    point: '#34343F',
+    eye: '#A6E86F',
+    nose: '#D88A96',
+  },
+  grey: {
+    outline: '#23272C',
+    fur: '#AEB6C0',
+    furLight: '#D9DEE3',
+    furShade: '#98A1AC',
+    stripe: '#7D8792',
+    patchA: '#AEB6C0',
+    patchB: '#AEB6C0',
+    point: '#AEB6C0',
+    eye: '#23272C',
+    nose: '#FF8584',
+  },
+  calico: {
+    outline: '#1A1612',
+    fur: '#E0E0E0',
+    furLight: '#F4F4F4',
+    furShade: '#BDBDBD',
+    stripe: '#E0E0E0',
+    patchA: '#F09647',
+    patchB: '#424242',
+    point: '#E0E0E0',
+    eye: '#1A1612',
+    nose: '#FF8584',
+  },
+  siamese: {
+    outline: '#2E241C',
+    fur: '#F3E6CF',
+    furLight: '#FBF4E6',
+    furShade: '#DCC9A8',
+    stripe: '#F3E6CF',
+    patchA: '#F3E6CF',
+    patchB: '#F3E6CF',
+    point: '#6B4A36',
+    eye: '#4F8FE0',
+    nose: '#C98A7E',
+  },
+};
+
+/** The little heart over the cat when it is touched (ADR 0028): o outline, h heart, l light. */
+export const CAT_HEART_COLORS: Record<'o' | 'h' | 'l', string> = {
+  o: '#3A2802',
+  h: '#FF8584',
+  l: '#FFC9C8',
+};
+
+/** A color seen through a veil (lights off): the veil's rgba laid over it. */
+export function throughVeil(color: string, veil: string | null): string {
+  if (!veil) return color;
+  const m = veil.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0, 0];
+  const [r, g, b, a] = m as [number, number, number, number];
+  const base = rgb(color);
+  const top = [r, g, b];
+  return hex(base.map((c, i) => Math.round(top[i]! * a + c * (1 - a))) as [number, number, number]);
 }

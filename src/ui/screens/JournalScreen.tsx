@@ -29,6 +29,7 @@ import { fonts, type Palette } from '../theme/tokens';
 import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
+import { useSafeAction } from '../useSafeAction';
 
 /** Screen sides (Screen's padding). */
 const SIDES = 28;
@@ -45,6 +46,7 @@ export function JournalScreen({ navigation, route }: ScreenProps<'Journal'>) {
   const styles = useThemedStyles(makeStyles);
   const { id, month: asked } = route.params;
   const tracker = useTracker();
+  const safely = useSafeAction();
   const { width } = useWindowDimensions();
   const load = useCallback(() => tracker.getHabit(id), [tracker, id]);
   const { data: detail, reload } = useScreenData(load);
@@ -77,9 +79,9 @@ export function JournalScreen({ navigation, route }: ScreenProps<'Journal'>) {
   };
 
   async function toggleRelapse(date: LocalDate) {
-    const result = await tracker.toggleRelapse(id, date);
-    setError(result.ok ? null : toggleRelapseErrorMessage[result.error]);
-    await reload();
+    const result = await safely(() => tracker.toggleRelapse(id, date));
+    if (result) setError(result.ok ? null : toggleRelapseErrorMessage[result.error]);
+    await safely(reload);
   }
 
   return (

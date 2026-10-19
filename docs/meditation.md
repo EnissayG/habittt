@@ -1,6 +1,6 @@
 # Le coin méditation : respirer avec le soleil
 
-Spécification de la fonctionnalité (ADR 0017 à 0020).
+Spécification de la fonctionnalité (ADR 0017 à 0022).
 
 ## L'idée
 
@@ -21,9 +21,8 @@ passe. À la fin, un petit « Bravo ».
   s'adoucissent : l'air finit de sortir. On peut poser le téléphone dans
   sa main ou sur sa cuisse et ne plus regarder l'écran.
 - **Trois durées**, de la pause de cinq minutes à la demi-heure.
-- **Rien à réussir** : aucune série, aucun compteur de séances, aucun
-  rappel. Une séance interrompue n'est pas un échec, aucun message ne le
-  relève.
+- **Rien à réussir** : une séance interrompue n'est pas un échec, aucun
+  message ne le relève. Le suivi (ci-dessous) avance, il ne recule jamais.
 
 ## Pas de mots
 
@@ -40,9 +39,11 @@ vibration). Seule la fin dit quelque chose : « Bravo ».
    papier). Un bouton « Méditer » est posé sur le mur au-dessus du
    coussin ; toucher le coussin, la table ou le rouleau ouvre aussi la
    séance.
-2. **Choisir** (écran 12) : « Combien de temps ? » et trois boutons :
-   5 minutes, 10 minutes, 30 minutes. Et un interrupteur : « Vibrer au
-   rythme du souffle », activé par défaut.
+2. **Choisir** (écran 12) : en haut, la plante de méditation et ses jours
+   (voir plus bas). « Combien de temps ? » et trois boutons : 5 minutes,
+   10 minutes, 30 minutes. Un interrupteur : « Vibrer au rythme du
+   souffle », activé par défaut et gardé. Puis la semaine, l'objectif, le
+   calendrier et le rappel.
 3. **La séance** :
    - En haut, **le soleil** : un cœur qui ne change pas de taille, et de
      l'air autour qui s'étend pendant l'inspiration et revient pendant
@@ -69,8 +70,23 @@ vibration). Seule la fin dit quelque chose : « Bravo ».
 6. **L'app passe en arrière-plan** : la séance se met en pause et reprend
    où elle en était.
 
-Rien n'est enregistré : pas de table, pas de migration, rien dans
-l'export.
+## Le suivi (ADR 0022)
+
+- **Un jour médité** : dès une minute entière de séance, finie ou quittée
+  avant. Les minutes de plusieurs séances du même jour s'additionnent.
+- **La plante de méditation**, un jade : un jour de pousse par jour médité,
+  jusqu'à 120. Elle ne meurt jamais : un jour sans méditation, elle attend.
+- **La semaine**, du lundi au dimanche : sept cases, vertes les jours
+  médités ; « 3 jours sur 5 », puis « objectif atteint ». L'objectif va de
+  1 à 7 jours, 5 par défaut.
+- **Les jours d'affilée** : affichés seulement à partir de 2. Quand la suite
+  s'arrête, la ligne disparaît, sans rien dire.
+- **Le calendrier** : un mois à la fois, un carré vert par jour médité,
+  aujourd'hui encadré ; les autres jours restent neutres.
+- **Le rappel** : désactivé par défaut ; une fois par jour, à 7 h 30,
+  12 h 30, 18 h ou 21 h 30 : « Le soleil est là, si tu as envie de respirer
+  un peu. »
+- Tout est dans l'export (format 2).
 
 ## Pour le code
 
@@ -88,5 +104,6 @@ l'export.
   (`useSessionClock`), ce qui laisse passer les coups rapides de
   l'inspiration (toutes les 0,13 s).
 - **Modules** : `expo-keep-awake` et `expo-haptics`.
-- **Le réglage de la vibration** : activé à chaque séance (l'app n'a pas
-  encore d'endroit où ranger ses réglages).
+- **Le suivi** : `meditationLog.ts` (`recordMeditation`,
+  `meditationSummary`, `meditationMonth`), table `meditation_days`
+  (migration 6) ; les réglages dans `settings.ts` et la table `settings`.

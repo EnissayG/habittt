@@ -8,6 +8,14 @@ import {
   type HabitStatus,
 } from './habit';
 import { daysBetween, type LocalDate } from './localDate';
+import {
+  MEDITATION_PLANT,
+  meditationSummary,
+  recordMeditation as recordMeditationDay,
+  type MeditationDay,
+  type MeditationSummary,
+  type RecordMeditationError,
+} from './meditationLog';
 import { record, splitLives, type Life } from './lives';
 import { MAX_GROWTH_DAYS, type PlantImage } from './plant/grid';
 import { FALLBACK_SPECIES_ID, SPECIES_IDS, type SpeciesId } from './plant/registry';
@@ -24,9 +32,11 @@ import { cancelRelapse, isActive, recordRelapse, type RecordRelapseError } from 
 import { replant, type ReplantError } from './replanting';
 import type {
   HabitRepository,
+  MeditationRepository,
   NoteRepository,
   RelapseRepository,
   ReplantingRepository,
+  SettingsRepository,
   WateringRepository,
 } from './repositories';
 import { err, ok, type Result } from './result';
@@ -34,6 +44,7 @@ import { eraseHabit, growthEnd, isOnShelf, retireHabit } from './retirement';
 import { drawWindow } from './scene/drawWindow';
 import type { SceneImage } from './scene/sceneImage';
 import { windowView, type WindowView } from './scene/windowView';
+import { readSettings, writeSetting, type SettingKey, type Settings } from './settings';
 import { arrangeShelf, type ShelfLayout } from './shelf';
 import { computeStats, type HabitStats } from './stats';
 import { buildTimeline, type DayEntry } from './timeline';
@@ -108,12 +119,24 @@ export interface AddHabitInput {
 
 export type ToggleRelapseError = RecordRelapseError | HabitAccessError;
 
+/** The meditation corner, outside a session (ADR 0022). */
+export interface MeditationOverview {
+  /** The meditation plant: one day for every day meditated, never dead. */
+  plant: PlantImage;
+  summary: MeditationSummary;
+  /** Every day meditated, oldest first (the calendar). */
+  days: MeditationDay[];
+  today: LocalDate;
+}
+
 export interface HabitTrackerDeps {
   habits: HabitRepository;
   relapses: RelapseRepository;
   notes: NoteRepository;
   waterings: WateringRepository;
   replantings: ReplantingRepository;
+  meditations: MeditationRepository;
+  settings: SettingsRepository;
   clock: Clock;
   generateId: IdGenerator;
   generateSeed: SeedGenerator;
@@ -127,7 +150,11 @@ const OPENING_DEFAULT = { species: 'bonsai', seed: 12 } as const;
  * interfaces, applies the pure domain rules, and saves the result.
  */
 export function createHabitTracker(deps: HabitTrackerDeps) {
-  const { habits, relapses, notes, waterings, replantings, clock } = deps;
+  const { habits, relapses, notes, waterings, replantings, meditations, settings, clock } = deps;
+
+  async function readAllSettings(): Promise<Settings> {
+    return readSettings(await settings.readAll());
+  }
 
   /** A habit that can still be written about: on the shelf, not erased. */
   async function writable(id: HabitId): Promise<Result<Habit, HabitAccessError>> {
@@ -256,7 +283,13 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
           replantings: await replantings.listByHabit(habit.id),
         })),
       );
-      return buildExport({ exportedAt: clock.now(), today: clock.today(), habits: rows });
+      const [days, kept] = await Promise.all([meditations.list(), readAllSettings()]);
+      return buildExport({
+        exportedAt: clock.now(),
+        today: clock.today(),
+        habits: rows,
+        meditation: { goal: kept.meditationGoal, days },
+      });
     },
 
     /** Replants a dead plant today: a new life, with its own seed (ADR 0013). */
@@ -338,6 +371,44 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
     /** The plant of the opening screen: always the same grown bonsai, the app's emblem. */
     async openingPlant(): Promise<PlantImage> {
       return renderPlant({ ...OPENING_DEFAULT, elapsedDays: MAX_GROWTH_DAYS, relapseDays: [] });
+    },
+
+    /** The meditation plant, this week and the days meditated (ADR 0022). */
+    async getMeditation(): Promise<MeditationOverview> {
+      const [days, kept] = await Promise.all([meditations.list(), readAllSettings()]);
+      const today = clock.today();
+      const sorted = [...days].sort((a, b) => a.date.localeCompare(b.date));
+      const summary = meditationSummary({ days: sorted, today, goal: kept.meditationGoal });
+      return {
+        plant: renderPlant({
+          ...MEDITATION_PLANT,
+          elapsedDays: summary.plantDays,
+          relapseDays: [],
+        }),
+        summary,
+        days: sorted,
+        today,
+      };
+    },
+
+    /**
+     * A session ended, finished or left: from one whole minute, today is a
+     * day meditated (its minutes add up). Shorter, nothing is kept.
+     */
+    async recordMeditation(seconds: number): Promise<Result<void, RecordMeditationError>> {
+      const existing = await meditations.findByDate(clock.today());
+      const result = recordMeditationDay({ seconds, existing, clock });
+      if (!result.ok) return result;
+      await meditations.save(result.value);
+      return ok(undefined);
+    },
+
+    async getSettings(): Promise<Settings> {
+      return readAllSettings();
+    },
+
+    async saveSetting<K extends SettingKey>(key: K, value: Settings[K]): Promise<void> {
+      await settings.write(key, writeSetting(key, value));
     },
 
     async addHabit(input: AddHabitInput): Promise<Result<Habit, CreateHabitError>> {

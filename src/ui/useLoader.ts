@@ -2,14 +2,23 @@ import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppState } from 'react-native';
 
+import { useNotice } from './components/Notice';
+import { LOAD_FAILED } from './messages';
+
 /**
  * Runs `load` on mount, again whenever the app comes back to the foreground
  * (the day may have changed overnight), and on demand via `reload`.
  * `load` must be stable (wrap it in useCallback).
  */
 export function useLoader<T>(load: () => Promise<T>) {
+  const notice = useNotice();
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<unknown>(undefined);
+  // A failed load is said once (ADR 0024); it is tried again on focus and
+  // when the app comes back.
+  useEffect(() => {
+    if (error !== undefined) notice(LOAD_FAILED);
+  }, [error, notice]);
 
   const reload = useCallback(
     () =>

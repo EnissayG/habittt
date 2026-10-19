@@ -4,7 +4,9 @@ import {
   InMemoryHabitRepository,
   InMemoryNoteRepository,
   InMemoryRelapseRepository,
+  InMemoryMeditationRepository,
   InMemoryReplantingRepository,
+  InMemorySettingsRepository,
   InMemoryWateringRepository,
 } from '../../domain/testSupport';
 import { DEMO_DEAD, DEMO_HABITS, demoSeeds, seedDemo } from './demoData';
@@ -12,12 +14,16 @@ import { DEMO_DEAD, DEMO_HABITS, demoSeeds, seedDemo } from './demoData';
 async function demoShelf() {
   let next = 0;
   const replantings = new InMemoryReplantingRepository();
+  const meditations = new InMemoryMeditationRepository();
+  const settings = new InMemorySettingsRepository();
   const tracker = createHabitTracker({
     habits: new InMemoryHabitRepository(),
     relapses: new InMemoryRelapseRepository(),
     notes: new InMemoryNoteRepository(),
     waterings: new InMemoryWateringRepository(),
     replantings,
+    meditations,
+    settings,
     clock: fixedClock(),
     generateId: () => `demo-${++next}`,
     generateSeed: demoSeeds(),

@@ -10,6 +10,7 @@ import {
   type Note,
 } from '../../domain';
 import { Button } from '../components/Button';
+import { TextLimit } from '../components/TextLimit';
 import { Chip } from '../components/Chip';
 import { NumberText } from '../components/NumberText';
 import { PixelIcon } from '../components/PixelIcon';
@@ -19,6 +20,7 @@ import { MOOD_LABELS, noteErrorMessage } from '../messages';
 import { fonts, spacing, type Palette } from '../theme/tokens';
 import { usePalette, useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
+import { useSafeAction } from '../useSafeAction';
 
 export type NoteSheetDone = 'watered' | 'saved';
 
@@ -57,6 +59,7 @@ export function NoteSheet({
   const colors = usePalette();
   const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
+  const safely = useSafeAction();
   const [text, setText] = useState(initial?.text ?? '');
   const [mood, setMood] = useState<Mood | null>(initial?.mood ?? null);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +71,8 @@ export function NoteSheet({
   ) {
     setBusy(true);
     try {
-      const result = await action();
+      const result = await safely(action);
+      if (!result) return;
       if (!result.ok) {
         setError(noteErrorMessage[result.error]);
         return;
@@ -92,7 +96,10 @@ export function NoteSheet({
       </View>
       <TextInput
         value={text}
-        onChangeText={setText}
+        onChangeText={(value) => {
+          setText(value);
+          setError(null);
+        }}
         multiline
         maxLength={NOTE_MAX_LENGTH}
         placeholder="Écris ce que tu veux, ou rien."
@@ -100,6 +107,7 @@ export function NoteSheet({
         style={styles.area}
         accessibilityLabel="Note du jour"
       />
+      <TextLimit length={text.length} max={NOTE_MAX_LENGTH} />
       <View style={styles.chips}>
         {MOODS.map((value) => (
           <Chip

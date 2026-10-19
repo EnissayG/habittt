@@ -536,6 +536,10 @@ et [l'ADR 0010](decisions/0010-la-piece-en-entier.md).
   qu'aucune plante n'y pend. Les premières rangées de chaque mur
   (`CEILING_ROWS`) sont réservées à la moulure et à la guirlande : rien n'y
   est accroché (ADR 0020).
+- **Plaques** (ADR 0023) : sous chaque plante, `drawPlaque` (bois cerclé du
+  métal de `plaqueTier`, selon les jours de la vie) et `plaqueShine` (le
+  reflet qui passe), rendus dans un petit canevas par plaque
+  (`ui/shelf/Plaque.tsx`) ; le texte est posé dessus.
 - **Lumière éteinte** (ADR 0020) : un interrupteur dans l'en-tête. Un voile
   sombre couvre la pièce ; `roomLights` (domaine) donne ce qui reste vif
   (ampoules, lanterne, braise) et les sources de lumière, `lightLevel` leur
@@ -715,7 +719,12 @@ spécification dans [meditation.md](meditation.md).
   n'avance qu'au premier plan (`useSessionClock`, 20 battements par
   seconde). Le bonsaï fait ses gestes (`LivingPlant`). L'écran reste allumé (`expo-keep-awake`), des vibrations
   suivent le souffle et une autre marque la fin (`expo-haptics`).
-- **Rien n'est enregistré.**
+- **Le suivi** (ADR 0022) : `meditationLog.ts` (un jour médité dès une
+  minute, la plante de méditation, la semaine et l'objectif, les jours
+  d'affilée montrés à partir de 2, le mois du calendrier), table
+  `meditation_days` ; les réglages gardés dans `settings.ts` et la table
+  `settings` (objectif, vibration, lumière éteinte). Le rappel est une
+  notification locale (`ui/meditation/reminder.ts`).
 
 ## Prévu (décidé, pas encore construit)
 

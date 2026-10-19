@@ -12,6 +12,7 @@ import { fonts, spacing, type Palette } from '../theme/tokens';
 import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
+import { useSafeAction } from '../useSafeAction';
 
 type Exit = Exclude<HabitStatus, 'shelf'>;
 
@@ -37,6 +38,7 @@ export function RetireScreen({ navigation, route }: ScreenProps<'Retire'>) {
   const styles = useThemedStyles(makeStyles);
   const { id } = route.params;
   const tracker = useTracker();
+  const safely = useSafeAction();
   const load = useCallback(() => tracker.getHabit(id), [tracker, id]);
   const { data: detail } = useScreenData(load);
   const [exit, setExit] = useState<Exit>('garden');
@@ -49,7 +51,8 @@ export function RetireScreen({ navigation, route }: ScreenProps<'Retire'>) {
   async function run(action: () => Promise<{ ok: boolean }>) {
     setBusy(true);
     try {
-      const result = await action();
+      const result = await safely(action);
+      if (!result) return;
       if (!result.ok) {
         setConfirmErase(false);
         setError("Ce n'est plus possible : cette plante a déjà quitté l'étagère.");

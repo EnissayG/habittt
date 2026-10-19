@@ -24,14 +24,10 @@ les [principes du produit](architecture.md#principes-du-produit) le moment venu.
   prochaine étape. Piste envisagée : des morceaux « chiptune » calmes
   générés par IA, à condition que la licence de l'outil autorise l'usage
   commercial dans une app. Recherche des outils en cours.
-- **La plante de méditation** (validée, à faire après la musique) : une
-  plante qui pousse d'un jour à chaque jour médité et **ne meurt jamais**
-  si on saute un jour ; un objectif doux (« 5 jours sur 7 »), pas une série
-  stricte ; un calendrier sur le modèle du journal de la plante (jours
-  médités marqués, les autres vides, jamais de rouge) ; un rappel
-  facultatif, désactivé par défaut, comme le rappel du soir. Demande une
-  table des séances, une migration, l'export : un ADR à part.
-- **Publier sur Android et iOS** (après la plante de méditation) : builds
+- **La plante de méditation dans la pièce** : la poser près du coussin. Le
+  suivi est fait (ADR 0022) ; elle n'apparaît pour l'instant que sur
+  l'écran 12.
+- **Publier sur Android et iOS** (prochaine grande étape) : builds
   EAS, icône et écran de démarrage, comptes développeur, politique de
   confidentialité, fiches des stores ; pour un compte Google personnel
   récent, un test fermé avec des testeurs pendant 14 jours avant la
@@ -48,3 +44,5 @@ les [principes du produit](architecture.md#principes-du-produit) le moment venu.
   décorations.
 - **Partager une image de son étagère.**
 - **Un jardinier animé** qui passe de temps en temps.
+- **Le chat sur les étagères** : sauter sur une étagère, dormir près d'une
+  plante, réagir quand on le touche (ADR 0025).
