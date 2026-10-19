@@ -18,7 +18,8 @@ import { SPECIES_LABELS } from '../plant/labels';
 import { PixelCanvas } from '../plant/PixelCanvas';
 import { PlantPixels } from '../plant/PlantCanvas';
 import { diceArt } from '../plant/slotArt';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 
 /** Order of the tiles (the mockup's first, then the others). */
@@ -56,6 +57,7 @@ const GAP = 6;
 
 /** Screen 4: choose the plant, shown grown up. */
 export function PlantChoiceScreen({ navigation, route }: ScreenProps<'PlantChoice'>) {
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const { width } = useWindowDimensions();
   const [choice, setChoice] = useState<Choice>('bonsai');
@@ -154,18 +156,19 @@ export function PlantChoiceScreen({ navigation, route }: ScreenProps<'PlantChoic
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
-  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
-  tile: {
-    borderWidth: 2,
-    borderColor: colors.line,
-    paddingTop: 2,
-    paddingBottom: 4,
-    alignItems: 'center',
-  },
-  selected: { borderColor: colors.strong },
-  tileLabel: { fontFamily: fonts.display, fontSize: 11, color: colors.text, textAlign: 'center' },
-  help: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  error: { fontFamily: fonts.body, fontSize: 13, color: colors.text },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+    tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
+    tile: {
+      borderWidth: 2,
+      borderColor: colors.line,
+      paddingTop: 2,
+      paddingBottom: 4,
+      alignItems: 'center',
+    },
+    selected: { borderColor: colors.strong },
+    tileLabel: { fontFamily: fonts.display, fontSize: 11, color: colors.text, textAlign: 'center' },
+    help: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+    error: { fontFamily: fonts.body, fontSize: 13, color: colors.text },
+  });

@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { CalendarDay, MonthId } from '../../domain';
 import { dayMonth, monthTitle } from '../format';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { NumberText } from './NumberText';
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -22,6 +23,7 @@ interface MonthCalendarProps {
  * outside the habit's period are left empty.
  */
 export function MonthCalendar({ month, weeks, width, onPressDay }: MonthCalendarProps) {
+  const styles = useThemedStyles(makeStyles);
   const size = Math.floor((width - GAP * 6) / 7);
   return (
     <View style={{ width, gap: GAP }}>
@@ -53,6 +55,7 @@ function Cell({
   size: number;
   onPress: (day: CalendarDay) => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const box = { width: size, height: size };
   const entry = day?.entry;
   if (!day || !entry) {
@@ -86,25 +89,26 @@ function Cell({
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 17, color: colors.text },
-  row: { flexDirection: 'row', gap: GAP },
-  weekday: { fontFamily: fonts.body, fontSize: 11, color: colors.muted, textAlign: 'center' },
-  cell: { alignItems: 'center', justifyContent: 'center' },
-  clean: { backgroundColor: colors.clean },
-  relapse: { backgroundColor: colors.relapse },
-  today: { borderWidth: 2, borderColor: colors.text },
-  number: { fontFamily: fonts.display, fontSize: 12 },
-  onClean: { color: colors.onAccent },
-  onRelapse: { color: colors.onRelapse },
-  dot: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 7,
-    height: 7,
-    backgroundColor: colors.note,
-    borderWidth: 1,
-    borderColor: colors.background,
-  },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 17, color: colors.text },
+    row: { flexDirection: 'row', gap: GAP },
+    weekday: { fontFamily: fonts.body, fontSize: 11, color: colors.muted, textAlign: 'center' },
+    cell: { alignItems: 'center', justifyContent: 'center' },
+    clean: { backgroundColor: colors.clean },
+    relapse: { backgroundColor: colors.relapse },
+    today: { borderWidth: 2, borderColor: colors.text },
+    number: { fontFamily: fonts.display, fontSize: 12 },
+    onClean: { color: colors.onAccent },
+    onRelapse: { color: colors.onRelapse },
+    dot: {
+      position: 'absolute',
+      top: 2,
+      right: 2,
+      width: 7,
+      height: 7,
+      backgroundColor: colors.note,
+      borderWidth: 1,
+      borderColor: colors.background,
+    },
+  });

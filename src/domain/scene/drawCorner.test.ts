@@ -6,6 +6,7 @@ import {
   drawLowTable,
   drawMat,
   drawSmoke,
+  drawSign,
   drawVase,
   drawWallpaper,
   drawWallShelf,
@@ -15,6 +16,8 @@ import {
   INCENSE_TIMER_SIZE,
   LOW_TABLE_SIZE,
   MAT_SIZE,
+  SIGN_PLANK,
+  SIGN_SIZE,
   SMOKE_SIZE,
   VASE_SIZE,
   WALL_SHELF_SIZE,
@@ -197,5 +200,26 @@ describe('the wallpaper', () => {
     for (let y = 0; y < 80; y++) {
       for (let x = 0; x < 100; x++) expect(at(wide, x, y)).toBe(at(narrow, x, y));
     }
+  });
+});
+
+describe('drawSign', () => {
+  const sign = drawSign();
+  const at = (x: number, y: number) => sign.pixels[y * sign.width + x]?.tone ?? null;
+
+  it('hangs from a nail by a string, over a wooden plank', () => {
+    expect(sign.width).toBe(SIGN_SIZE.width);
+    expect(sign.height).toBe(SIGN_SIZE.height);
+    expect(at(Math.floor(SIGN_SIZE.width / 2), 0)).toBe('brass');
+    for (let y = SIGN_PLANK.y; y < SIGN_PLANK.y + SIGN_PLANK.height; y++) {
+      expect(at(0, y)).not.toBeNull();
+      expect(at(SIGN_SIZE.width - 1, y)).not.toBeNull();
+    }
+    expect(at(SIGN_SIZE.width / 2, SIGN_PLANK.y + 4)).toBe('tableTop');
+  });
+
+  it('leaves the wall bare around the string', () => {
+    expect(at(0, 0)).toBeNull();
+    expect(at(SIGN_SIZE.width - 1, 1)).toBeNull();
   });
 });

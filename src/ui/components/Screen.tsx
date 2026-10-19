@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '../theme/tokens';
+import { spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 
 interface ScreenProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ interface ScreenProps {
 
 /** The phone frame of the mockup: cream background, 14 pt sides, safe areas. */
 export function Screen({ children, scroll = false, footer, overlay }: ScreenProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.safe}>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -37,9 +39,10 @@ export function Screen({ children, scroll = false, footer, overlay }: ScreenProp
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  flex: { flex: 1 },
-  content: { paddingHorizontal: 14, paddingTop: spacing.sm, paddingBottom: spacing.md, gap: 12 },
-  footer: { paddingHorizontal: 14, paddingBottom: spacing.sm, gap: spacing.xs },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    flex: { flex: 1 },
+    content: { paddingHorizontal: 14, paddingTop: spacing.sm, paddingBottom: spacing.md, gap: 12 },
+    footer: { paddingHorizontal: 14, paddingBottom: spacing.sm, gap: spacing.xs },
+  });

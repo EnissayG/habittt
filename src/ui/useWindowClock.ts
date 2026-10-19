@@ -8,11 +8,11 @@ const FPS = 6;
 
 /**
  * Animation time of the window, in seconds, advancing a few times per
- * second while `active` (the screen is shown), the app is in the
+ * second (`fps`; the lights of the dark room ask for more) while `active` (the screen is shown), the app is in the
  * foreground and the phone's "reduce motion" setting is off. Otherwise it
  * stays still (0 with reduce motion).
  */
-export function useWindowClock(active: boolean): number {
+export function useWindowClock(active: boolean, fps = FPS): number {
   const [t, setT] = useState(0);
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const reduceMotion = useReduceMotion();
@@ -27,9 +27,9 @@ export function useWindowClock(active: boolean): number {
   const running = active && foreground && !reduceMotion;
   useEffect(() => {
     if (!running) return;
-    const timer = setInterval(() => setT((value) => value + 1 / FPS), 1000 / FPS);
+    const timer = setInterval(() => setT((value) => value + 1 / fps), 1000 / fps);
     return () => clearInterval(timer);
-  }, [running]);
+  }, [running, fps]);
 
   return reduceMotion ? 0 : t;
 }

@@ -1,12 +1,16 @@
-import { MAX_GROWTH_DAYS } from './plant/grid';
-import { SPECIES_IDS, type SpeciesId } from './plant/registry';
-import type { SeedGenerator } from './ports';
+import type { SpeciesId } from './plant/registry';
 
-// The meditation corner (docs/meditation.md, ADR 0017 and 0019): a plant grows from
-// an empty pot to a grown plant while one breathes, over the whole session.
+// The meditation corner (docs/meditation.md, ADR 0017 to 0020): one breathes
+// with the sun, beside a grown bonsai, while a stick of incense burns down.
 // Everything here is a function of the time spent in the session, in
 // seconds, given by the UI (which pauses it when the app is in the
 // background). Nothing is stored.
+
+/** The plant of every session: the grown bonsai of the opening screen, already there. */
+export const MEDITATION_BONSAI: { species: SpeciesId; seed: number } = {
+  species: 'bonsai',
+  seed: 12,
+};
 
 export type MeditationMinutes = 5 | 10 | 30;
 
@@ -15,8 +19,6 @@ export const MEDITATION_LENGTHS: readonly MeditationMinutes[] = [5, 10, 30];
 export interface Meditation {
   minutes: MeditationMinutes;
   seconds: number;
-  /** The plant grows `days` days every `every` breaths. */
-  growth: { days: number; every: number };
 }
 
 /** One breath, in seconds: in, then out. */
@@ -28,9 +30,9 @@ export const BREATH_SECONDS = BREATH.inhale + BREATH.exhale;
  * the breath (see breathWord): no phrase, no advice (ADR 0019).
  */
 export const MEDITATIONS: Record<MeditationMinutes, Meditation> = {
-  5: { minutes: 5, seconds: 5 * 60, growth: { days: 4, every: 1 } },
-  10: { minutes: 10, seconds: 10 * 60, growth: { days: 2, every: 1 } },
-  30: { minutes: 30, seconds: 30 * 60, growth: { days: 2, every: 3 } },
+  5: { minutes: 5, seconds: 5 * 60 },
+  10: { minutes: 10, seconds: 10 * 60 },
+  30: { minutes: 30, seconds: 30 * 60 },
 };
 
 export interface Breath {
@@ -95,27 +97,45 @@ export interface BreathPulse {
   strength: PulseStrength;
 }
 
+/** Seconds between two taps while breathing in, and at the start of the breath out. */
+export const PULSE_GAP = 0.13;
+/** Each gap of the breath out is this much longer than the one before. */
+const EXHALE_SLOWING = 1.18;
+/** Silence kept at the top of the breath, and before the next breath in. */
+const TOP_PAUSE = 0.2;
+const LAST_SILENCE = 0.7;
+
+/** Seconds rounded to the millisecond: the same list on every phone. */
+const ms = (seconds: number) => Math.round(seconds * 1000) / 1000;
+
+/** The taps of one breath, computed once (see BREATH_PULSES). */
+function lungTaps(): BreathPulse[] {
+  const taps: BreathPulse[] = [];
+  // Breathing in: quick, even taps, as the lungs fill fast, stronger as they fill.
+  const inEnd = BREATH.inhale - TOP_PAUSE;
+  for (let at = 0; at <= inEnd + 1e-9; at += PULSE_GAP) {
+    const share = at / inEnd;
+    taps.push({ at: ms(at), strength: share < 0.35 ? 'soft' : share < 0.75 ? 'light' : 'medium' });
+  }
+  // Breathing out: the same quick taps at first, then each gap a little
+  // longer, as the air slows down leaving the lungs, softer and softer.
+  const outEnd = BREATH_SECONDS - LAST_SILENCE;
+  let gap = PULSE_GAP;
+  for (let at = BREATH.inhale; at <= outEnd + 1e-9; at += gap, gap *= EXHALE_SLOWING) {
+    const share = (at - BREATH.inhale) / (outEnd - BREATH.inhale);
+    taps.push({ at: ms(at), strength: share < 0.25 ? 'medium' : share < 0.6 ? 'light' : 'soft' });
+  }
+  return taps;
+}
+
 /**
- * The breath, for the hand: small taps that come closer and stronger while
- * breathing in, a pause at the top, then taps that space out and fade
- * while breathing out, and silence before the next breath. With the eyes
- * closed, one feels the air come and go, not only when a breath starts.
+ * The breath, for the hand, like the lungs: breathing in, quick and even
+ * taps that grow stronger; a short pause at the top; breathing out, taps
+ * that start just as quick, then slow down and soften, like air running
+ * out; a moment of silence before the next breath. With the eyes closed,
+ * one feels the air come in fast and go out slowly.
  */
-export const BREATH_PULSES: readonly BreathPulse[] = [
-  { at: 0, strength: 'soft' },
-  { at: 0.9, strength: 'soft' },
-  { at: 1.6, strength: 'light' },
-  { at: 2.2, strength: 'light' },
-  { at: 2.7, strength: 'medium' },
-  { at: 3.1, strength: 'medium' },
-  { at: 3.45, strength: 'medium' },
-  { at: 4.3, strength: 'medium' },
-  { at: 4.8, strength: 'light' },
-  { at: 5.4, strength: 'light' },
-  { at: 6.1, strength: 'soft' },
-  { at: 6.9, strength: 'soft' },
-  { at: 7.8, strength: 'soft' },
-];
+export const BREATH_PULSES: readonly BreathPulse[] = lungTaps();
 
 /**
  * The taps due between two beats of the session's clock: after `from`, up
@@ -139,21 +159,6 @@ export function pulsesBetween(meditation: Meditation, from: number, to: number):
   return due;
 }
 
-/** Breaths ended so far (the plant grows at the end of each breath out). */
-export function breathsDone(meditation: Meditation, t: number): number {
-  return Math.floor(Math.min(Math.max(0, t), meditation.seconds) / BREATH_SECONDS);
-}
-
-/** Days of the plant after n breaths: 0 at the start, grown at the last breath. */
-export function plantDaysAfter(meditation: Meditation, breaths: number): number {
-  const { days, every } = meditation.growth;
-  return Math.min(MAX_GROWTH_DAYS, Math.floor(Math.max(0, breaths) / every) * days);
-}
-
-export function plantDaysAt(meditation: Meditation, t: number): number {
-  return plantDaysAfter(meditation, breathsDone(meditation, t));
-}
-
 /** "encore N min": the time left, rounded up to the minute. */
 export function minutesLeft(meditation: Meditation, t: number): number {
   return Math.ceil(Math.max(0, meditation.seconds - Math.max(0, t)) / 60);
@@ -161,13 +166,4 @@ export function minutesLeft(meditation: Meditation, t: number): number {
 
 export function isOver(meditation: Meditation, t: number): boolean {
   return t >= meditation.seconds;
-}
-
-/** The plant of a session, drawn among every species: never kept. */
-export function drawMeditationPlant(generateSeed: SeedGenerator): {
-  species: SpeciesId;
-  seed: number;
-} {
-  const species = SPECIES_IDS[generateSeed() % SPECIES_IDS.length] ?? SPECIES_IDS[0]!;
-  return { species, seed: generateSeed() };
 }

@@ -533,7 +533,16 @@ et [l'ADR 0010](decisions/0010-la-piece-en-entier.md).
   derrière tous les murs ; la fumée de l'encens et la flamme de la bougie
   (`RoomPlan.animated`) sont de petits canevas animés posés par-dessus. Un
   tableau occupe la bande du haut des autres murs de tablettes tant
-  qu'aucune plante n'y pend.
+  qu'aucune plante n'y pend. Les premières rangées de chaque mur
+  (`CEILING_ROWS`) sont réservées à la moulure et à la guirlande : rien n'y
+  est accroché (ADR 0020).
+- **Lumière éteinte** (ADR 0020) : un interrupteur dans l'en-tête. Un voile
+  sombre couvre la pièce ; `roomLights` (domaine) donne ce qui reste vif
+  (ampoules, lanterne, braise) et les sources de lumière, `lightLevel` leur
+  éclat à chaque instant (scintillement, souffle, vacillement). L'UI dessine
+  les halos en dégradés dans un canevas à part, pour le seul mur affiché.
+  Tous les autres écrans passent dans la palette sombre (`darkColors`,
+  `ThemeContext`, ADR 0021).
 - **Plan** (`planRoom`, domaine) : chaque élément placé en cellules, tous
   murs côte à côte ; chaque bande a la hauteur de sa plante la plus haute,
   rien n'est coupé ; tous les murs reposent sur la même ligne de sol.
@@ -680,30 +689,31 @@ Décisions détaillées dans [l'ADR 0014](decisions/0014-reglages-rappel-export.
 ## Le coin méditation (phase 4a, fait)
 
 Décisions dans les ADR [0017](decisions/0017-le-coin-meditation.md),
-[0018](decisions/0018-le-coin-meditation-revu.md) et
-[0019](decisions/0019-la-piece-refaite-et-la-seance-sans-mots.md) ;
+[0018](decisions/0018-le-coin-meditation-revu.md),
+[0019](decisions/0019-la-piece-refaite-et-la-seance-sans-mots.md) et
+[0020](decisions/0020-bonsai-souffle-et-lumiere-eteinte.md) ;
 spécification dans [meditation.md](meditation.md).
 
 - **Domaine** (`meditation.ts`) : tout se calcule à partir des secondes
   passées dans la séance : le souffle (`breathAt`), le mot et son opacité
-  (`breathWord`), les jours de la plante (`plantDaysAt` : 0 au début, 120
-  au dernier souffle), la part écoulée (`sessionShare`), le temps restant
-  (`minutesLeft`). Aucune phrase. La plante est tirée avec le générateur
-  de graines injecté.
+  (`breathWord`), la part écoulée (`sessionShare`), le temps restant
+  (`minutesLeft`). Aucune phrase. La plante est toujours le bonsaï adulte
+  de l'ouverture (`MEDITATION_BONSAI`).
 - **Entrée** : le décor du plan de la pièce porte son nom
   (`PlacedContent.piece`) ; l'étagère pose un bouton « Méditer » au-dessus
   du coussin et une zone tactile sur les pièces du coin
   (`MEDITATION_PIECES`).
 - **Le souffle à l'écran et dans la main** (ADR 0018) : `breathFullness`
   donne le remplissage du souffle, adouci aux deux bouts ; `drawSun`
-  dessine le soleil au-dessus de la plante (cœur fixe, air en vagues qui
+  dessine le soleil au-dessus du bonsaï (cœur fixe, air en vagues qui
   suit le souffle) ; `drawIncenseTimer` le bâton d'encens qui se consume
-  avec la séance ; `BREATH_PULSES` et
+  avec la séance ; `drawSparkles` les étoiles de la fin ; `BREATH_PULSES`
+  (coups rapides à l'inspiration, qui ralentissent à l'expiration) et
   `pulsesBetween` donnent les vibrations dues entre deux battements de
   l'horloge.
 - **UI** (`MeditationScreen`, `ui/meditation/`) : l'horloge de la séance
-  n'avance qu'au premier plan (`useSessionClock`). La plante est affichée
-  sans geste. L'écran reste allumé (`expo-keep-awake`), des vibrations
+  n'avance qu'au premier plan (`useSessionClock`, 20 battements par
+  seconde). Le bonsaï fait ses gestes (`LivingPlant`). L'écran reste allumé (`expo-keep-awake`), des vibrations
   suivent le souffle et une autre marque la fin (`expo-haptics`).
 - **Rien n'est enregistré.**
 

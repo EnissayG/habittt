@@ -10,7 +10,14 @@ import {
   type SkPicture,
 } from '@shopify/react-native-skia';
 
-import type { PlacedItem, PlantPixel, ScenePixel, SceneImage, WindowView } from '../../domain';
+import type {
+  PlacedItem,
+  PlantPixel,
+  ReflectedCell,
+  ScenePixel,
+  SceneImage,
+  WindowView,
+} from '../../domain';
 import { buildColorRuns, type ColorRuns } from '../plant/colorRuns';
 import { plantColor } from '../theme/plantPalette';
 import { sceneColor } from '../theme/scenePalette';
@@ -166,5 +173,28 @@ export function patchPicture(
       canvas.drawRect(Skia.XYWHRect(x, y, 1, 1), paint);
     }
     canvas.restore();
+  }, size);
+}
+
+/**
+ * The lights of the dark room seen in the floor (see reflectLights): each
+ * cell in its own color, as transparent as the reflection is faint there.
+ * Recorded once, at `cell` points per floor pixel.
+ */
+export function reflectedLightsPicture(
+  cells: readonly ReflectedCell[],
+  view: WindowView,
+  cell: number,
+  size: { width: number; height: number },
+): SkPicture {
+  return createPicture((canvas) => {
+    const paint = Skia.Paint();
+    paint.setAntiAlias(false);
+    canvas.scale(cell, cell);
+    for (const { x, y, tone, alpha } of cells) {
+      paint.setColor(Skia.Color(sceneColor({ tone, layers: [] }, view)));
+      paint.setAlphaf(alpha);
+      canvas.drawRect(Skia.XYWHRect(x, y, 1, 1), paint);
+    }
   }, size);
 }

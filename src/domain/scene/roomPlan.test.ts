@@ -3,7 +3,10 @@ import { PLANT_GRID, type PlantImage } from '../plant/grid';
 import { renderPlant } from '../plant/renderPlant';
 import { arrangeShelf, type ShelfItem } from '../shelf';
 import {
+  CEILING_ROWS,
   CUSHION_SIZE,
+  drawSign,
+  SIGN_SIZE,
   drawCushion,
   drawLowTable,
   drawMat,
@@ -164,8 +167,25 @@ describe('planRoom', () => {
     const painting = wall.items.find((p) => p.content.kind === 'decor')!;
     expect(painting.content.image).toEqual(drawPainting('sea'));
     expect(painting.x).toBe(wall.left + 8);
-    expect(painting.y).toBe(4);
+    expect(painting.y).toBe(CEILING_ROWS + 1);
     expect(painting.labelled).toBe(false);
+  });
+
+  it('hangs nothing over the string of lights, except the cord of the lantern', () => {
+    const items = [
+      item('h1', 'pothos', 1),
+      ...Array.from({ length: 6 }, (_, i) => item(`s${i}`, 'cactus', i + 2)),
+    ];
+    const images = Object.fromEntries(
+      items.map((it) => [it.id, grown(it.id === 'h1' ? 'pothos' : 'cactus')]),
+    );
+    const room = plan(items, images);
+    for (const wall of room.walls) {
+      for (const placed of wall.items) {
+        if (placed.content.kind === 'decor' && placed.content.piece === 'lantern') continue;
+        expect(placed.y).toBeGreaterThanOrEqual(CEILING_ROWS);
+      }
+    }
   });
 
   it('takes the painting down as soon as a plant hangs on that wall', () => {
@@ -199,9 +219,16 @@ describe('planRoom', () => {
       'scroll',
       'lantern',
       'cushion',
+      'sign',
       'lowTable',
       'vase',
     ]);
+    // The sign of the meditation, over the cushion, never on the wall shelf.
+    const sign = piece(room, 'sign');
+    expect(sign.content.image).toEqual(drawSign());
+    expect(sign.y + SIGN_SIZE.height).toBe(room.height - CUSHION_SIZE.height - 2);
+    expect(sign.x + SIGN_SIZE.width / 2).toBe(wall.left + 20 + CUSHION_SIZE.width / 2);
+    expect(sign.y).toBeGreaterThan(piece(room, 'wallShelf').y + WALL_SHELF_SIZE.height);
     // What stands, on the floor line, left to right.
     const standing: [string, unknown, number, number][] = [
       ['cushion', drawCushion(), 20, CUSHION_SIZE.height],
@@ -300,9 +327,9 @@ describe('planRoom', () => {
     expect(pieces(low)).not.toContain('scroll');
   });
 
-  it('names each piece of decor; the cushion, the table and the scroll open the corner', () => {
+  it('names each piece of decor; the sign, the cushion, the table and the scroll open the corner', () => {
     const all = tallRoom().walls.flatMap((_, w) => pieces(tallRoom(), w));
-    expect(MEDITATION_PIECES).toEqual(['cushion', 'lowTable', 'scroll']);
+    expect(MEDITATION_PIECES).toEqual(['sign', 'cushion', 'lowTable', 'scroll']);
     for (const name of MEDITATION_PIECES) expect(all.filter((p) => p === name)).toHaveLength(1);
   });
 

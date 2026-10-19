@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { NumberText } from './NumberText';
 import { PixelIcon } from './PixelIcon';
 
@@ -14,6 +15,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ backLabel, onBack, right }: TopBarProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.bar}>
       {onBack ? (
@@ -35,13 +37,14 @@ export function TopBar({ backLabel, onBack, right }: TopBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: 28,
-  },
-  back: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
-  label: { fontFamily: fonts.display, fontSize: 14, color: colors.muted },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    bar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      minHeight: 28,
+    },
+    back: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
+    label: { fontFamily: fonts.display, fontSize: 14, color: colors.muted },
+  });

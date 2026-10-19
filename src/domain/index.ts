@@ -42,13 +42,12 @@ export {
   pulsesBetween,
   type BreathPulse,
   type PulseStrength,
-  breathsDone,
   isOver,
+  MEDITATION_BONSAI,
   MEDITATION_LENGTHS,
+  PULSE_GAP,
   MEDITATIONS,
   minutesLeft,
-  plantDaysAfter,
-  plantDaysAt,
   type Breath,
   type Meditation,
   type MeditationMinutes,
@@ -107,9 +106,18 @@ export {
 } from './shelf';
 export { buildTimeline, type DayEntry } from './timeline';
 export { WINDOW_VIEWS, windowView, type WindowView } from './scene/windowView';
-export { drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
+export { DAYLIGHT, drawWindow, GLASS, WINDOW_SIZE } from './scene/drawWindow';
 export { drawSlot, type SlotKind } from './scene/drawSlot';
-export { drawSun, SUN } from './scene/drawSun';
+export { drawSparkles, drawSun, SPARKLE_CYCLE, SUN } from './scene/drawSun';
+export {
+  LIGHT_TONES,
+  lightLevel,
+  reflectLights,
+  roomLights,
+  type ReflectedCell,
+  type LightKind,
+  type LightSource,
+} from './scene/lights';
 export {
   drawCushion,
   drawFlame,
@@ -119,6 +127,12 @@ export {
   drawSmoke,
   drawVase,
   drawWallpaper,
+  drawSign,
+  SIGN_PLANK,
+  SIGN_SIZE,
+  garlandBulbs,
+  CEILING_ROWS,
+  BULB_EVERY,
   drawWallShelf,
   FLAME_SIZE,
   INCENSE_TIMER_SIZE,

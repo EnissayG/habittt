@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 
 const NUMBERS = '951  952  982  508  717';
 const PAIRS = '5 8 · 6 · 7 1 · 0 O';
@@ -16,6 +17,7 @@ const BOARD = [
  * The digits must be told apart at a glance: 5 and 8, 6, 7 and 1, 0 and O.
  */
 export function DigitBoard() {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.board}>
       {BOARD.map((font) => (
@@ -46,10 +48,11 @@ export function DigitBoard() {
   );
 }
 
-const styles = StyleSheet.create({
-  board: { gap: spacing.md },
-  candidate: { gap: 2, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.sm },
-  note: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  counter: { fontSize: 52, color: colors.text },
-  line: { color: colors.text },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    board: { gap: spacing.md },
+    candidate: { gap: 2, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.sm },
+    note: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+    counter: { fontSize: 52, color: colors.text },
+    line: { color: colors.text },
+  });

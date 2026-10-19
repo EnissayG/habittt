@@ -22,6 +22,12 @@ export const WINDOW_SIZE = { width: PLANT_GRID.width * 2, height: 46 } as const;
 
 /** The glass area inside the frame. */
 export const GLASS = { x: 13, y: 7, width: 70, height: 30 } as const;
+/**
+ * The part of the glass the curtains leave open: where the light of the hour
+ * comes in. With the lights off, only this stays lit; the frame, the
+ * curtains and the sill darken with the room (ADR 0020).
+ */
+export const DAYLIGHT = { x: 14, y: GLASS.y, width: 64, height: GLASS.height } as const;
 
 /** How strongly the glass reflects light, per view (0 to 1). */
 const GLARE: Record<WindowView, number> = { day: 0.2, evening: 0.1, night: 0.06, winter: 0.16 };

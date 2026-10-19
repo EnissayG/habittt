@@ -9,7 +9,9 @@ import {
   type Wall,
 } from '../shelf';
 import {
+  CEILING_ROWS,
   drawCushion,
+  drawSign,
   drawLowTable,
   drawMat,
   drawVase,
@@ -46,10 +48,10 @@ export type PlacedContent =
 
 /** What a piece of decor is. */
 export type DecorPiece =
-  'cushion' | 'lowTable' | 'scroll' | 'wallShelf' | 'vase' | 'lantern' | 'painting';
+  'sign' | 'cushion' | 'lowTable' | 'scroll' | 'wallShelf' | 'vase' | 'lantern' | 'painting';
 
 /** The pieces that make the meditation corner: touching any of them opens it. */
-export const MEDITATION_PIECES: readonly DecorPiece[] = ['cushion', 'lowTable', 'scroll'];
+export const MEDITATION_PIECES: readonly DecorPiece[] = ['sign', 'cushion', 'lowTable', 'scroll'];
 
 /** Something of the decor that moves, drawn apart over the wall (see drawCorner). */
 export interface AnimatedDecor {
@@ -137,8 +139,10 @@ type Cell = Extract<PlacedContent, { kind: 'plant' | 'slot' }>;
 // still keeping them free; if it cannot, it is left out.
 const DECOR = {
   /** The painting of a wall of shelves, in its top band. */
-  wallPainting: { x: 8, y: 4 },
+  wallPainting: { x: 8, y: 1 },
   cushion: { x: 20 },
+  /** The sign of the meditation, centered over the cushion, a little above it. */
+  sign: { x: 17, above: 2 },
   lowTable: { x: 70 },
   vase: { x: 122 },
   wallShelf: { x: 14, above: 48, clear: 14 + 18 },
@@ -152,6 +156,7 @@ const DECOR = {
 
 const IMAGES = {
   cushion: drawCushion(),
+  sign: drawSign(),
   lowTable: drawLowTable(),
   wallShelf: drawWallShelf(),
   vase: drawVase(),
@@ -219,7 +224,8 @@ export function planRoom({
     ),
   ];
   const rowTops: number[] = [];
-  let y = 0;
+  // Under the ceiling, the moulding and the string of lights: nothing hangs over them.
+  let y = CEILING_ROWS;
   bands.forEach((band, row) => {
     if (row > 0) y += rowGap;
     rowTops.push(y);
@@ -311,7 +317,7 @@ function decorItems(left: number, floorLine: number): PlacedItem[] {
     at: { x: number; above: number; clear: number },
   ): PlacedItem[] => {
     const lowest = floorLine - at.clear - image.height;
-    const y = Math.max(0, floorLine - at.above);
+    const y = Math.max(CEILING_ROWS, floorLine - at.above);
     return y <= lowest ? [placeDecor(piece, image, left + at.x, y)] : [];
   };
   const cord = floorLine - DECOR.lantern.above - LANTERN_SIZE.height;
@@ -325,6 +331,12 @@ function decorItems(left: number, floorLine: number): PlacedItem[] {
     ...hanging('scroll', IMAGES.scroll, DECOR.scroll),
     ...lantern,
     standing('cushion', IMAGES.cushion, DECOR.cushion.x),
+    placeDecor(
+      'sign',
+      IMAGES.sign,
+      left + DECOR.sign.x,
+      floorLine - IMAGES.cushion.height - DECOR.sign.above - IMAGES.sign.height,
+    ),
     standing('lowTable', IMAGES.lowTable, DECOR.lowTable.x),
     standing('vase', IMAGES.vase, DECOR.vase.x),
   ];

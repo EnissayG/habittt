@@ -9,7 +9,8 @@ import { NumberText } from '../components/NumberText';
 import { Sheet } from '../components/Sheet';
 import { dayMonth, fromPickerDate, toPickerDate } from '../format';
 import { toggleRelapseErrorMessage } from '../messages';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 
 interface RelapseSheetProps {
@@ -31,6 +32,7 @@ export function RelapseSheet({
   onClose,
   onChanged,
 }: RelapseSheetProps) {
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const today = tracker.today();
   const yesterday = addDays(today, -1);
@@ -144,8 +146,9 @@ export function RelapseSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  });

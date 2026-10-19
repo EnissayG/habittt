@@ -52,9 +52,11 @@ updatedAt, deletedAt }`, `Relapse { id, habitId, date, deletedAt, updatedAt }`,
 - Gestes (`plant/gesture.ts`, ADR 0016) : une plante vivante est immobile et fait de
   temps en temps un petit geste propre à son espèce. Chaque espèce désigne ses parties
   mobiles (`plan.part`, `plan.mark`) sans changer ses traits, et donne son repos (`rest`).
-- Coin méditation (`meditation.ts`, ADR 0017 à 0019) : la plante pousse à chaque souffle,
-  sous un soleil dont l'air suit le souffle, à côté d'un encens qui se consume. Aucune
-  phrase : seulement « inspire » / « expire ». Rien n'est enregistré.
+- Coin méditation (`meditation.ts`, ADR 0017 à 0020) : un bonsaï adulte, sous un soleil dont
+  l'air suit le souffle, à côté d'un encens qui se consume ; la vibration imite les poumons.
+  Aucune phrase : seulement « inspire » / « expire », puis « Bravo ». Rien n'est enregistré.
+- Lumière éteinte (`scene/lights.ts`, ADR 0020, 0021) : la pièce s'assombrit, chaque source
+  de lumière brille et s'anime à sa façon ; tous les écrans passent en sombre.
 
 ## Expo Go
 
@@ -65,7 +67,9 @@ L'API Expo change à chaque SDK : consulter https://docs.expo.dev/versions/v57.0
 ## Conventions
 
 - Code, identifiants et commits en anglais ; documentation en français.
-- Couleurs et polices : uniquement les rôles de `src/ui/theme/`, jamais en dur.
+- Couleurs et polices : uniquement les rôles de `src/ui/theme/`, jamais en dur. Les styles
+  s'écrivent `makeStyles = (colors: Palette) => StyleSheet.create(...)` puis
+  `useThemedStyles(makeStyles)` : chaque écran suit la lumière éteinte (ADR 0021).
 - Commits atomiques : un changement logique par commit.
 - Décision d'architecture importante : nouvel ADR `docs/decisions/NNNN-titre.md`.
 - Ne rien installer pour Supabase, les comptes ou les stores avant la

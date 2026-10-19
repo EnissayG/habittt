@@ -1,7 +1,7 @@
 # État du projet
 
 Point de reprise entre deux sessions. À jour au **12 octobre 2026**, après la
-phase 4c (la pièce refaite, la séance sans phrases). À lire en premier avec `CLAUDE.md`, puis
+phase 4d (le bonsaï de la séance, la lumière éteinte). À lire en premier avec `CLAUDE.md`, puis
 [architecture.md](architecture.md) et les [ADR](decisions/).
 
 ## Où on en est
@@ -28,9 +28,10 @@ phase 4c (la pièce refaite, la séance sans phrases). À lire en premier avec `
 | Phase 3h         | Gestes des plantes, un par espèce (habitude, Labo, étagère et son reflet)            | fait (ADR 0016), **à tester sur téléphone** |
 | Phase 4a         | Le coin méditation : une plante pousse à chaque souffle (écran 12)                   | fait (ADR 0017), **à tester sur téléphone** |
 | Phase 4b         | Le coin méditation revu : décor, bouton, lumière du souffle, vibrations rythmées     | fait (ADR 0018), **à tester sur téléphone** |
-| Phase 4c         | La pièce refaite (coin, papier peint, fumée), soleil en vagues, encens, sans phrases | fait (ADR 0019), **à tester sur téléphone** |
+| Phase 4c         | La pièce refaite (coin, papier peint, fumée), soleil en vagues, encens, sans phrases | fait (ADR 0019), testé                      |
+| Phase 4d         | Bonsaï de la séance, vibration façon poumon, « Bravo », lumière éteinte, plafond     | fait (ADR 0020, 0021), **à tester**         |
 
-Chiffres au dernier commit : 1235 tests, typecheck et lint au vert, bundles
+Chiffres au dernier commit : 1251 tests, typecheck et lint au vert, bundles
 iOS et Android compilés. `expo-doctor` : 21/21 (correctifs Expo appliqués).
 
 ## Ce qui reste
@@ -44,6 +45,43 @@ faite. Reste à la tester sur téléphone (ci-dessous), avec les phases 3, puis
 La phase 3g (ADR 0015) a été écrite hors de Claude Code, sans téléphone :
 les tests, le typecheck et le lint passent, mais **le bundle n'a pas été
 recompilé et rien n'a été vu dans Expo Go**.
+
+### À vérifier sur téléphone (phase 4d)
+
+Écrit hors de Claude Code, sans téléphone : tests, typecheck et lint
+passent, le bundle n'a pas été recompilé.
+
+- **Le plafond** : la guirlande n'est plus cachée par un tableau ni par le
+  pot d'une plante retombante ; seul le cordon de la lanterne la traverse.
+- **L'enseigne « Méditer »** : une planche de bois pendue à un clou, au-
+  dessus du coussin ; le mot entier, lisible ; la toucher ouvre l'écran 12.
+- **Les noms des plantes retombantes** juste sous leurs tiges.
+- **La séance** : le bonsaï adulte, immobile puis un petit geste de temps
+  en temps ; le soleil et l'encens comme avant ; plus aucune plante qui
+  pousse.
+- **La vibration** : à l'inspiration, des coups rapides et réguliers qui se
+  renforcent ; une courte pause ; à l'expiration, des coups qui ralentissent
+  et s'adoucissent. Dire si on sent bien l'air entrer vite et sortir
+  lentement, ou si le téléphone lisse les coups rapides.
+- **La fin** : le soleil s'ouvre, des étoiles s'allument une à une,
+  « Bravo » et « N minutes pour toi » apparaissent ; la longue vibration.
+- **La lumière éteinte** : l'ampoule dans l'en-tête ; la pièce devient
+  sombre ; les ampoules de la guirlande scintillent, chacune à son rythme ;
+  la lanterne brille et respire ; la bougie vacille ; la braise rougeoie ;
+  la fenêtre laisse entrer la lumière de l'heure (presque rien la nuit) :
+  seule la vitre reste claire, rideaux et cadre s'assombrissent ; la
+  bougie et la braise se reflètent dans le plancher.
+  Le jour, la pièce ne fait que s'assombrir (textes restés foncés) ; le
+  soir, la pénombre ; la nuit, le noir, avec en-tête, chiffres et noms en
+  clair et la barre d'état claire. Le glissement entre les murs reste
+  fluide. Rallumer remet tout comme avant.
+- **« Réduire les animations »** avec la lumière éteinte : les halos ne
+  bougent plus.
+- **Tout est sombre** (ADR 0021) : lumière éteinte, ouvrir une plante, son
+  journal, les panneaux (rechute, note, renommer, retirer), une nouvelle
+  habitude, les réglages, l'herbier et la méditation : fonds sombres,
+  textes clairs, rien de crème. Le soleil de la méditation se fond dans le
+  noir. La barre d'état est claire. Rallumer remet tout en crème.
 
 ### À vérifier sur téléphone (phase 4c, la pièce refaite)
 

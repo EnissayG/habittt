@@ -9,7 +9,6 @@ import {
 } from './habit';
 import { daysBetween, type LocalDate } from './localDate';
 import { record, splitLives, type Life } from './lives';
-import { drawMeditationPlant } from './meditation';
 import { MAX_GROWTH_DAYS, type PlantImage } from './plant/grid';
 import { FALLBACK_SPECIES_ID, SPECIES_IDS, type SpeciesId } from './plant/registry';
 import { renderPlant } from './plant/renderPlant';
@@ -339,11 +338,6 @@ export function createHabitTracker(deps: HabitTrackerDeps) {
     /** The plant of the opening screen: always the same grown bonsai, the app's emblem. */
     async openingPlant(): Promise<PlantImage> {
       return renderPlant({ ...OPENING_DEFAULT, elapsedDays: MAX_GROWTH_DAYS, relapseDays: [] });
-    },
-
-    /** The plant of a meditation (docs/meditation.md): drawn, never saved. */
-    drawMeditationPlant(): { species: SpeciesId; seed: number } {
-      return drawMeditationPlant(deps.generateSeed);
     },
 
     async addHabit(input: AddHabitInput): Promise<Result<Habit, CreateHabitError>> {

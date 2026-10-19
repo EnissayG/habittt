@@ -68,3 +68,56 @@ export function drawSun(fullness: number, t = 0): SceneImage {
   }
   return c.toImage();
 }
+
+/** Seconds a sparkle of the end takes to shine and go out. */
+export const SPARKLE_CYCLE = 1.6;
+/** Sparkles of the end, and the delay between the first appearance of two of them. */
+const SPARKLES = 12;
+const SPARKLE_DELAY = 0.2;
+
+/**
+ * The end of a session, for a well done: small stars of light that come one
+ * after the other around the sun and the bonsai, each shining and going out
+ * at its own pace. Their places are drawn from a fixed sequence, the same
+ * every time; t is the time since the end, in seconds.
+ */
+export function drawSparkles(width: number, height: number, t: number): SceneImage {
+  const c = new SceneCanvas(width, height);
+  let state = 2166136261;
+  const next = () => {
+    // A small linear congruential sequence: integers only, the same everywhere.
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+  for (let i = 0; i < SPARKLES; i++) {
+    const x = 3 + Math.floor(next() * (width - 6));
+    const y = 3 + Math.floor(next() * (height - 6));
+    const offset = next() * SPARKLE_CYCLE;
+    const since = t - i * SPARKLE_DELAY;
+    if (since < 0) continue;
+    const phase = ((since + offset) % SPARKLE_CYCLE) / SPARKLE_CYCLE;
+    // Out, a dot, a small cross, a large cross, the small one again, out.
+    const arm =
+      phase < 0.2
+        ? -1
+        : phase < 0.35
+          ? 0
+          : phase < 0.5
+            ? 1
+            : phase < 0.65
+              ? 2
+              : phase < 0.8
+                ? 1
+                : -1;
+    if (arm < 0) continue;
+    c.fill(x, y, 1, 1, 'sunHeart');
+    for (let k = 1; k <= arm; k++) {
+      const tone = k === arm ? 'airA' : 'sunGlow';
+      c.fill(x - k, y, 1, 1, tone);
+      c.fill(x + k, y, 1, 1, tone);
+      c.fill(x, y - k, 1, 1, tone);
+      c.fill(x, y + k, 1, 1, tone);
+    }
+  }
+  return c.toImage();
+}

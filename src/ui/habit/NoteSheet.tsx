@@ -16,7 +16,8 @@ import { PixelIcon } from '../components/PixelIcon';
 import { Sheet } from '../components/Sheet';
 import { dayMonth } from '../format';
 import { MOOD_LABELS, noteErrorMessage } from '../messages';
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { usePalette, useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 
 export type NoteSheetDone = 'watered' | 'saved';
@@ -53,6 +54,8 @@ export function NoteSheet({
   onClose,
   onDone,
 }: NoteSheetProps) {
+  const colors = usePalette();
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const [text, setText] = useState(initial?.text ?? '');
   const [mood, setMood] = useState<Mood | null>(initial?.mood ?? null);
@@ -136,22 +139,23 @@ export function NoteSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  title: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  titleText: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  area: {
-    minHeight: 96,
-    maxHeight: 180,
-    backgroundColor: colors.field,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: 10,
-    fontFamily: fonts.body,
-    fontSize: 14,
-    lineHeight: 19,
-    color: colors.text,
-    textAlignVertical: 'top',
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    titleText: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    area: {
+      minHeight: 96,
+      maxHeight: 180,
+      backgroundColor: colors.field,
+      borderWidth: 1,
+      borderColor: colors.line,
+      padding: 10,
+      fontFamily: fonts.body,
+      fontSize: 14,
+      lineHeight: 19,
+      color: colors.text,
+      textAlignVertical: 'top',
+    },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+  });

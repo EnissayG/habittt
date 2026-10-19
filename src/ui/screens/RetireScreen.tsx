@@ -8,7 +8,8 @@ import { Sheet } from '../components/Sheet';
 import { TopBar } from '../components/TopBar';
 import type { ScreenProps } from '../navigation/types';
 import { PlantPixels } from '../plant/PlantCanvas';
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
 
@@ -33,6 +34,7 @@ const EXITS: { exit: Exit; title: string; text: string }[] = [
  * is the confirmation; erasing everything asks a second time.
  */
 export function RetireScreen({ navigation, route }: ScreenProps<'Retire'>) {
+  const styles = useThemedStyles(makeStyles);
   const { id } = route.params;
   const tracker = useTracker();
   const load = useCallback(() => tracker.getHabit(id), [tracker, id]);
@@ -119,6 +121,7 @@ interface ExitCardProps {
 }
 
 function ExitCard({ plant, title, text, selected, onPress }: ExitCardProps) {
+  const styles = useThemedStyles(makeStyles);
   const ratio = PixelRatio.get();
   const cellSize = Math.max(1, Math.round(ratio * 1.4)) / ratio;
   const { top } = usedRows(plant);
@@ -138,21 +141,22 @@ function ExitCard({ plant, title, text, selected, onPress }: ExitCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.sm,
-    backgroundColor: colors.field,
-    borderWidth: 2,
-    borderColor: colors.line,
-  },
-  selected: { borderColor: colors.strong },
-  cardText: { flex: 1, gap: 2 },
-  cardTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.text },
-  cardBody: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 17 },
-  sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      padding: spacing.sm,
+      backgroundColor: colors.field,
+      borderWidth: 2,
+      borderColor: colors.line,
+    },
+    selected: { borderColor: colors.strong },
+    cardText: { flex: 1, gap: 2 },
+    cardTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.text },
+    cardBody: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 17 },
+    sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+  });

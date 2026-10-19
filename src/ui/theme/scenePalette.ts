@@ -1,4 +1,4 @@
-import type { RoomSource, ScenePixel, SceneTone, WindowView } from '../../domain';
+import type { LightKind, RoomSource, ScenePixel, SceneTone, WindowView } from '../../domain';
 import { plantColor, SCENERY } from './plantPalette';
 import { colors, solarized } from './tokens';
 
@@ -233,4 +233,105 @@ export function roomColor(source: RoomSource | null, view: WindowView): string {
   return source.kind === 'tone'
     ? toneColor(source.tone, view).toUpperCase()
     : plantColor(source.pixel, source.genome).toUpperCase();
+}
+
+/** The glow around each light of the dark room (ADR 0020): warm, but the window's follows the hour. */
+const GLOW: Record<Exclude<LightKind, 'window'>, string> = {
+  bulb: '#FFD978',
+  lantern: '#FFCF7A',
+  candle: '#FFB24C',
+  ember: '#FF7A3A',
+};
+const WINDOW_GLOW: Record<WindowView, string> = {
+  day: '#CDEAF0',
+  evening: '#F6B26B',
+  night: '#3A6F9D',
+  winter: '#EDF1F2',
+};
+/** How strong each glow is at its center, at full brightness. */
+const GLOW_STRENGTH: Record<LightKind, number> = {
+  bulb: 0.55,
+  lantern: 0.4,
+  candle: 0.45,
+  ember: 0.6,
+  window: 0.4,
+};
+
+export function glowColor(kind: LightKind, view: WindowView): string {
+  return kind === 'window' ? WINDOW_GLOW[view] : GLOW[kind];
+}
+
+export function glowStrength(kind: LightKind, view: WindowView): number {
+  // At night the window lets in only a little moonlight; in the evening, some.
+  if (kind === 'window' && view === 'night') return 0.14;
+  if (kind === 'window' && view === 'evening') return 0.3;
+  return GLOW_STRENGTH[kind];
+}
+
+/** How the room looks with the lights off, at this hour (ADR 0020). */
+export interface LightsOffLook {
+  /** Laid over the whole room, and over the window. */
+  veil: string;
+  windowVeil: string;
+  /** Text over the dark room: the numbers, and what is quieter. */
+  text: string;
+  muted: string;
+  statusBar: 'light' | 'dark';
+}
+
+/**
+ * Lights off in the daytime, the daylight still fills the room: it only
+ * dims, and the text stays dark. In the evening it is dusky; at night it is
+ * dark, and only the lights shine. Each pair of text and wall is checked in
+ * contrast.test.ts (TEXT_PAIRS).
+ */
+export function lightsOffLook(view: WindowView): LightsOffLook {
+  switch (view) {
+    case 'day':
+    case 'winter':
+      return {
+        veil: colors.darknessDay,
+        windowVeil: colors.windowDarknessDay,
+        text: colors.text,
+        muted: colors.text,
+        statusBar: 'dark',
+      };
+    case 'evening':
+      return {
+        veil: colors.darknessEvening,
+        windowVeil: colors.windowDarknessEvening,
+        text: colors.textInDark,
+        muted: colors.textInDark,
+        statusBar: 'light',
+      };
+    case 'night':
+      return {
+        veil: colors.darkness,
+        windowVeil: colors.windowDarkness,
+        text: colors.textInDark,
+        muted: colors.mutedInDark,
+        statusBar: 'light',
+      };
+  }
+}
+
+/** How much of the sun's glow each ring of air keeps, from the heart outwards. */
+const AIR_SHARE = { sunGlow: 1, airA: 0.72, airB: 0.48, airC: 0.28 } as const;
+
+/**
+ * The sun of the meditation on a dark screen (ADR 0021): the rings of air
+ * fade from the sun's glow into the background, as they fade into the cream
+ * wall in the light. Everything else keeps its day color.
+ */
+export function sunOnDark(background: string): (pixel: ScenePixel) => string {
+  const glow = rgb(FIXED.sunGlow);
+  const back = rgb(background);
+  return (pixel) => {
+    const tone = pixel.tone;
+    if (tone && tone in AIR_SHARE) {
+      const k = AIR_SHARE[tone as keyof typeof AIR_SHARE];
+      return hex(glow.map((c, i) => Math.round(c * k + back[i]! * (1 - k))) as typeof glow);
+    }
+    return sceneColor(pixel, 'day');
+  };
 }

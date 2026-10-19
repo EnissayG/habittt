@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 
 interface ButtonProps {
   label: string;
@@ -15,6 +16,8 @@ interface ButtonProps {
 
 /** No rounded corners, no shadow; buttons have a darker 4 px bottom edge. */
 export function Button({ label, onPress, variant = 'primary', disabled = false }: ButtonProps) {
+  const styles = useThemedStyles(makeStyles);
+  const labels = useThemedStyles(makeLabels);
   return (
     <Pressable
       accessibilityRole="button"
@@ -33,22 +36,24 @@ export function Button({ label, onPress, variant = 'primary', disabled = false }
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    paddingVertical: 10,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 4,
-    alignItems: 'center',
-  },
-  primary: { backgroundColor: colors.accent, borderBottomColor: colors.accentEdge },
-  alt: { backgroundColor: colors.surface, borderBottomColor: colors.line },
-  quiet: { paddingVertical: spacing.sm, alignItems: 'center' },
-  dimmed: { opacity: 0.6 },
-  label: { fontFamily: fonts.display, fontSize: 15 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    base: {
+      paddingVertical: 10,
+      paddingHorizontal: spacing.md,
+      borderBottomWidth: 4,
+      alignItems: 'center',
+    },
+    primary: { backgroundColor: colors.accent, borderBottomColor: colors.accentEdge },
+    alt: { backgroundColor: colors.surface, borderBottomColor: colors.line },
+    quiet: { paddingVertical: spacing.sm, alignItems: 'center' },
+    dimmed: { opacity: 0.6 },
+    label: { fontFamily: fonts.display, fontSize: 15 },
+  });
 
-const labels = StyleSheet.create({
-  primary: { color: colors.onAccent },
-  alt: { color: colors.text },
-  quiet: { color: colors.muted, fontSize: 13, textDecorationLine: 'underline' },
-});
+const makeLabels = (colors: Palette) =>
+  StyleSheet.create({
+    primary: { color: colors.onAccent },
+    alt: { color: colors.text },
+    quiet: { color: colors.muted, fontSize: 13, textDecorationLine: 'underline' },
+  });

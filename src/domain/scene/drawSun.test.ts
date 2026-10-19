@@ -1,4 +1,4 @@
-import { drawSun, SUN } from './drawSun';
+import { drawSparkles, drawSun, SUN } from './drawSun';
 
 const at = (image: ReturnType<typeof drawSun>, x: number, y: number) =>
   image.pixels[y * image.width + x]?.tone ?? null;
@@ -71,5 +71,26 @@ describe('drawSun', () => {
 
   it('is opaque: no layer, the colors come from the theme', () => {
     for (const pixel of drawSun(0.6, 2).pixels) expect(pixel?.layers ?? []).toEqual([]);
+  });
+});
+
+describe('drawSparkles', () => {
+  const lit = (t: number) => drawSparkles(70, 110, t).pixels.filter((pixel) => pixel?.tone).length;
+
+  it('starts dark, then lights a few stars one after the other', () => {
+    // At the very end, one star at most (a large cross: 9 cells).
+    expect(lit(0)).toBeLessThanOrEqual(9);
+    const later = [1, 1.5, 2, 2.5, 3].map(lit);
+    expect(Math.max(...later)).toBeGreaterThan(10);
+  });
+
+  it('twinkles: what shines changes from one moment to the next', () => {
+    const a = drawSparkles(70, 110, 3).pixels.map((pixel) => pixel?.tone ?? null);
+    const b = drawSparkles(70, 110, 3.3).pixels.map((pixel) => pixel?.tone ?? null);
+    expect(a).not.toEqual(b);
+  });
+
+  it('is the same every time', () => {
+    expect(drawSparkles(70, 110, 2.4)).toEqual(drawSparkles(70, 110, 2.4));
   });
 });

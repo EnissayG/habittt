@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet } from 'react-native';
 
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { NumberText } from './NumberText';
 
 interface ChipProps {
@@ -13,6 +14,7 @@ interface ChipProps {
 }
 
 export function Chip({ label, selected = false, big = false, onPress, disabled }: ChipProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : 'text'}
@@ -33,12 +35,13 @@ export function Chip({ label, selected = false, big = false, onPress, disabled }
   );
 }
 
-const styles = StyleSheet.create({
-  chip: { backgroundColor: colors.surface, paddingVertical: 3, paddingHorizontal: spacing.sm },
-  big: { paddingVertical: 6, paddingHorizontal: 10 },
-  selected: { backgroundColor: colors.strong },
-  disabled: { opacity: 0.5 },
-  label: { fontFamily: fonts.display, fontSize: 12, color: colors.text },
-  bigLabel: { fontSize: 14 },
-  selectedLabel: { color: colors.onStrong },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    chip: { backgroundColor: colors.surface, paddingVertical: 3, paddingHorizontal: spacing.sm },
+    big: { paddingVertical: 6, paddingHorizontal: 10 },
+    selected: { backgroundColor: colors.strong },
+    disabled: { opacity: 0.5 },
+    label: { fontFamily: fonts.display, fontSize: 12, color: colors.text },
+    bigLabel: { fontSize: 14 },
+    selectedLabel: { color: colors.onStrong },
+  });

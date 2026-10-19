@@ -10,13 +10,16 @@ import { TopBar } from '../components/TopBar';
 import { dayMonth, fromPickerDate, toPickerDate } from '../format';
 import { createHabitErrorMessage } from '../messages';
 import type { ScreenProps } from '../navigation/types';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { usePalette, useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 
 type When = 'today' | 'yesterday' | 'other';
 
 /** Screen 3: what the user quits, and since when. */
 export function NewHabitNameScreen({ navigation }: ScreenProps<'NewHabitName'>) {
+  const colors = usePalette();
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const today = tracker.today();
   const [name, setName] = useState('');
@@ -105,20 +108,21 @@ export function NewHabitNameScreen({ navigation }: ScreenProps<'NewHabitName'>) 
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 22, color: colors.text, lineHeight: 26 },
-  field: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.field,
-    borderWidth: 2,
-    borderColor: colors.strong,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
-  },
-  label: { fontFamily: fonts.display, fontSize: 13, color: colors.text, marginTop: 8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  help: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  error: { fontFamily: fonts.body, fontSize: 13, color: colors.text },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 22, color: colors.text, lineHeight: 26 },
+    field: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.field,
+      borderWidth: 2,
+      borderColor: colors.strong,
+      paddingVertical: 9,
+      paddingHorizontal: 10,
+    },
+    label: { fontFamily: fonts.display, fontSize: 13, color: colors.text, marginTop: 8 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    help: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+    error: { fontFamily: fonts.body, fontSize: 13, color: colors.text },
+  });

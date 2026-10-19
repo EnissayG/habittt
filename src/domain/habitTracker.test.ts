@@ -225,18 +225,6 @@ describe('habit tracker use cases', () => {
     });
   });
 
-  describe('drawMeditationPlant', () => {
-    it('draws the plant of a meditation with the injected generator, and saves nothing', async () => {
-      const { tracker, habits } = setup();
-      // generateSeed() returns 7 here, for the species and for the seed.
-      expect(tracker.drawMeditationPlant()).toEqual({
-        species: SPECIES_IDS[7 % SPECIES_IDS.length],
-        seed: 7,
-      });
-      expect(habits.rows.size).toBe(0);
-    });
-  });
-
   describe('notes and watering', () => {
     it('saves the note of a past day, then updates and deletes it', async () => {
       const { tracker, id, notes } = await withHabit();

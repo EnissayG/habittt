@@ -30,7 +30,8 @@ import { describePlant, isRare, potLabel, SPECIES_LABELS } from '../plant/labels
 import { PixelCanvas } from '../plant/PixelCanvas';
 import { PlantCanvas } from '../plant/PlantCanvas';
 import { sceneColor } from '../theme/scenePalette';
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { usePalette, useThemedStyles } from '../theme/ThemeContext';
 import { useWindowClock } from '../useWindowClock';
 
 const clampDays = (value: number) => Math.min(MAX_GROWTH_DAYS, Math.max(1, value));
@@ -48,6 +49,7 @@ const VIEW_LABELS: Record<WindowView, string> = {
  * without the database, and the window and floor in any view.
  */
 export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
+  const styles = useThemedStyles(makeStyles);
   const { width } = useWindowDimensions();
   const [species, setSpecies] = useState<SpeciesId>(SPECIES_IDS[0] ?? 'monstera');
   const [seedText, setSeedText] = useState('42');
@@ -212,6 +214,8 @@ export function LabScreen({ navigation }: ScreenProps<'Lab'>) {
 }
 
 function DayInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const colors = usePalette();
+  const styles = useThemedStyles(makeStyles);
   return (
     <TextInput
       value={value}
@@ -224,20 +228,26 @@ function DayInput({ value, onChange }: { value: string; onChange: (value: string
   );
 }
 
-const styles = StyleSheet.create({
-  description: { fontFamily: fonts.display, fontSize: 15, color: colors.text, textAlign: 'center' },
-  caption: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
-  label: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
-  grow: { flex: 1 },
-  input: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: colors.field,
-    borderWidth: 2,
-    borderColor: colors.strong,
-    padding: spacing.sm,
-  },
-  scene: { alignItems: 'center', gap: spacing.sm },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    description: {
+      fontFamily: fonts.display,
+      fontSize: 15,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    caption: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
+    label: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
+    row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
+    grow: { flex: 1 },
+    input: {
+      fontFamily: fonts.display,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.field,
+      borderWidth: 2,
+      borderColor: colors.strong,
+      padding: spacing.sm,
+    },
+    scene: { alignItems: 'center', gap: spacing.sm },
+  });

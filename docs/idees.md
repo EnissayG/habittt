@@ -20,12 +20,22 @@ les [principes du produit](architecture.md#principes-du-produit) le moment venu.
 
 ## Hors périmètre pour l'instant
 
-- **La musique et sa barre** (lecture, suivant, titre, égaliseur). Piste
-  envisagée : des morceaux « chiptune » calmes générés par IA, à condition
-  que la licence de l'outil autorise l'usage commercial dans une app.
-- **Garder la dernière plante de méditation** près du coussin jusqu'au
-  lendemain. Le coin méditation est fait (ADR 0017), mais sa plante n'est
-  pas gardée : il faudrait l'enregistrer.
+- **La musique et sa barre** (lecture, suivant, titre, égaliseur) :
+  prochaine étape. Piste envisagée : des morceaux « chiptune » calmes
+  générés par IA, à condition que la licence de l'outil autorise l'usage
+  commercial dans une app. Recherche des outils en cours.
+- **La plante de méditation** (validée, à faire après la musique) : une
+  plante qui pousse d'un jour à chaque jour médité et **ne meurt jamais**
+  si on saute un jour ; un objectif doux (« 5 jours sur 7 »), pas une série
+  stricte ; un calendrier sur le modèle du journal de la plante (jours
+  médités marqués, les autres vides, jamais de rouge) ; un rappel
+  facultatif, désactivé par défaut, comme le rappel du soir. Demande une
+  table des séances, une migration, l'export : un ADR à part.
+- **Publier sur Android et iOS** (après la plante de méditation) : builds
+  EAS, icône et écran de démarrage, comptes développeur, politique de
+  confidentialité, fiches des stores ; pour un compte Google personnel
+  récent, un test fermé avec des testeurs pendant 14 jours avant la
+  publication : à lancer tôt.
 - **La vitalité** de la plante : la soif et la fatigue (voir
   [architecture.md](architecture.md)).
 - **Le compte et la synchronisation** (Supabase).

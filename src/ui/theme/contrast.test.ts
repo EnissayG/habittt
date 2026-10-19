@@ -3,7 +3,14 @@ import { join } from 'path';
 
 import { contrastRatio } from './contrast';
 import { sceneColor } from './scenePalette';
-import { colors, FLOOR_MARKS, MIN_TEXT_CONTRAST, TEXT_PAIRS } from './tokens';
+import {
+  colors,
+  FLOOR_MARKS,
+  MIN_TEXT_CONTRAST,
+  PALETTES,
+  ROOM_TEXT_PAIRS,
+  TEXT_PAIRS,
+} from './tokens';
 
 describe('contrastRatio', () => {
   it('matches the WCAG reference values', () => {
@@ -15,7 +22,16 @@ describe('contrastRatio', () => {
 });
 
 describe('theme text contrast', () => {
-  it.each(TEXT_PAIRS)('%s on %s is at least 4.5:1', (text, background) => {
+  // Both palettes: the lights on, and the lights off (ADR 0021).
+  it.each(TEXT_PAIRS)('%s on %s is at least 4.5:1, lights on and off', (text, background) => {
+    for (const palette of Object.values(PALETTES)) {
+      expect(contrastRatio(palette[text], palette[background])).toBeGreaterThanOrEqual(
+        MIN_TEXT_CONTRAST,
+      );
+    }
+  });
+
+  it.each(ROOM_TEXT_PAIRS)('%s on %s, in the room, is at least 4.5:1', (text, background) => {
     expect(contrastRatio(colors[text], colors[background])).toBeGreaterThanOrEqual(
       MIN_TEXT_CONTRAST,
     );
@@ -24,7 +40,7 @@ describe('theme text contrast', () => {
   // Pairs are only safe if screens stick to them: text may only be colored
   // with the roles that appear as text in TEXT_PAIRS.
   it('screens color text only with allowed text roles', () => {
-    const allowed = new Set(TEXT_PAIRS.map(([text]) => text));
+    const allowed = new Set([...TEXT_PAIRS, ...ROOM_TEXT_PAIRS].map(([text]) => text));
     const uiDir = join(__dirname, '..');
     const offenders: string[] = [];
 

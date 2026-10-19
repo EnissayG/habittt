@@ -5,7 +5,8 @@ import { HABIT_NAME_MAX_LENGTH, type HabitId } from '../../domain';
 import { Button } from '../components/Button';
 import { Sheet } from '../components/Sheet';
 import { renameErrorMessage } from '../messages';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 
 interface RenameSheetProps {
@@ -17,6 +18,7 @@ interface RenameSheetProps {
 
 /** Renames a habit (from its menu). Mount it when it opens. */
 export function RenameSheet({ habitId, name, onClose, onDone }: RenameSheetProps) {
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const [value, setValue] = useState(name);
   const [error, setError] = useState<string | null>(null);
@@ -56,16 +58,17 @@ export function RenameSheet({ habitId, name, onClose, onDone }: RenameSheetProps
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  field: {
-    backgroundColor: colors.field,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: 10,
-    fontFamily: fonts.body,
-    fontSize: 15,
-    color: colors.text,
-  },
-  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    field: {
+      backgroundColor: colors.field,
+      borderWidth: 1,
+      borderColor: colors.line,
+      padding: 10,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      color: colors.text,
+    },
+    body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+  });

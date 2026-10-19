@@ -12,6 +12,9 @@ export const MAT_SIZE = { width: 64, height: 7 } as const;
 export const LOW_TABLE_SIZE = { width: 46, height: 26 } as const;
 export const WALL_SHELF_SIZE = { width: 42, height: 14 } as const;
 export const VASE_SIZE = { width: 18, height: 61 } as const;
+export const SIGN_SIZE = { width: 36, height: 15 } as const;
+/** The plank of the sign, under its string: where its word is written (see the UI). */
+export const SIGN_PLANK = { x: 0, y: 6, width: 36, height: 9 } as const;
 export const SMOKE_SIZE = { width: 9, height: 34 } as const;
 export const FLAME_SIZE = { width: 3, height: 4 } as const;
 
@@ -298,9 +301,61 @@ export function drawVase(): SceneImage {
   return c.toImage();
 }
 
+/**
+ * The way into the meditation, on the wall above the cushion: a small
+ * wooden sign hung from a brass nail by a string. Its word ("Méditer") is
+ * written by the UI on the plank; the sign itself is decor like the rest,
+ * so it darkens with the room and shows in the floor.
+ */
+export function drawSign(): SceneImage {
+  const { width, height } = SIGN_SIZE;
+  const c = new SceneCanvas(width, height);
+  const middle = Math.floor(width / 2);
+  // The nail, and the string down to both ends of the plank: an unbroken
+  // line on each side, one cell per column.
+  const reach = middle - 3;
+  for (let dx = 1; dx <= reach; dx++) {
+    const y = 1 + Math.round(((dx - 1) / (reach - 1)) * (SIGN_PLANK.y - 2));
+    c.fill(middle - dx, y, 1, 1, 'frameDark');
+    c.fill(middle + dx, y, 1, 1, 'frameDark');
+  }
+  c.fill(middle, 0, 1, 1, 'brass');
+  // The plank: a dark edge, the wood, lit from above, and two grain lines.
+  const { y: top, height: h } = SIGN_PLANK;
+  c.fill(0, top, width, h, 'tableShade');
+  c.fill(1, top + 1, width - 2, h - 2, 'tableTop');
+  c.fill(1, top + 1, width - 2, 1, 'tableLight');
+  c.fill(3, top + 3, 5, 1, 'tableShade');
+  c.fill(width - 9, top + h - 3, 6, 1, 'tableShade');
+  return c.toImage();
+}
+
 /** Cells between two hooks of the string of lights, and how low it hangs between them. */
 const GARLAND_SPAN = 37;
-const GARLAND_SAG = 6;
+const GARLAND_SAG = 4;
+/** Row of the string at its hooks. */
+const GARLAND_TOP = 3;
+/** A bulb every few cells along the string, and its offset. */
+export const BULB_EVERY = 6;
+const BULB_OFFSET = 3;
+/**
+ * Rows the moulding and the string of lights take under the ceiling, down to
+ * the lowest bulb: nothing is hung there, so nothing covers them (planRoom).
+ */
+export const CEILING_ROWS = GARLAND_TOP + GARLAND_SAG + 4;
+
+/** Row of the string at column x (it sags between two hooks). */
+function garlandRow(x: number): number {
+  const along = (x % GARLAND_SPAN) / GARLAND_SPAN;
+  return GARLAND_TOP + Math.round(GARLAND_SAG * 4 * along * (1 - along));
+}
+
+/** Where each bulb of the string of lights hangs (the bulb's lit pixel), across a width. */
+export function garlandBulbs(width: number): { x: number; y: number }[] {
+  const bulbs: { x: number; y: number }[] = [];
+  for (let x = BULB_OFFSET; x < width; x += BULB_EVERY) bulbs.push({ x, y: garlandRow(x) + 2 });
+  return bulbs;
+}
 
 /**
  * The wallpaper of every wall: small sprigs on a staggered grid, barely
@@ -327,12 +382,10 @@ export function drawWallpaper(width: number, height: number): SceneImage {
   // A string of small lights under it, hooked every GARLAND_SPAN cells, sagging
   // between two hooks, a bulb every few cells.
   for (let x = 0; x < width; x++) {
-    const along = (x % GARLAND_SPAN) / GARLAND_SPAN;
-    const sag = Math.round(GARLAND_SAG * 4 * along * (1 - along));
-    const y = 4 + sag;
+    const y = garlandRow(x);
     c.fill(x, y, 1, 1, 'garland');
-    if (x % GARLAND_SPAN === 0) c.fill(x, 3, 1, 1, 'garland');
-    if (x % 6 === 3) {
+    if (x % GARLAND_SPAN === 0) c.fill(x, y - 1, 1, 1, 'garland');
+    if (x % BULB_EVERY === BULB_OFFSET) {
       c.fill(x, y + 1, 1, 2, 'bulb');
       c.fill(x, y + 3, 1, 1, 'bulbGlow');
     }

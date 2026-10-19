@@ -15,15 +15,16 @@ import {
   breathFullness,
   breathWord,
   drawIncenseTimer,
+  drawSparkles,
   drawSun,
   INCENSE_TIMER_SIZE,
   isOver,
   MAX_GROWTH_DAYS,
+  MEDITATION_BONSAI,
   MEDITATION_LENGTHS,
   MEDITATIONS,
   minutesLeft,
   PLANT_GRID,
-  plantDaysAt,
   pulsesBetween,
   renderPlant,
   sessionShare,
@@ -31,7 +32,6 @@ import {
   type Meditation,
   type MeditationMinutes,
   type ScenePixel,
-  type SpeciesId,
 } from '../../domain';
 import { Button } from '../components/Button';
 import { NumberText } from '../components/NumberText';
@@ -40,46 +40,47 @@ import { TopBar } from '../components/TopBar';
 import { tapBreath, tapEnd } from '../meditation/haptics';
 import { useSessionClock } from '../meditation/useSessionClock';
 import type { ScreenProps } from '../navigation/types';
-import { plantName } from '../plant/labels';
+import { LivingPlant } from '../plant/LivingPlant';
 import { PixelCanvas } from '../plant/PixelCanvas';
-import { PlantPixels } from '../plant/PlantCanvas';
 import { pixelScale } from '../plant/pixelScale';
-import { sceneColor } from '../theme/scenePalette';
-import { colors, fonts, spacing } from '../theme/tokens';
-import { useTracker } from '../TrackerContext';
+import { sceneColor, sunOnDark } from '../theme/scenePalette';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { useLights, usePalette, useThemedStyles } from '../theme/ThemeContext';
 import { useReduceMotion } from '../useReduceMotion';
 
 /** With "reduce motion", the air around the sun keeps this reach: half a breath. */
 const STILL_FULLNESS = 0.5;
 /**
- * The scene of a session, in grid cells: the sun above the pot, the incense
- * beside it. The incense has an empty twin on the other side, so that the
- * plant stays in the middle of the screen.
+ * The scene of a session, in grid cells: the sun above the bonsai, the
+ * incense beside it. The incense has an empty twin on the other side, so
+ * that the bonsai stays in the middle of the screen.
  */
 const SCENE = {
   width: PLANT_GRID.width + 2 * INCENSE_TIMER_SIZE.width,
   height: SUN.height + PLANT_GRID.height,
 } as const;
+/** At the end, the seconds the sun takes to open fully, and the well done to appear. */
+const END_OPEN = 1.5;
+const END_WORDS = 0.8;
 
-interface SessionPlant {
-  species: SpeciesId;
-  seed: number;
-}
+/** The grown bonsai of every session, already there (ADR 0020). */
+const BONSAI = renderPlant({ ...MEDITATION_BONSAI, elapsedDays: MAX_GROWTH_DAYS, relapseDays: [] });
 
 type Stage =
   | { kind: 'choose' }
-  | { kind: 'session'; meditation: Meditation; plant: SessionPlant }
-  | { kind: 'end'; plant: SessionPlant };
+  | { kind: 'session'; meditation: Meditation }
+  | { kind: 'end'; meditation: Meditation };
 
 /**
- * Screen 12: the meditation corner (docs/meditation.md, ADR 0017, 0019).
- * Choose a length, then a plant grows in its pot while one breathes, under a
- * sun whose air follows the breath, beside a stick of incense that burns
- * down with the session. The only words are "inspire" and "expire". Leaving
- * (Terminer or back) returns to the room. Nothing is saved.
+ * Screen 12: the meditation corner (docs/meditation.md, ADR 0017 to 0020).
+ * Choose a length, then breathe with the sun, beside the grown bonsai and a
+ * stick of incense that burns down with the session. The only words are
+ * "inspire" and "expire"; the end says well done. Leaving (Terminer or
+ * back) returns to the room. Nothing is saved.
  */
 export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
-  const tracker = useTracker();
+  const colors = usePalette();
+  const styles = useThemedStyles(makeStyles);
   const [stage, setStage] = useState<Stage>({ kind: 'choose' });
   const [vibrate, setVibrate] = useState(true);
 
@@ -87,21 +88,16 @@ export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
     return (
       <Session
         meditation={stage.meditation}
-        plant={stage.plant}
         vibrate={vibrate}
-        onEnd={() => setStage({ kind: 'end', plant: stage.plant })}
+        onEnd={() => setStage({ kind: 'end', meditation: stage.meditation })}
         onQuit={navigation.goBack}
       />
     );
   }
-  if (stage.kind === 'end') return <End plant={stage.plant} onBack={navigation.goBack} />;
+  if (stage.kind === 'end') return <End meditation={stage.meditation} onBack={navigation.goBack} />;
 
   const start = (minutes: MeditationMinutes) =>
-    setStage({
-      kind: 'session',
-      meditation: MEDITATIONS[minutes],
-      plant: tracker.drawMeditationPlant(),
-    });
+    setStage({ kind: 'session', meditation: MEDITATIONS[minutes] });
 
   return (
     <Screen>
@@ -133,26 +129,63 @@ export function MeditationScreen({ navigation }: ScreenProps<'Meditation'>) {
   );
 }
 
-/** The plant of the session after `days` days: never dead, never moving, never watered. */
-function sessionPlant(plant: SessionPlant, days: number) {
-  return renderPlant({ ...plant, elapsedDays: days, relapseDays: [] });
-}
-
 /** The scale of the session scene: most of the screen, in whole device pixels. */
 function useSceneScale() {
   const { width, height } = useWindowDimensions();
   return pixelScale(SCENE, { width: width - 28, height: height * 0.62 }, PixelRatio.get());
 }
 
+/** The sun and the incense have the same colors whatever the hour. */
+const dayColor = (pixel: ScenePixel) => sceneColor(pixel, 'day');
+
+/** The sun, then the bonsai with the incense beside it; `over` is laid on the whole scene. */
+function Scene({
+  sun,
+  incense,
+  cellSize,
+  over,
+}: {
+  sun: ReturnType<typeof drawSun>;
+  incense: ReturnType<typeof drawIncenseTimer>;
+  cellSize: number;
+  over?: ReturnType<typeof drawSparkles>;
+}) {
+  // Lights off, the air around the sun fades into the dark, not into the cream.
+  const colors = usePalette();
+  const lights = useLights();
+  const sunColor = useMemo(
+    () => (lights.off ? sunOnDark(colors.background) : dayColor),
+    [lights.off, colors.background],
+  );
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View>
+      <View style={styles.sun}>
+        <PixelCanvas grid={sun} colorOf={sunColor} cellSize={cellSize} />
+      </View>
+      <View style={styles.pot}>
+        <View style={{ width: INCENSE_TIMER_SIZE.width * cellSize }} />
+        <LivingPlant image={BONSAI} cellSize={cellSize} />
+        <PixelCanvas grid={incense} colorOf={dayColor} cellSize={cellSize} />
+      </View>
+      {over && (
+        <View style={styles.over} pointerEvents="none">
+          <PixelCanvas grid={over} colorOf={sunColor} cellSize={cellSize} />
+        </View>
+      )}
+    </View>
+  );
+}
+
 interface SessionProps {
   meditation: Meditation;
-  plant: SessionPlant;
   vibrate: boolean;
   onEnd: () => void;
   onQuit: () => void;
 }
 
-function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
+function Session({ meditation, vibrate, onEnd, onQuit }: SessionProps) {
+  const styles = useThemedStyles(makeStyles);
   useKeepAwake();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
@@ -169,10 +202,8 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
     onEnd();
   }, [over, onEnd]);
 
-  const days = plantDaysAt(meditation, t);
-  const image = useMemo(() => sessionPlant(plant, days), [plant, days]);
-  // The breath, for the hand: the taps due since the last beat of the clock
-  // (closer and stronger breathing in, fading breathing out).
+  // The breath, for the hand, like the lungs: quick taps breathing in, taps
+  // that slow down breathing out (only the last one due since the last beat).
   const felt = useRef(0);
   useEffect(() => {
     const due = vibrate ? pulsesBetween(meditation, felt.current, t) : [];
@@ -203,12 +234,7 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
       accessible={false}
     >
       <View style={styles.center}>
-        <PixelCanvas grid={sun} colorOf={dayColor} cellSize={scale.cellSize} />
-        <View style={styles.pot}>
-          <View style={{ width: INCENSE_TIMER_SIZE.width * scale.cellSize }} />
-          <PlantPixels image={image} cellSize={scale.cellSize} />
-          <PixelCanvas grid={incense} colorOf={dayColor} cellSize={scale.cellSize} />
-        </View>
+        <Scene sun={sun} incense={incense} cellSize={scale.cellSize} />
         <Text
           style={[styles.word, { opacity: reduceMotion ? 1 : word.opacity }]}
           accessibilityLiveRegion="polite"
@@ -228,53 +254,74 @@ function Session({ meditation, plant, vibrate, onEnd, onQuit }: SessionProps) {
   );
 }
 
-/** The sun and the incense have the same colors whatever the hour. */
-const dayColor = (pixel: ScenePixel) => sceneColor(pixel, 'day');
-
-function End({ plant, onBack }: { plant: SessionPlant; onBack: () => void }) {
+/**
+ * The end, a small well done: the sun opens fully, stars of light come one
+ * after the other around it and the bonsai, the incense has burnt down, and
+ * "Bravo" appears with the time one gave oneself.
+ */
+function End({ meditation, onBack }: { meditation: Meditation; onBack: () => void }) {
+  const styles = useThemedStyles(makeStyles);
   const scale = useSceneScale();
-  const image = useMemo(() => sessionPlant(plant, MAX_GROWTH_DAYS), [plant]);
+  const reduceMotion = useReduceMotion();
+  const t = useSessionClock(true);
+  const open = reduceMotion ? 1 : Math.min(1, t / END_OPEN);
+  const sun = useMemo(
+    () => drawSun(1 - (1 - open) * (1 - open), reduceMotion ? 0 : t),
+    [open, reduceMotion, t],
+  );
+  const incense = useMemo(() => drawIncenseTimer(1, reduceMotion ? 0 : t), [reduceMotion, t]);
+  const sparkles = useMemo(
+    () => drawSparkles(SCENE.width, SCENE.height, reduceMotion ? 2 : t),
+    [reduceMotion, t],
+  );
+  const words = reduceMotion ? 1 : Math.min(1, Math.max(0, (t - END_OPEN / 2) / END_WORDS));
   return (
     <Screen footer={<Button label="Revenir à la pièce" onPress={onBack} />}>
       <View style={styles.center}>
-        <PlantPixels image={image} cellSize={scale.cellSize} />
-        <Text style={styles.name}>{plantName(image)}</Text>
+        <Scene sun={sun} incense={incense} cellSize={scale.cellSize} over={sparkles} />
+        <View style={{ opacity: words }} accessibilityLiveRegion="polite">
+          <Text style={styles.word}>Bravo</Text>
+          <NumberText style={styles.given}>{`${meditation.minutes} minutes pour toi`}</NumberText>
+        </View>
       </View>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
-  lengths: { gap: spacing.sm },
-  length: {
-    backgroundColor: colors.surface,
-    borderBottomWidth: 4,
-    borderBottomColor: colors.line,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  pressed: { opacity: 0.6 },
-  lengthLabel: { fontFamily: fonts.display, fontSize: 17, color: colors.text },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: 48,
-    gap: spacing.md,
-  },
-  rowLabel: { flex: 1, fontFamily: fonts.display, fontSize: 15, color: colors.text },
-  session: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 14 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
-  pot: { flexDirection: 'row', alignItems: 'flex-end' },
-  word: {
-    fontFamily: fonts.display,
-    fontSize: 40,
-    lineHeight: 48,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  name: { fontFamily: fonts.display, fontSize: 17, color: colors.text, textAlign: 'center' },
-  controls: { alignItems: 'center', paddingBottom: spacing.sm, minHeight: 64 },
-  left: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+    lengths: { gap: spacing.sm },
+    length: {
+      backgroundColor: colors.surface,
+      borderBottomWidth: 4,
+      borderBottomColor: colors.line,
+      paddingVertical: 14,
+      alignItems: 'center',
+    },
+    pressed: { opacity: 0.6 },
+    lengthLabel: { fontFamily: fonts.display, fontSize: 17, color: colors.text },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      minHeight: 48,
+      gap: spacing.md,
+    },
+    rowLabel: { flex: 1, fontFamily: fonts.display, fontSize: 15, color: colors.text },
+    session: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 14 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+    sun: { alignItems: 'center' },
+    pot: { flexDirection: 'row', alignItems: 'flex-end' },
+    over: { position: 'absolute', left: 0, top: 0 },
+    given: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, textAlign: 'center' },
+    word: {
+      fontFamily: fonts.display,
+      fontSize: 40,
+      lineHeight: 48,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    controls: { alignItems: 'center', paddingBottom: spacing.sm, minHeight: 64 },
+    left: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
+  });

@@ -7,18 +7,14 @@ import {
   breathWord,
   sessionShare,
   WORD_FADE,
-  breathsDone,
-  drawMeditationPlant,
   isOver,
+  MEDITATION_BONSAI,
   MEDITATION_LENGTHS,
   MEDITATIONS,
   minutesLeft,
-  plantDaysAfter,
-  plantDaysAt,
+  PULSE_GAP,
   pulsesBetween,
 } from './meditation';
-import { MAX_GROWTH_DAYS } from './plant/grid';
-import { SPECIES_IDS } from './plant/registry';
 
 const ALL = MEDITATION_LENGTHS.map((minutes) => MEDITATIONS[minutes]);
 
@@ -31,10 +27,14 @@ describe('the three meditations', () => {
     }
   });
 
-  it('write nothing during a session: no phrase, no advice', () => {
+  it('write nothing during a session and grow nothing: a length, nothing more', () => {
     for (const meditation of ALL) {
-      expect(Object.keys(meditation).sort()).toEqual(['growth', 'minutes', 'seconds']);
+      expect(Object.keys(meditation).sort()).toEqual(['minutes', 'seconds']);
     }
+  });
+
+  it('keep the grown bonsai of the opening screen company', () => {
+    expect(MEDITATION_BONSAI).toEqual({ species: 'bonsai', seed: 12 });
   });
 });
 
@@ -104,10 +104,10 @@ describe('the breath, for the hand', () => {
   const exhale = BREATH_PULSES.filter((pulse) => pulse.at >= BREATH.inhale);
   const rank = { soft: 0, light: 1, medium: 2 };
 
-  it('taps closer and stronger while breathing in', () => {
+  it('taps quick and even while breathing in, stronger as the lungs fill', () => {
     expect(inhale[0]!.at).toBe(0);
-    const between = gaps(inhale.map((pulse) => pulse.at));
-    for (let i = 1; i < between.length; i++) expect(between[i]!).toBeLessThan(between[i - 1]!);
+    for (const gap of gaps(inhale.map((pulse) => pulse.at))) expect(gap).toBeCloseTo(PULSE_GAP, 2);
+    expect(inhale.length).toBeGreaterThanOrEqual(25);
     for (let i = 1; i < inhale.length; i++) {
       expect(rank[inhale[i]!.strength]).toBeGreaterThanOrEqual(rank[inhale[i - 1]!.strength]);
     }
@@ -115,27 +115,36 @@ describe('the breath, for the hand', () => {
     expect(inhale[inhale.length - 1]!.strength).toBe('medium');
   });
 
-  it('holds still at the top of the breath', () => {
-    expect(exhale[0]!.at - inhale[inhale.length - 1]!.at).toBeGreaterThan(0.7);
-    expect(exhale[0]!.at).toBeGreaterThan(BREATH.inhale);
+  it('pauses briefly at the top of the breath', () => {
+    expect(exhale[0]!.at).toBe(BREATH.inhale);
+    expect(exhale[0]!.at - inhale[inhale.length - 1]!.at).toBeGreaterThan(PULSE_GAP);
   });
 
-  it('spaces out and fades while breathing out, then keeps silent', () => {
+  it('slows down and softens while breathing out, like air running out, then keeps silent', () => {
     const between = gaps(exhale.map((pulse) => pulse.at));
+    expect(between[0]!).toBeCloseTo(PULSE_GAP, 2);
     for (let i = 1; i < between.length; i++) expect(between[i]!).toBeGreaterThan(between[i - 1]!);
+    expect(between[between.length - 1]!).toBeGreaterThan(4 * PULSE_GAP);
     for (let i = 1; i < exhale.length; i++) {
       expect(rank[exhale[i]!.strength]).toBeLessThanOrEqual(rank[exhale[i - 1]!.strength]);
     }
+    expect(exhale[0]!.strength).toBe('medium');
     expect(exhale[exhale.length - 1]!.strength).toBe('soft');
-    expect(BREATH_SECONDS - exhale[exhale.length - 1]!.at).toBeGreaterThanOrEqual(2);
+    expect(BREATH_SECONDS - exhale[exhale.length - 1]!.at).toBeGreaterThanOrEqual(0.5);
   });
 
-  it('gives every tap exactly once to a clock that beats ten times a second', () => {
+  it('is felt in time: the taps of one breath come in order, within the breath', () => {
+    const times = BREATH_PULSES.map((pulse) => pulse.at);
+    for (const gap of gaps(times)) expect(gap).toBeGreaterThan(0.1);
+    expect(times[times.length - 1]!).toBeLessThan(BREATH_SECONDS);
+  });
+
+  it('gives every tap exactly once to a clock that beats twenty times a second', () => {
     const meditation = MEDITATIONS[5];
     let count = 0;
     let previous = 0;
-    for (let beat = 1; beat <= meditation.seconds * 10; beat++) {
-      const t = beat / 10;
+    for (let beat = 1; beat <= meditation.seconds * 20; beat++) {
+      const t = beat / 20;
       count += pulsesBetween(meditation, previous, t).length;
       previous = t;
     }
@@ -144,11 +153,11 @@ describe('the breath, for the hand', () => {
 
   it('gives them in order, whatever the beat', () => {
     const meditation = MEDITATIONS[5];
-    expect(pulsesBetween(meditation, 0, 0.1)).toEqual([BREATH_PULSES[0]]);
-    expect(pulsesBetween(meditation, 0.1, 0.8)).toEqual([]);
-    expect(pulsesBetween(meditation, 0.8, 1.0)).toEqual([BREATH_PULSES[1]]);
+    expect(pulsesBetween(meditation, 0, 0.05)).toEqual([BREATH_PULSES[0]]);
+    expect(pulsesBetween(meditation, 0.05, 0.1)).toEqual([]);
+    expect(pulsesBetween(meditation, 0.1, 0.15)).toEqual([BREATH_PULSES[1]]);
     expect(pulsesBetween(meditation, 9.95, 10.05)).toEqual([BREATH_PULSES[0]]);
-    expect(pulsesBetween(meditation, 12.6, 13.2)).toEqual([BREATH_PULSES[4], BREATH_PULSES[5]]);
+    expect(pulsesBetween(meditation, 10.1, 10.3)).toEqual([BREATH_PULSES[1], BREATH_PULSES[2]]);
   });
 
   it('does not catch up after a pause, and stops with the session', () => {
@@ -160,63 +169,6 @@ describe('the breath, for the hand', () => {
       [],
     );
     expect(pulsesBetween(meditation, meditation.seconds + 1, meditation.seconds + 1.1)).toEqual([]);
-  });
-});
-
-describe('the plant of a meditation', () => {
-  it('starts as an empty pot', () => {
-    for (const meditation of ALL) {
-      expect(plantDaysAfter(meditation, 0)).toBe(0);
-      expect(plantDaysAt(meditation, 0)).toBe(0);
-    }
-  });
-
-  it('is grown exactly at the last breath, not before', () => {
-    for (const meditation of ALL) {
-      const breaths = meditation.seconds / BREATH_SECONDS;
-      expect(plantDaysAfter(meditation, breaths)).toBe(MAX_GROWTH_DAYS);
-      expect(plantDaysAfter(meditation, breaths - 1)).toBeLessThan(MAX_GROWTH_DAYS);
-      expect(plantDaysAt(meditation, meditation.seconds)).toBe(MAX_GROWTH_DAYS);
-      expect(plantDaysAt(meditation, meditation.seconds - 0.01)).toBeLessThan(MAX_GROWTH_DAYS);
-    }
-  });
-
-  it('never shrinks, and never grows beyond a grown plant', () => {
-    for (const meditation of ALL) {
-      let previous = 0;
-      for (let n = 0; n <= meditation.seconds / BREATH_SECONDS + 5; n++) {
-        const days = plantDaysAfter(meditation, n);
-        expect(days).toBeGreaterThanOrEqual(previous);
-        expect(days).toBeLessThanOrEqual(MAX_GROWTH_DAYS);
-        previous = days;
-      }
-    }
-  });
-
-  it('grows four days a breath in 5 minutes, two in 10, two every three breaths in 30', () => {
-    expect([1, 2, 3].map((n) => plantDaysAfter(MEDITATIONS[5], n))).toEqual([4, 8, 12]);
-    expect([1, 2, 3].map((n) => plantDaysAfter(MEDITATIONS[10], n))).toEqual([2, 4, 6]);
-    expect([1, 2, 3, 4, 5, 6].map((n) => plantDaysAfter(MEDITATIONS[30], n))).toEqual([
-      0, 0, 2, 2, 2, 4,
-    ]);
-  });
-
-  it('grows at the end of each breath out', () => {
-    const meditation = MEDITATIONS[5];
-    expect(breathsDone(meditation, 9.99)).toBe(0);
-    expect(breathsDone(meditation, 10)).toBe(1);
-    expect(plantDaysAt(meditation, 9.99)).toBe(0);
-    expect(plantDaysAt(meditation, 10)).toBe(4);
-    expect(breathsDone(meditation, meditation.seconds + 60)).toBe(30);
-  });
-
-  it('is drawn among the thirteen species with the injected seeds', () => {
-    const seeds = [15, 987654321];
-    const plant = drawMeditationPlant(() => seeds.shift()!);
-    expect(plant).toEqual({ species: SPECIES_IDS[15 % SPECIES_IDS.length], seed: 987654321 });
-    for (let s = 0; s < 40; s++) {
-      expect(SPECIES_IDS).toContain(drawMeditationPlant(() => s).species);
-    }
   });
 });
 

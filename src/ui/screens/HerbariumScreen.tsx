@@ -7,7 +7,8 @@ import { Screen } from '../components/Screen';
 import { TopBar } from '../components/TopBar';
 import { dayMonth, days } from '../format';
 import type { ScreenProps } from '../navigation/types';
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
 
@@ -17,6 +18,7 @@ import { useScreenData } from '../useLoader';
  * habit opens its journal.
  */
 export function HerbariumScreen({ navigation }: ScreenProps<'Herbarium'>) {
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const load = useCallback(() => tracker.getHerbarium(), [tracker]);
   const { data: entries } = useScreenData(load);
@@ -65,16 +67,17 @@ export function HerbariumScreen({ navigation }: ScreenProps<'Herbarium'>) {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
-  small: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 17 },
-  entry: {
-    gap: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-    paddingTop: spacing.sm,
-  },
-  name: { fontFamily: fonts.display, fontSize: 17, color: colors.text },
-  life: { paddingLeft: spacing.sm, borderLeftWidth: 3, borderLeftColor: colors.line, gap: 1 },
-  lifeLine: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+    small: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 17 },
+    entry: {
+      gap: spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: colors.line,
+      paddingTop: spacing.sm,
+    },
+    name: { fontFamily: fonts.display, fontSize: 17, color: colors.text },
+    life: { paddingLeft: spacing.sm, borderLeftWidth: 3, borderLeftColor: colors.line, gap: 1 },
+    lifeLine: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
+  });

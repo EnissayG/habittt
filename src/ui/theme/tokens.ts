@@ -56,9 +56,61 @@ export const colors = {
   onFloorMuted: '#D3CBB7',
   /** Dimmed screen behind a sheet. */
   dim: 'rgba(7, 54, 66, 0.38)',
+  /**
+   * The room with the lights off, laid over everything (ADR 0020): how dark
+   * depends on the hour, the daylight still comes in. Then the window, which
+   * darkens less than the room.
+   */
+  darknessDay: 'rgba(3, 18, 24, 0.4)',
+  darknessEvening: 'rgba(3, 18, 24, 0.65)',
+  darkness: 'rgba(3, 18, 24, 0.86)',
+  windowDarknessDay: 'rgba(3, 18, 24, 0.1)',
+  windowDarknessEvening: 'rgba(3, 18, 24, 0.3)',
+  windowDarkness: 'rgba(3, 18, 24, 0.45)',
+  /** The bare wall under each darkness (base3 seen through it), for the contrast checks. */
+  darkRoomDay: '#999B92',
+  darkRoomEvening: '#5A625F',
+  darkRoom: '#263234',
+  /** Text in the dark room: the header and the labels. */
+  textInDark: solarized.base2,
+  /** The word on the wooden sign of the meditation corner (on the low table's wood). */
+  onWood: solarized.base3,
+  wood: '#8A5A32',
+  mutedInDark: solarized.base1,
 } as const;
 
 type ColorRole = keyof typeof colors;
+
+/** Every color role, with its value: one palette for the lights on, one for the lights off. */
+export type Palette = Record<ColorRole, string>;
+
+/**
+ * The lights off (ADR 0021): every screen goes dark, in the colors of the
+ * dark room at night (its wall seen through the darkness), Solarized's dark
+ * tones for the text. The roles keep their meaning: what is text stays text,
+ * what is quiet stays quiet. The room's own roles (darkness, onWood...) do
+ * not change: the room is drawn lit, then darkened.
+ */
+export const darkColors: Palette = {
+  ...colors,
+  background: '#1F2A2C',
+  surface: '#2C3A3D',
+  field: '#253234',
+  line: '#3B4B4E',
+  border: '#5C6E70',
+  text: solarized.base2,
+  muted: solarized.base1,
+  accent: solarized.green,
+  accentEdge: '#5F7000',
+  onAccent: solarized.base03,
+  strong: solarized.base2,
+  onStrong: solarized.base03,
+  onFloor: solarized.base2,
+  onFloorMuted: '#6F8083',
+  dim: 'rgba(0, 0, 0, 0.5)',
+};
+
+export const PALETTES = { light: colors as Palette, dark: darkColors } as const;
 
 /** Every [text, background] combination the screens are allowed to use. */
 export const TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
@@ -71,6 +123,19 @@ export const TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
   ['onStrong', 'strong'],
   ['onAccent', 'clean'],
   ['onRelapse', 'relapse'],
+];
+
+/**
+ * The text drawn in the room itself, with the lights on or off (ADR 0020):
+ * the room is always drawn lit, then darkened, so these pairs are checked in
+ * the light palette only.
+ */
+export const ROOM_TEXT_PAIRS: readonly (readonly [ColorRole, ColorRole])[] = [
+  ['text', 'darkRoomDay'],
+  ['textInDark', 'darkRoomEvening'],
+  ['textInDark', 'darkRoom'],
+  ['mutedInDark', 'darkRoom'],
+  ['onWood', 'wood'],
 ];
 
 /** Marks drawn on the floor planks; checked against every plank tone (at least 3:1). */

@@ -10,7 +10,8 @@ import { TopBar } from '../components/TopBar';
 import type { ScreenProps } from '../navigation/types';
 import { isReminderOn, turnReminderOff, turnReminderOn } from '../settings/reminder';
 import { shareExport } from '../settings/shareExport';
-import { colors, fonts, spacing } from '../theme/tokens';
+import { fonts, spacing, type Palette } from '../theme/tokens';
+import { usePalette, useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
 
@@ -19,6 +20,8 @@ import { useScreenData } from '../useLoader';
  * the evening reminder is off by default and never reproaches anything.
  */
 export function SettingsScreen({ navigation }: ScreenProps<'Settings'>) {
+  const colors = usePalette();
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const load = useCallback(() => tracker.herbariumCount(), [tracker]);
   const { data: lives } = useScreenData(load);
@@ -124,6 +127,7 @@ interface RowProps {
 
 /** One line of the settings: a label, and a value or a control on the right. */
 function Row({ label, value, onPress, last = false }: RowProps) {
+  const styles = useThemedStyles(makeStyles);
   const content = (
     <>
       <Text style={styles.label}>{label}</Text>
@@ -140,21 +144,22 @@ function Row({ label, value, onPress, last = false }: RowProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: 48,
-    gap: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  lastRow: { borderBottomWidth: 0 },
-  label: { flex: 1, fontFamily: fonts.display, fontSize: 15, color: colors.text },
-  value: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
-  notice: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, lineHeight: 18 },
-  sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      minHeight: 48,
+      gap: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.line,
+    },
+    lastRow: { borderBottomWidth: 0 },
+    label: { flex: 1, fontFamily: fonts.display, fontSize: 15, color: colors.text },
+    value: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
+    notice: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, lineHeight: 18 },
+    sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+  });

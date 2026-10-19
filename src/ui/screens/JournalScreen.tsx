@@ -25,7 +25,8 @@ import { DaySheet } from '../habit/DaySheet';
 import { NoteSheet } from '../habit/NoteSheet';
 import { MOOD_LABELS, toggleRelapseErrorMessage } from '../messages';
 import type { ScreenProps } from '../navigation/types';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
 
@@ -41,6 +42,7 @@ type Open = { kind: 'day' | 'note'; index: number } | null;
  * month's notes and relapses. Touching a day or a note opens that day.
  */
 export function JournalScreen({ navigation, route }: ScreenProps<'Journal'>) {
+  const styles = useThemedStyles(makeStyles);
   const { id, month: asked } = route.params;
   const tracker = useTracker();
   const { width } = useWindowDimensions();
@@ -162,20 +164,21 @@ export function JournalScreen({ navigation, route }: ScreenProps<'Journal'>) {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
-  legend: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 17 },
-  note: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.note,
-    backgroundColor: colors.surface,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 2,
-  },
-  relapseNote: { borderLeftColor: colors.relapse },
-  noteTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
-  // Only text goes on the surface color (TEXT_PAIRS).
-  noteMood: { fontFamily: fonts.display, fontSize: 12, color: colors.text },
-  noteText: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+    legend: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 17 },
+    note: {
+      borderLeftWidth: 3,
+      borderLeftColor: colors.note,
+      backgroundColor: colors.surface,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      gap: 2,
+    },
+    relapseNote: { borderLeftColor: colors.relapse },
+    noteTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
+    // Only text goes on the surface color (TEXT_PAIRS).
+    noteMood: { fontFamily: fonts.display, fontSize: 12, color: colors.text },
+    noteText: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+  });

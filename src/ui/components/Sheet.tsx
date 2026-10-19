@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '../theme/tokens';
+import { spacing, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 
 interface SheetProps {
   visible: boolean;
@@ -27,6 +28,7 @@ const SLIDE = 320;
  * every panel after it.
  */
 export function Sheet({ visible, onClose, children }: SheetProps) {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [offset] = useState(() => new Animated.Value(SLIDE));
   // Callers pass inline functions: keep the latest without restarting the slide.
@@ -66,15 +68,23 @@ export function Sheet({ visible, onClose, children }: SheetProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { justifyContent: 'flex-end' },
-  dim: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.dim },
-  sheet: {
-    backgroundColor: colors.background,
-    borderTopWidth: 3,
-    borderTopColor: colors.strong,
-    paddingTop: spacing.md,
-    paddingHorizontal: 14,
-    gap: 10,
-  },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    root: { justifyContent: 'flex-end' },
+    dim: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      backgroundColor: colors.dim,
+    },
+    sheet: {
+      backgroundColor: colors.background,
+      borderTopWidth: 3,
+      borderTopColor: colors.strong,
+      paddingTop: spacing.md,
+      paddingHorizontal: 14,
+      gap: 10,
+    },
+  });

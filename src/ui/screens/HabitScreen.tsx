@@ -19,7 +19,8 @@ import { MOOD_LABELS, replantErrorMessage } from '../messages';
 import { describePlant } from '../plant/labels';
 import { LivingPlant } from '../plant/LivingPlant';
 import { pixelScale } from '../plant/pixelScale';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useScreenData } from '../useLoader';
 
@@ -44,6 +45,7 @@ const NOTICE_MS = 3000;
 
 /** Screen 5: one habit. The plant is the main element. */
 export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
+  const styles = useThemedStyles(makeStyles);
   const { id } = route.params;
   const tracker = useTracker();
   const { width, height } = useWindowDimensions();
@@ -295,6 +297,7 @@ export function HabitScreen({ navigation, route }: ScreenProps<'Habit'>) {
 
 /** A fact about the habit: a quiet label above a value in the text color. */
 function Fact({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View accessible accessibilityLabel={`${label} ${value}`}>
       <Text style={styles.factLabel}>{label}</Text>
@@ -303,41 +306,42 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  scene: { alignItems: 'center' },
-  counterOverlay: { position: 'absolute', left: 0, top: 0 },
-  count: { fontFamily: fonts.numeric, fontSize: 64, color: colors.text, lineHeight: 64 },
-  countLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
-  // A dead plant's days are kept, quieter: they no longer run.
-  deadCount: { color: colors.muted },
-  deadLabel: { color: colors.muted },
-  deadMessage: {
-    fontFamily: fonts.display,
-    fontSize: 14,
-    color: colors.text,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
-  traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  hint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  facts: { flexDirection: 'row', gap: 32 },
-  factLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  factValue: { fontFamily: fonts.display, fontSize: 18, lineHeight: 26, color: colors.text },
-  note: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.note,
-    backgroundColor: colors.surface,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 2,
-  },
-  // Only text goes on the surface color (TEXT_PAIRS).
-  noteTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
-  noteMood: { fontFamily: fonts.display, fontSize: 12, color: colors.text },
-  noteText: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-  notice: { fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'center' },
-  sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    scene: { alignItems: 'center' },
+    counterOverlay: { position: 'absolute', left: 0, top: 0 },
+    count: { fontFamily: fonts.numeric, fontSize: 64, color: colors.text, lineHeight: 64 },
+    countLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+    // A dead plant's days are kept, quieter: they no longer run.
+    deadCount: { color: colors.muted },
+    deadLabel: { color: colors.muted },
+    deadMessage: {
+      fontFamily: fonts.display,
+      fontSize: 14,
+      color: colors.text,
+      textAlign: 'center',
+      lineHeight: 19,
+    },
+    name: { fontFamily: fonts.display, fontSize: 22, color: colors.text },
+    traits: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+    hint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    facts: { flexDirection: 'row', gap: 32 },
+    factLabel: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+    factValue: { fontFamily: fonts.display, fontSize: 18, lineHeight: 26, color: colors.text },
+    note: {
+      borderLeftWidth: 3,
+      borderLeftColor: colors.note,
+      backgroundColor: colors.surface,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      gap: 2,
+    },
+    // Only text goes on the surface color (TEXT_PAIRS).
+    noteTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
+    noteMood: { fontFamily: fonts.display, fontSize: 12, color: colors.text },
+    noteText: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+    notice: { fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'center' },
+    sheetTitle: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    body: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 18 },
+  });

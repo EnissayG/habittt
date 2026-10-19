@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -14,21 +15,34 @@ import { PlantChoiceScreen } from '../screens/PlantChoiceScreen';
 import { RetireScreen } from '../screens/RetireScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ShelfScreen } from '../screens/ShelfScreen';
-import { colors } from '../theme/tokens';
+import { LightsProvider, useLights, usePalette } from '../theme/ThemeContext';
+import type { Palette } from '../theme/tokens';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const theme: Theme = {
+const themeOf = (colors: Palette): Theme => ({
   ...DefaultTheme,
   colors: { ...DefaultTheme.colors, background: colors.background, card: colors.background },
-};
+});
 
 /**
  * Native stack: real native transitions, swipe-back on iOS and the back
  * button on Android. Screens draw their own top bar (mockup style).
  */
 export function AppNavigator() {
+  return (
+    <LightsProvider>
+      <Navigator />
+    </LightsProvider>
+  );
+}
+
+/** The screens, in the colors of the moment: the lights off darken them all (ADR 0021). */
+function Navigator() {
+  const colors = usePalette();
+  const lights = useLights();
+  const theme = useMemo(() => themeOf(colors), [colors]);
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={theme}>
@@ -52,7 +66,7 @@ export function AppNavigator() {
           {__DEV__ && <Stack.Screen name="Lab" component={LabScreen} />}
         </Stack.Navigator>
       </NavigationContainer>
-      <StatusBar style="dark" />
+      <StatusBar style={lights.off ? 'light' : 'dark'} />
     </SafeAreaProvider>
   );
 }

@@ -6,7 +6,8 @@ import { NumberText } from '../components/NumberText';
 import { Sheet } from '../components/Sheet';
 import { dayMonth } from '../format';
 import { MOOD_LABELS } from '../messages';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 
 interface DaySheetProps {
   day: DayEntry;
@@ -22,6 +23,7 @@ interface DaySheetProps {
 
 /** A day of the journal: what happened, its note, and what can be changed. */
 export function DaySheet({ day, today, onWrite, onToggleRelapse, error, onClose }: DaySheetProps) {
+  const styles = useThemedStyles(makeStyles);
   const { note } = day;
   const facts = [
     day.relapsed ? 'Une rechute ce jour-là.' : null,
@@ -62,9 +64,10 @@ export function DaySheet({ day, today, onWrite, onToggleRelapse, error, onClose 
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
-  mood: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: 14, color: colors.text, lineHeight: 20 },
-  muted: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, lineHeight: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    title: { fontFamily: fonts.display, fontSize: 19, color: colors.text },
+    mood: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+    body: { fontFamily: fonts.body, fontSize: 14, color: colors.text, lineHeight: 20 },
+    muted: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, lineHeight: 18 },
+  });

@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { PlantImage } from '../../domain';
 import type { ScreenProps } from '../navigation/types';
 import { PlantCanvas } from '../plant/PlantCanvas';
-import { colors, fonts } from '../theme/tokens';
+import { fonts, type Palette } from '../theme/tokens';
+import { useThemedStyles } from '../theme/ThemeContext';
 import { useTracker } from '../TrackerContext';
 import { useLoader } from '../useLoader';
 
@@ -15,6 +16,7 @@ const OPENING_MAX_MS = 3000;
 
 /** Screen 1: the grown bonsai, the app's emblem, and the name. */
 export function OpeningScreen({ navigation }: ScreenProps<'Opening'>) {
+  const styles = useThemedStyles(makeStyles);
   const tracker = useTracker();
   const load = useCallback(() => tracker.openingPlant(), [tracker]);
   const { data: plant } = useLoader<PlantImage>(load);
@@ -44,14 +46,15 @@ export function OpeningScreen({ navigation }: ScreenProps<'Opening'>) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  logo: { fontFamily: fonts.displayBold, fontSize: 44, color: colors.text },
-  tagline: { fontFamily: fonts.display, fontSize: 14, color: colors.muted },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    logo: { fontFamily: fonts.displayBold, fontSize: 44, color: colors.text },
+    tagline: { fontFamily: fonts.display, fontSize: 14, color: colors.muted },
+  });
